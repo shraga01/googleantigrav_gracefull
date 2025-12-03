@@ -47,7 +47,7 @@ const FALLBACK_SUGGESTIONS = {
 };
 
 export const LLMService = {
-    generateOpeningSentence: async (user: UserProfile, recentEntries: DailyEntry[]): Promise<string> => {
+    generateOpeningSentence: async (user: UserProfile, _recentEntries: DailyEntry[]): Promise<string> => {
         try {
             if (!API_KEY || API_KEY === 'YOUR_GEMINI_API_KEY') throw new Error('No API Key');
 
@@ -88,7 +88,7 @@ export const LLMService = {
         }
     },
 
-    generateSuggestions: async (user: UserProfile, recentEntries: DailyEntry[]): Promise<string[]> => {
+    generateSuggestions: async (user: UserProfile, _recentEntries: DailyEntry[]): Promise<string[]> => {
         try {
             if (!API_KEY || API_KEY === 'YOUR_GEMINI_API_KEY') throw new Error('No API Key');
 

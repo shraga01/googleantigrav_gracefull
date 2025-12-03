@@ -4,7 +4,7 @@ import { StorageService } from '../../services/storage';
 import { Button } from '../common/Button';
 
 export const SettingsMenu: React.FC = () => {
-    const { userProfile, setLanguage, updateProfile } = useApp();
+    const { userProfile, setLanguage } = useApp();
     const isHebrew = userProfile?.language === 'hebrew';
 
     const handleExport = () => {
