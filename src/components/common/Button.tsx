@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'outline';
+    variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
     fullWidth?: boolean;
 }
 
@@ -14,13 +14,17 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
     const baseStyle: React.CSSProperties = {
         padding: '12px 24px',
-        borderRadius: 'var(--radius-full)',
+        borderRadius: 'var(--radius-md)',
         border: 'none',
-        fontSize: '16px',
+        fontSize: 'var(--font-size-md)',
         fontWeight: 600,
         cursor: 'pointer',
-        transition: 'transform 0.1s ease, opacity 0.2s ease',
+        transition: 'all var(--transition-fast)',
         width: fullWidth ? '100%' : 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 'var(--spacing-sm)',
         ...style,
     };
 
@@ -28,16 +32,25 @@ export const Button: React.FC<ButtonProps> = ({
         primary: {
             backgroundColor: 'var(--color-primary)',
             color: 'white',
+            boxShadow: 'var(--shadow-sm)',
         },
         secondary: {
             backgroundColor: 'var(--color-secondary)',
             color: 'var(--color-text-main)',
+            boxShadow: 'none',
         },
         outline: {
             backgroundColor: 'transparent',
             border: '2px solid var(--color-primary)',
             color: 'var(--color-primary)',
+            boxShadow: 'none',
         },
+        ghost: {
+            backgroundColor: 'transparent',
+            color: 'var(--color-text-muted)',
+            boxShadow: 'none',
+            padding: '8px',
+        }
     };
 
     return (

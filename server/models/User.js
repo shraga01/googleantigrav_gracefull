@@ -21,6 +21,21 @@ const userSchema = new mongoose.Schema({
         type: String,
         select: false // Don't include in queries by default
     },
+    googleId: {
+        type: String,
+        sparse: true, // Allow null, unique when present
+        index: true,
+        select: false // Don't include in queries by default (privacy)
+    },
+    authProvider: {
+        type: String,
+        enum: ['email', 'google', 'anonymous'],
+        default: 'anonymous'
+    },
+    lastLoginAt: {
+        type: Number,
+        default: () => Date.now()
+    },
     language: {
         type: String,
         enum: ['english', 'hebrew'],

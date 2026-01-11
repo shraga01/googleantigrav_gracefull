@@ -138,4 +138,74 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Google Sign-In (Firebase Authentication)
+router.post('/google', async (req, res) => {
+    try {
+        const { firebaseToken } = req.body;
+
+        if (!firebaseToken) {
+            return res.status(400).json({ error: 'Firebase token required' });
+        }
+
+        // Verify Firebase token
+        const { auth } = await import('../config/firebase.js');
+        const decodedToken = await auth.verifyIdToken(firebaseToken);
+
+        const { uid: googleId, email } = decodedToken;
+
+        // Hash Google ID for privacy (server doesn't store raw Google ID)
+        const crypto = await import('crypto');
+        const hashedGoogleId = crypto.createHash('sha256').update(googleId).digest('hex');
+
+        // Check if user exists
+        let user = await User.findOne({ googleId: hashedGoogleId });
+
+        if (user) {
+            // Existing user - update last login
+            user.lastLoginAt = Date.now();
+            await user.save();
+        } else {
+            // New user - create account
+            const userId = uuidv4();
+
+            user = new User({
+                userId,
+                googleId: hashedGoogleId,
+                email, // Store email for account recovery
+                isAnonymous: false,
+                authProvider: 'google'
+            });
+
+            await user.save();
+
+            // Create initial streak record
+            const streak = new Streak({ userId });
+            await streak.save();
+        }
+
+        // Generate JWT token for our backend
+        const token = generateToken(user.userId, false);
+
+        res.status(200).json({
+            token,
+            user: {
+                userId: user.userId,
+                email: user.email,
+                isAnonymous: false,
+                createdAt: user.createdAt
+            },
+            // Return Google ID for client-side encryption key derivation
+            googleId: googleId // Only sent to the user's own client
+        });
+    } catch (error) {
+        console.error('Google sign-in error:', error);
+
+        if (error.code === 'auth/id-token-expired') {
+            return res.status(401).json({ error: 'Firebase token expired' });
+        }
+
+        res.status(500).json({ error: 'Failed to sign in with Google' });
+    }
+});
+
 export default router;

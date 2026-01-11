@@ -78,16 +78,26 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
             display: 'flex',
             flexDirection: 'column',
             height: '100vh',
-            padding: '20px',
+            padding: 'var(--spacing-lg)',
             maxWidth: '600px',
-            margin: '0 auto'
+            margin: '0 auto',
+            backgroundColor: 'var(--color-background)'
         }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{ marginBottom: '10px', color: 'var(--color-text-muted)' }}>
-                    {step + 1} / {ONBOARDING_QUESTIONS.length}
+                <div style={{
+                    marginBottom: 'var(--spacing-md)',
+                    color: 'var(--color-primary)',
+                    fontWeight: 600,
+                    letterSpacing: '1px'
+                }}>
+                    STEP {step + 1} OF {ONBOARDING_QUESTIONS.length}
                 </div>
 
-                <h2 style={{ marginBottom: '24px', fontSize: '24px' }}>
+                <h2 style={{
+                    marginBottom: 'var(--spacing-lg)',
+                    fontSize: 'var(--font-size-xxl)',
+                    color: 'var(--color-text-main)'
+                }}>
                     {isHebrew ? currentQuestion.he : currentQuestion.en}
                 </h2>
 
@@ -96,12 +106,13 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={isHebrew ? 'הקלד כאן...' : 'Type here...'}
                     autoFocus
+                    style={{ fontSize: 'var(--font-size-lg)', padding: '16px' }}
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '16px', paddingBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', paddingBottom: 'var(--spacing-xl)' }}>
                 <Button
-                    variant="secondary"
+                    variant="ghost"
                     onClick={handleSkip}
                     style={{ flex: 1 }}
                 >
@@ -110,7 +121,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                 <Button
                     variant="primary"
                     onClick={() => handleNext(inputValue)}
-                    style={{ flex: 1 }}
+                    style={{ flex: 2 }}
                 >
                     {isLastStep ? (isHebrew ? 'סיים' : 'Finish') : (isHebrew ? 'המשך' : 'Continue')}
                 </Button>

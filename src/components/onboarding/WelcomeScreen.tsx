@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../common/Button';
+import { SunIcon } from '../common/Icons';
 
 interface Props {
     onNext: () => void;
@@ -40,15 +41,40 @@ export const WelcomeScreen: React.FC<Props> = ({ onNext }) => {
             alignItems: 'center',
             justifyContent: 'center',
             height: '100vh',
-            padding: '32px',
+            padding: 'var(--spacing-xl)',
             textAlign: 'center',
-            backgroundColor: 'var(--color-primary-light)'
+            backgroundColor: 'var(--color-primary-light)',
+            color: 'var(--color-text-main)'
         }}>
-            <h1 style={{ color: 'var(--color-primary)', marginBottom: '32px' }}>{t.title}</h1>
+            <div style={{
+                color: 'var(--color-primary)',
+                marginBottom: 'var(--spacing-lg)',
+                padding: 'var(--spacing-md)',
+                backgroundColor: 'white',
+                borderRadius: 'var(--radius-full)',
+                boxShadow: 'var(--shadow-md)'
+            }}>
+                <SunIcon size={48} />
+            </div>
 
-            <div style={{ marginBottom: '48px', fontSize: '18px', lineHeight: '1.6' }}>
+            <h1 style={{
+                color: 'var(--color-text-main)',
+                marginBottom: 'var(--spacing-xl)',
+                fontSize: 'var(--font-size-xxl)',
+                fontWeight: 800
+            }}>
+                {t.title}
+            </h1>
+
+            <div style={{
+                marginBottom: 'var(--spacing-xxl)',
+                fontSize: 'var(--font-size-lg)',
+                lineHeight: '1.8',
+                maxWidth: '600px',
+                color: 'var(--color-text-muted)'
+            }}>
                 {t.text.map((line, i) => (
-                    <p key={i} style={{ marginBottom: '16px' }}>{line}</p>
+                    <p key={i} style={{ marginBottom: 'var(--spacing-md)' }}>{line}</p>
                 ))}
             </div>
 

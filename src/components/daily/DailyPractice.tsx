@@ -136,35 +136,52 @@ export const DailyPractice: React.FC = () => {
                 />
             )}
 
-            <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                    <div style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>Daily Appreciation</div>
-                    <div>🔥 {StorageService.getStreak().currentStreak}</div>
+            <div style={{ padding: 'var(--spacing-lg)', maxWidth: '600px', margin: '0 auto', color: 'var(--color-text-main)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-xl)' }}>
+                    <div style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: 'var(--font-size-xl)' }}>Daily Appreciation</div>
+                    <div style={{
+                        padding: '8px 16px',
+                        backgroundColor: 'var(--color-primary-light)',
+                        borderRadius: 'var(--radius-full)',
+                        color: 'var(--color-primary)',
+                        fontWeight: 600
+                    }}>
+                        🔥 {StorageService.getStreak().currentStreak}
+                    </div>
                 </div>
 
                 <div style={{
-                    fontSize: '24px',
-                    fontWeight: 500,
+                    fontSize: 'var(--font-size-xl)',
+                    fontWeight: 600,
                     textAlign: 'center',
-                    marginBottom: '40px',
-                    lineHeight: '1.4'
+                    marginBottom: 'var(--spacing-xl)',
+                    lineHeight: '1.4',
+                    color: 'var(--color-text-main)'
                 }}>
                     {openingSentence}
                 </div>
 
-                <div style={{ marginBottom: '30px' }}>
-                    <h3 style={{ fontSize: '16px', color: 'var(--color-text-muted)', marginBottom: '10px' }}>
+                <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                    <h3 style={{
+                        fontSize: 'var(--font-size-sm)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        color: 'var(--color-text-muted)',
+                        marginBottom: 'var(--spacing-md)'
+                    }}>
                         {userProfile?.language === 'hebrew' ? 'הנה שלושה דברים להעריך:' : 'Here are three things to appreciate:'}
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
                         {suggestions.map((s, i) => (
                             <div key={i} style={{
-                                padding: '12px',
-                                backgroundColor: 'var(--color-secondary)',
+                                padding: 'var(--spacing-md)',
+                                backgroundColor: 'white',
                                 borderRadius: 'var(--radius-md)',
-                                fontSize: '14px'
+                                fontSize: 'var(--font-size-md)',
+                                boxShadow: 'var(--shadow-sm)',
+                                borderLeft: '4px solid var(--color-secondary)'
                             }}>
-                                {i + 1}. {s}
+                                {s}
                             </div>
                         ))}
                     </div>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Button } from '../common/Button';
 
 interface Props {
     onNext: () => void;
@@ -14,36 +13,63 @@ export const LanguageSelection: React.FC<Props> = ({ onNext }) => {
         onNext();
     };
 
+    const CardStyle: React.CSSProperties = {
+        padding: '32px',
+        backgroundColor: 'white',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-md)',
+        cursor: 'pointer',
+        textAlign: 'center',
+        width: '100%',
+        maxWidth: '280px',
+        transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)',
+        border: '1px solid transparent',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '12px'
+    };
+
     return (
         <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            height: '100vh',
-            padding: '20px',
-            gap: '20px'
+            minHeight: '100vh',
+            padding: 'var(--spacing-lg)',
+            gap: 'var(--spacing-xl)',
+            backgroundColor: 'var(--color-background)'
         }}>
-            <h1 style={{ fontSize: '24px', marginBottom: '40px', textAlign: 'center' }}>
+            <h1 style={{
+                fontSize: 'var(--font-size-xl)',
+                textAlign: 'center',
+                color: 'var(--color-text-main)',
+                lineHeight: '1.5'
+            }}>
                 Choose your language<br />
-                בחר את השפה שלך
+                <span style={{ color: 'var(--color-primary)' }}>בחר את השפה שלך</span>
             </h1>
 
-            <Button
-                fullWidth
-                onClick={() => handleSelect('english')}
-                style={{ maxWidth: '300px' }}
-            >
-                English
-            </Button>
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+                <div
+                    onClick={() => handleSelect('english')}
+                    style={CardStyle}
+                    className="hover-card"
+                >
+                    <span style={{ fontSize: '48px' }}>🇬🇧</span>
+                    <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-text-main)' }}>English</span>
+                </div>
 
-            <Button
-                fullWidth
-                onClick={() => handleSelect('hebrew')}
-                style={{ maxWidth: '300px', fontFamily: 'sans-serif' }}
-            >
-                עברית
-            </Button>
+                <div
+                    onClick={() => handleSelect('hebrew')}
+                    style={CardStyle}
+                    className="hover-card"
+                >
+                    <span style={{ fontSize: '48px' }}>🇮🇱</span>
+                    <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-text-main)' }}>עברית</span>
+                </div>
+            </div>
         </div>
     );
 };
