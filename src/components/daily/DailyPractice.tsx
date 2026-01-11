@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { LLMService } from '../../services/llm';
 import { StorageService } from '../../services/storage';
+import { encryptEntry } from '../../services/encryption';
 import type { DailyEntry } from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { Button } from '../common/Button';
@@ -10,7 +11,7 @@ import { RandomProfileQuestion } from './RandomProfileQuestion';
 import { v4 as uuidv4 } from 'uuid';
 
 export const DailyPractice: React.FC = () => {
-    const { userProfile } = useApp();
+    const { userProfile, googleId, isAuthenticated } = useApp();
     const [isLoading, setIsLoading] = useState(true);
     const [openingSentence, setOpeningSentence] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -88,6 +89,18 @@ export const DailyPractice: React.FC = () => {
             });
         }
 
+        // Encrypt content if user is authenticated with Google
+        if (isAuthenticated && googleId) {
+            try {
+                contentToSave = await encryptEntry(contentToSave, googleId);
+                console.log('✅ Entry encrypted before saving');
+            } catch (error) {
+                console.error('❌ Encryption failed:', error);
+                alert('Failed to encrypt entry. Please try again.');
+                return;
+            }
+        }
+
         const today = new Date().toLocaleDateString('en-CA');
         const streak = StorageService.getStreak();
         const newStreak = { ...streak, currentStreak: streak.currentStreak + 1, totalDaysPracticed: streak.totalDaysPracticed + 1, lastPracticeDate: today };
@@ -100,7 +113,7 @@ export const DailyPractice: React.FC = () => {
             suggestions,
             userContent: {
                 type: inputType,
-                content: contentToSave,
+                content: contentToSave, // Now encrypted if authenticated
                 duration: audioDuration
             },
             completedAt: Date.now(),

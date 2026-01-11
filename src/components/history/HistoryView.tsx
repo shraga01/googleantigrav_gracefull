@@ -1,10 +1,49 @@
 import React, { useEffect, useState } from 'react';
 import { StorageService } from '../../services/storage';
+import { decryptEntry } from '../../services/encryption';
 import type { DailyEntry } from '../../types';
 import { useApp } from '../../context/AppContext';
 
+// Component to handle decryption of a single entry
+const DecryptedContent: React.FC<{ content: string; googleId: string | null; isAuthenticated: boolean }> = ({ content, googleId, isAuthenticated }) => {
+    const [decrypted, setDecrypted] = useState<string>('');
+    const [isDecrypting, setIsDecrypting] = useState(true);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        const decrypt = async () => {
+            if (isAuthenticated && googleId) {
+                try {
+                    const decryptedText = await decryptEntry(content, googleId);
+                    setDecrypted(decryptedText);
+                } catch (err) {
+                    console.error('Decryption failed:', err);
+                    setError(true);
+                    setDecrypted('🔒 Unable to decrypt this entry');
+                }
+            } else {
+                // Not authenticated, content is not encrypted
+                setDecrypted(content);
+            }
+            setIsDecrypting(false);
+        };
+
+        decrypt();
+    }, [content, googleId, isAuthenticated]);
+
+    if (isDecrypting) {
+        return <div style={{ fontStyle: 'italic', color: 'var(--color-text-muted)' }}>Decrypting...</div>;
+    }
+
+    if (error) {
+        return <div style={{ color: 'var(--color-text-muted)' }}>{decrypted}</div>;
+    }
+
+    return <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: 'var(--font-size-md)' }}>{decrypted}</div>;
+};
+
 export const HistoryView: React.FC = () => {
-    const { userProfile } = useApp();
+    const { userProfile, googleId, isAuthenticated } = useApp();
     const [entries, setEntries] = useState<DailyEntry[]>([]);
 
     useEffect(() => {
@@ -69,9 +108,11 @@ export const HistoryView: React.FC = () => {
                             borderLeft: '2px solid var(--color-primary)'
                         }}>
                             {entry.userContent.type === 'text' ? (
-                                <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: 'var(--font-size-md)' }}>
-                                    {entry.userContent.content}
-                                </div>
+                                <DecryptedContent
+                                    content={entry.userContent.content as string}
+                                    googleId={googleId}
+                                    isAuthenticated={isAuthenticated}
+                                />
                             ) : (
                                 <div>
                                     <audio controls src={entry.userContent.content as string} style={{ width: '100%' }} />
