@@ -9,7 +9,37 @@ import { HistoryView } from './components/history/HistoryView';
 import { StatsDashboard } from './components/stats/StatsDashboard';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
-import { SunIcon, BookIcon, ChartIcon, SettingsIcon } from './components/common/Icons';
+import { StorageService } from './services/storage';
+
+// Navigation Icons - responsive sizes handled in CSS
+const SunIcon = ({ active }: { active: boolean }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="12" cy="12" r="5" />
+    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+  </svg>
+);
+
+const BookIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  </svg>
+);
+
+const ChartIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="12" width="4" height="9" />
+    <rect x="10" y="6" width="4" height="15" />
+    <rect x="17" y="3" width="4" height="18" />
+  </svg>
+);
+
+const SettingsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
 
 const AppContent: React.FC = () => {
   const { userProfile, isLoading } = useApp();
@@ -22,53 +52,71 @@ const AppContent: React.FC = () => {
 
   // If we have a profile, show the main app
   if (userProfile) {
+    const isHebrew = userProfile.language === 'hebrew';
+    const streak = StorageService.getStreak();
+
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--color-background)' }}>
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }}>
+      <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen">
+        {/* Header - Explicit inline styles for guaranteed horizontal alignment */}
+        <header style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+          padding: '20px 20px 12px 20px'
+        }}>
+          {/* Streak Pill */}
+          <div className="streak-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px' }}>
+            <span style={{ fontSize: '16px' }}>✨</span>
+            <span style={{ fontWeight: 700, fontSize: '16px' }}>{streak.currentStreak}</span>
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>{isHebrew ? 'יום' : 'day'}</span>
+          </div>
+          {/* Title */}
+          <div className="title-english" style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 600 }}>
+            Daily Appreciation
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="container-main page-content">
           {currentTab === 'daily' && <DailyPractice />}
           {currentTab === 'history' && <HistoryView />}
           {currentTab === 'stats' && <StatsDashboard />}
           {currentTab === 'settings' && <SettingsMenu />}
-        </div>
+        </main>
 
         {/* Bottom Navigation */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-around',
-          padding: '12px 16px 32px 16px',
-          borderTop: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-card-bg)',
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          boxShadow: 'var(--shadow-lg)'
-        }}>
-          <NavButton
-            active={currentTab === 'daily'}
-            onClick={() => setCurrentTab('daily')}
-            icon={<SunIcon size={24} />}
-            label={userProfile.language === 'hebrew' ? 'היום' : 'Today'}
-          />
-          <NavButton
-            active={currentTab === 'history'}
-            onClick={() => setCurrentTab('history')}
-            icon={<BookIcon size={24} />}
-            label={userProfile.language === 'hebrew' ? 'יומן' : 'Journal'}
-          />
-          <NavButton
-            active={currentTab === 'stats'}
-            onClick={() => setCurrentTab('stats')}
-            icon={<ChartIcon size={24} />}
-            label={userProfile.language === 'hebrew' ? 'מדדים' : 'Stats'}
-          />
-          <NavButton
-            active={currentTab === 'settings'}
+        <nav className="nav-container">
+          <div
+            className={`nav-item ${currentTab === 'settings' ? 'active' : ''}`}
             onClick={() => setCurrentTab('settings')}
-            icon={<SettingsIcon size={24} />}
-            label={userProfile.language === 'hebrew' ? 'הגדרות' : 'Settings'}
-          />
-        </div>
+          >
+            <SettingsIcon />
+            <span>{isHebrew ? 'הגדרות' : 'Settings'}</span>
+          </div>
+          <div
+            className={`nav-item ${currentTab === 'stats' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('stats')}
+          >
+            <ChartIcon />
+            <span>{isHebrew ? 'מדדים' : 'Stats'}</span>
+          </div>
+          <div
+            className={`nav-item ${currentTab === 'history' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('history')}
+          >
+            <BookIcon />
+            <span>{isHebrew ? 'יומן' : 'Journal'}</span>
+          </div>
+          <div
+            className={`nav-item ${currentTab === 'daily' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('daily')}
+          >
+            <SunIcon active={currentTab === 'daily'} />
+            <span>{isHebrew ? 'היום' : 'Today'}</span>
+          </div>
+        </nav>
       </div>
     );
   }
@@ -77,17 +125,13 @@ const AppContent: React.FC = () => {
   const handleLanguageSelected = () => setOnboardingStep('auth');
   const handleAuthCompleted = () => setOnboardingStep('welcome');
   const handleWelcomeCompleted = () => setOnboardingStep('profile');
-  const handleProfileCompleted = () => {
-    // Context updates automatically, so re-render will show main app
-  };
+  const handleProfileCompleted = () => { };
 
   const handleGoogleSignIn = async () => {
-    // User signed in with Google, proceed to welcome screen
     handleAuthCompleted();
   };
 
   const handleContinueAnonymously = () => {
-    // User chose anonymous mode, proceed to welcome screen
     handleAuthCompleted();
   };
 
@@ -97,7 +141,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="app-container" style={{ height: '100vh', overflow: 'hidden' }}>
+    <div className="min-h-screen animate-fadeIn">
       {onboardingStep === 'language' && <LanguageSelection onNext={handleLanguageSelected} />}
       {onboardingStep === 'auth' && (
         <AuthChoice
@@ -111,35 +155,6 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
-
-const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
-  <button
-    onClick={onClick}
-    style={{
-      background: 'none',
-      border: 'none',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',
-      cursor: 'pointer',
-      fontSize: 'var(--font-size-xs)',
-      padding: '8px',
-      gap: '4px',
-      transition: 'color var(--transition-fast)',
-      boxShadow: 'none',
-      transform: 'none'
-    }}
-  >
-    <div style={{
-      transition: 'transform var(--transition-fast)',
-      transform: active ? 'scale(1.1)' : 'scale(1)'
-    }}>
-      {icon}
-    </div>
-    <span style={{ fontWeight: active ? 600 : 400 }}>{label}</span>
-  </button>
-);
 
 const App: React.FC = () => {
   return (

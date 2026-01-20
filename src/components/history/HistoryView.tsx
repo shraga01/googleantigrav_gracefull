@@ -22,7 +22,6 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
                     setDecrypted('🔒 Unable to decrypt this entry');
                 }
             } else {
-                // Not authenticated, content is not encrypted
                 setDecrypted(content);
             }
             setIsDecrypting(false);
@@ -32,81 +31,67 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
     }, [content, googleId, isAuthenticated]);
 
     if (isDecrypting) {
-        return <div style={{ fontStyle: 'italic', color: 'var(--color-text-muted)' }}>Decrypting...</div>;
+        return <div className="italic text-gray-400">Decrypting...</div>;
     }
 
     if (error) {
-        return <div style={{ color: 'var(--color-text-muted)' }}>{decrypted}</div>;
+        return <div className="text-gray-400">{decrypted}</div>;
     }
 
-    return <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: 'var(--font-size-md)' }}>{decrypted}</div>;
+    return (
+        <div className="whitespace-pre-wrap leading-relaxed text-gray-800">
+            {decrypted.split('\n').map((line, i) => (
+                <div key={i} className="py-1">{line}</div>
+            ))}
+        </div>
+    );
 };
 
 export const HistoryView: React.FC = () => {
     const { userProfile, googleId, isAuthenticated } = useApp();
     const [entries, setEntries] = useState<DailyEntry[]>([]);
 
+    const isHebrew = userProfile?.language === 'hebrew';
+
     useEffect(() => {
         setEntries(StorageService.getEntries());
     }, []);
 
-    const isHebrew = userProfile?.language === 'hebrew';
-
     if (entries.length === 0) {
         return (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                {isHebrew ? 'עדיין אין היסטוריה. התחל לתרגל!' : 'No history yet. Start practicing!'}
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+                <div className="text-6xl mb-4">📖</div>
+                <p className="text-lg text-gray-500">
+                    {isHebrew ? 'עדיין אין היסטוריה. התחל לתרגל!' : 'No history yet. Start practicing!'}
+                </p>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: 'var(--spacing-lg)', maxWidth: '600px', margin: '0 auto', paddingBottom: '100px' }}>
-            <h2 style={{
-                marginBottom: 'var(--spacing-lg)',
-                color: 'var(--color-primary)',
-                fontSize: 'var(--font-size-xl)',
-                fontWeight: 800
-            }}>
+        <div className="animate-fadeIn">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 {isHebrew ? 'יומן הוקרת תודה' : 'Appreciation Journal'}
             </h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+            <div className="space-y-4">
                 {entries.map((entry) => (
-                    <div key={entry.entryId} style={{
-                        padding: 'var(--spacing-lg)',
-                        backgroundColor: 'white',
-                        borderRadius: 'var(--radius-md)',
-                        border: 'none',
-                        boxShadow: 'var(--shadow-sm)',
-                        transition: 'transform var(--transition-fast)',
-                    }}>
-                        <div style={{
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-muted)',
-                            marginBottom: 'var(--spacing-xs)',
-                            display: 'flex',
-                            justifyContent: 'space-between'
-                        }}>
-                            <span>{entry.date}</span>
-                            <span>🔥 {entry.streakDay}</span>
+                    <div key={entry.entryId} className="card card-sage">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-sm text-gray-500">{entry.date}</span>
+                            <span className="streak-pill text-sm px-2 py-0.5 rounded-full">
+                                🔥 {entry.streakDay}
+                            </span>
                         </div>
 
-                        <div style={{
-                            fontWeight: 600,
-                            marginBottom: 'var(--spacing-md)',
-                            fontSize: 'var(--font-size-md)',
-                            color: 'var(--color-text-main)'
-                        }}>
+                        {/* Opening sentence */}
+                        <div className="font-semibold text-gray-700 mb-3">
                             {entry.openingSentence}
                         </div>
 
-                        <div style={{
-                            padding: 'var(--spacing-md)',
-                            backgroundColor: 'var(--color-background)',
-                            borderRadius: 'var(--radius-sm)',
-                            borderLeft: '2px solid var(--color-primary)'
-                        }}>
+                        {/* Content */}
+                        <div className="bg-white/50 rounded-xl p-4 border-l-4 border-olive-btn">
                             {entry.userContent.type === 'text' ? (
                                 <DecryptedContent
                                     content={entry.userContent.content as string}
@@ -115,8 +100,8 @@ export const HistoryView: React.FC = () => {
                                 />
                             ) : (
                                 <div>
-                                    <audio controls src={entry.userContent.content as string} style={{ width: '100%' }} />
-                                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                    <audio controls src={entry.userContent.content as string} className="w-full" />
+                                    <div className="text-xs text-gray-500 mt-2">
                                         Duration: {Math.round(entry.userContent.duration || 0)}s
                                     </div>
                                 </div>

@@ -5,8 +5,6 @@ import { StorageService } from '../../services/storage';
 import { encryptEntry } from '../../services/encryption';
 import type { DailyEntry } from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { Button } from '../common/Button';
-import { AudioRecorder } from '../common/AudioRecorder';
 import { RandomProfileQuestion } from './RandomProfileQuestion';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,13 +13,12 @@ export const DailyPractice: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [openingSentence, setOpeningSentence] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
-    const [entryText, setEntryText] = useState('');
+    const [entries, setEntries] = useState<string[]>(['', '', '']);
     const [isCompleted, setIsCompleted] = useState(false);
     const [affirmation, setAffirmation] = useState('');
-    const [inputType, setInputType] = useState<'text' | 'audio'>('text');
-    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-    const [audioDuration, setAudioDuration] = useState(0);
     const [showRandomQuestion, setShowRandomQuestion] = useState(false);
+
+    const isHebrew = userProfile?.language === 'hebrew';
 
     useEffect(() => {
         loadDailyContent();
@@ -37,12 +34,13 @@ export const DailyPractice: React.FC = () => {
             setOpeningSentence(existingEntry.openingSentence);
             setSuggestions(existingEntry.suggestions);
             setIsCompleted(true);
-            setEntryText(existingEntry.userContent.content as string);
+            const content = existingEntry.userContent.content as string;
+            const parsedEntries = content.split('\n').filter(line => line.trim());
+            setEntries(parsedEntries.length >= 3 ? parsedEntries : ['', '', '']);
             setIsLoading(false);
             return;
         }
 
-        // 30% chance to show a random profile question before daily practice
         if (Math.random() < 0.3) {
             setShowRandomQuestion(true);
         }
@@ -56,40 +54,32 @@ export const DailyPractice: React.FC = () => {
             setSuggestions(suggs);
         } catch (e) {
             console.error(e);
+            setOpeningSentence(isHebrew ? 'היום הוא הזדמנות חדשה להבחין בחסד.' : 'Today is a new opportunity to notice grace.');
+            setSuggestions(isHebrew
+                ? ['מים זורמים', 'כוס קפה או תה חמה', 'היכולת ללכת']
+                : ['Running water', 'A warm cup of coffee', 'The ability to walk']);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleEntryChange = (index: number, value: string) => {
+        const newEntries = [...entries];
+        newEntries[index] = value;
+        setEntries(newEntries);
+    };
+
     const handleSave = async () => {
         if (!userProfile) return;
 
-        if (inputType === 'text') {
-            const items = entryText.split('\n').filter(line => line.trim().length > 0);
-            if (items.length < 3) {
-                alert(userProfile.language === 'hebrew' ? 'אנא כתוב לפחות 3 דברים' : 'Please write at least 3 things');
-                return;
-            }
-        } else {
-            if (!audioBlob) {
-                alert('Please record something');
-                return;
-            }
+        const filledEntries = entries.filter(e => e.trim().length > 0);
+        if (filledEntries.length < 3) {
+            alert(isHebrew ? 'אנא כתוב לפחות 3 דברים' : 'Please write at least 3 things');
+            return;
         }
 
-        let contentToSave = entryText;
-        if (inputType === 'audio' && audioBlob) {
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            await new Promise(resolve => {
-                reader.onloadend = () => {
-                    contentToSave = reader.result as string;
-                    resolve(null);
-                };
-            });
-        }
+        let contentToSave = entries.join('\n');
 
-        // Encrypt content if user is authenticated with Google
         if (isAuthenticated && googleId) {
             try {
                 contentToSave = await encryptEntry(contentToSave, googleId);
@@ -103,7 +93,12 @@ export const DailyPractice: React.FC = () => {
 
         const today = new Date().toLocaleDateString('en-CA');
         const streak = StorageService.getStreak();
-        const newStreak = { ...streak, currentStreak: streak.currentStreak + 1, totalDaysPracticed: streak.totalDaysPracticed + 1, lastPracticeDate: today };
+        const newStreak = {
+            ...streak,
+            currentStreak: streak.currentStreak + 1,
+            totalDaysPracticed: streak.totalDaysPracticed + 1,
+            lastPracticeDate: today
+        };
         StorageService.updateStreak(newStreak);
 
         const newEntry: DailyEntry = {
@@ -112,9 +107,9 @@ export const DailyPractice: React.FC = () => {
             openingSentence,
             suggestions,
             userContent: {
-                type: inputType,
-                content: contentToSave, // Now encrypted if authenticated
-                duration: audioDuration
+                type: 'text',
+                content: contentToSave,
+                duration: 0
             },
             completedAt: Date.now(),
             streakDay: newStreak.currentStreak
@@ -126,15 +121,24 @@ export const DailyPractice: React.FC = () => {
         setIsCompleted(true);
     };
 
-    if (isLoading) return <LoadingSpinner />;
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
 
     if (isCompleted) {
         return (
-            <div style={{ padding: '20px', textAlign: 'center', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h1 style={{ color: 'var(--color-primary)', fontSize: '32px' }}>🔥 {StorageService.getStreak().currentStreak}</h1>
-                <h2 style={{ marginBottom: '20px' }}>{affirmation || (userProfile?.language === 'hebrew' ? 'כל הכבוד' : 'Well done')}</h2>
-                <p style={{ fontSize: '18px', color: 'var(--color-text-muted)' }}>
-                    {userProfile?.language === 'hebrew' ? 'נתראה מחר' : 'See you tomorrow'}
+            <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] text-center animate-fadeIn">
+                <div className="text-5xl sm:text-6xl mb-4">🎉</div>
+                <div className="streak-pill mb-4 sm:mb-6" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px' }}>
+                    <span className="text-xl sm:text-2xl">✨</span>
+                    <span className="streak-number">{StorageService.getStreak().currentStreak}</span>
+                    <span className="streak-label">{isHebrew ? 'ימים' : 'days'}</span>
+                </div>
+                <h2 className="title-main text-center mb-3 sm:mb-4 px-4">
+                    {affirmation || (isHebrew ? 'כל הכבוד!' : 'Well done!')}
+                </h2>
+                <p className="subtitle">
+                    {isHebrew ? 'נתראה מחר' : 'See you tomorrow'}
                 </p>
             </div>
         );
@@ -149,113 +153,54 @@ export const DailyPractice: React.FC = () => {
                 />
             )}
 
-            <div style={{ padding: 'var(--spacing-lg)', maxWidth: '600px', margin: '0 auto', color: 'var(--color-text-main)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-xl)' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: 'var(--font-size-xl)' }}>Daily Appreciation</div>
-                    <div style={{
-                        padding: '8px 16px',
-                        backgroundColor: 'var(--color-primary-light)',
-                        borderRadius: 'var(--radius-full)',
-                        color: 'var(--color-primary)',
-                        fontWeight: 600
+            <div className="animate-fadeIn pt-2 sm:pt-4">
+                {/* Headlines */}
+                <section className="text-center section-spacing">
+                    <h1 className="title-main mb-3 sm:mb-4">
+                        {openingSentence}
+                    </h1>
+                    <p className="subtitle" style={{ marginBottom: '8px' }}>
+                        {isHebrew ? 'כתוב שלושה דברים ספציפיים להעריך:' : 'Write three SPECIFIC things to appreciate:'}
+                    </p>
+                    {/* Specificity hint */}
+                    <p style={{
+                        fontSize: '13px',
+                        color: '#6B7280',
+                        maxWidth: '300px',
+                        margin: '0 auto',
+                        lineHeight: '1.4'
                     }}>
-                        🔥 {StorageService.getStreak().currentStreak}
-                    </div>
-                </div>
+                        {isHebrew
+                            ? '💡 הנוסחה: מעשה קונקרטי + אדם + איך זה הקל עליך'
+                            : '💡 Formula: Concrete act + Person + How it helped you'}
+                    </p>
+                </section>
 
-                <div style={{
-                    fontSize: 'var(--font-size-xl)',
-                    fontWeight: 600,
-                    textAlign: 'center',
-                    marginBottom: 'var(--spacing-xl)',
-                    lineHeight: '1.4',
-                    color: 'var(--color-text-main)'
-                }}>
-                    {openingSentence}
-                </div>
-
-                <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-                    <h3 style={{
-                        fontSize: 'var(--font-size-sm)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        color: 'var(--color-text-muted)',
-                        marginBottom: 'var(--spacing-md)'
-                    }}>
-                        {userProfile?.language === 'hebrew' ? 'הנה שלושה דברים להעריך:' : 'Here are three things to appreciate:'}
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-                        {suggestions.map((s, i) => (
-                            <div key={i} style={{
-                                padding: 'var(--spacing-md)',
-                                backgroundColor: 'white',
-                                borderRadius: 'var(--radius-md)',
-                                fontSize: 'var(--font-size-md)',
-                                boxShadow: 'var(--shadow-sm)',
-                                borderLeft: '4px solid var(--color-secondary)'
-                            }}>
-                                {s}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
-                    <Button
-                        variant={inputType === 'text' ? 'primary' : 'outline'}
-                        onClick={() => setInputType('text')}
-                        style={{ padding: '8px 16px', fontSize: '14px' }}
-                    >
-                        ✍️ Text
-                    </Button>
-                    <Button
-                        variant={inputType === 'audio' ? 'primary' : 'outline'}
-                        onClick={() => setInputType('audio')}
-                        style={{ padding: '8px 16px', fontSize: '14px' }}
-                    >
-                        🎤 Audio
-                    </Button>
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                    {inputType === 'text' ? (
-                        <>
-                            <textarea
-                                value={entryText}
-                                onChange={(e) => setEntryText(e.target.value)}
-                                placeholder={userProfile?.language === 'hebrew' ? 'על מה אתה אסיר תודה היום?' : 'What are you grateful for today?'}
-                                style={{
-                                    width: '100%',
-                                    minHeight: '150px',
-                                    padding: '16px',
-                                    borderRadius: 'var(--radius-lg)',
-                                    border: '1px solid var(--color-border)',
-                                    fontSize: '16px',
-                                    fontFamily: 'inherit',
-                                    resize: 'vertical'
-                                }}
+                {/* Input Cards */}
+                <section className="flex flex-col content-spacing" style={{ gap: 'clamp(0.75rem, 2vw, 1rem)' }}>
+                    {entries.map((entry, index) => (
+                        <div key={index} className="input-card">
+                            <input
+                                type="text"
+                                value={entry}
+                                onChange={(e) => handleEntryChange(index, e.target.value)}
+                                placeholder={suggestions[index] || (isHebrew ? `דבר ${index + 1}...` : `Thing ${index + 1}...`)}
+                                dir={isHebrew ? 'rtl' : 'ltr'}
                             />
-                            <div style={{ textAlign: 'right', fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                                {userProfile?.language === 'hebrew' ? 'כתוב לפחות 3 דברים' : 'Write at least 3 things'}
-                            </div>
-                        </>
-                    ) : (
-                        <AudioRecorder
-                            onRecordingComplete={(blob, duration) => {
-                                setAudioBlob(blob);
-                                setAudioDuration(duration);
-                            }}
-                            onDelete={() => {
-                                setAudioBlob(null);
-                                setAudioDuration(0);
-                            }}
-                        />
-                    )}
-                </div>
+                        </div>
+                    ))}
+                </section>
 
-                <Button fullWidth onClick={handleSave}>
-                    {userProfile?.language === 'hebrew' ? 'סיים תרגול' : 'Complete Practice'}
-                </Button>
+                {/* Save Button */}
+                <section className="mt-8 sm:mt-12 mb-6 sm:mb-10">
+                    <button
+                        onClick={handleSave}
+                        className="save-btn"
+                        disabled={entries.filter(e => e.trim()).length < 3}
+                    >
+                        {isHebrew ? 'שמור' : 'Save'}
+                    </button>
+                </section>
             </div>
         </>
     );

@@ -1,74 +1,114 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 
-interface Props {
+interface LanguageSelectionProps {
     onNext: () => void;
 }
 
-export const LanguageSelection: React.FC<Props> = ({ onNext }) => {
+export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) => {
     const { setLanguage } = useApp();
 
-    const handleSelect = (lang: 'hebrew' | 'english') => {
+    const handleSelection = (lang: 'english' | 'hebrew') => {
         setLanguage(lang);
         onNext();
     };
 
-    const CardStyle: React.CSSProperties = {
-        padding: '32px',
-        backgroundColor: 'white',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-md)',
-        cursor: 'pointer',
-        textAlign: 'center',
-        width: '100%',
-        maxWidth: '280px',
-        transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)',
-        border: '1px solid transparent',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '12px'
-    };
-
     return (
         <div style={{
+            minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '100vh',
-            padding: 'var(--spacing-lg)',
-            gap: 'var(--spacing-xl)',
-            backgroundColor: 'var(--color-background)'
+            padding: '24px'
         }}>
+            {/* Logo/Icon */}
+            <div style={{ fontSize: '64px', marginBottom: '24px' }}>🌅</div>
+
+            {/* Title */}
             <h1 style={{
-                fontSize: 'var(--font-size-xl)',
-                textAlign: 'center',
-                color: 'var(--color-text-main)',
-                lineHeight: '1.5'
+                fontFamily: "'Playfair Display', serif",
+                fontSize: '28px',
+                fontWeight: 600,
+                color: '#4B5563',
+                marginBottom: '8px',
+                textAlign: 'center'
             }}>
-                Choose your language<br />
-                <span style={{ color: 'var(--color-primary)' }}>בחר את השפה שלך</span>
+                Daily Appreciation
             </h1>
+            <p style={{
+                fontSize: '16px',
+                color: '#6B7280',
+                marginBottom: '40px',
+                textAlign: 'center'
+            }}>
+                Choose your language / בחר שפה
+            </p>
 
-            <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
-                <div
-                    onClick={() => handleSelect('english')}
-                    style={CardStyle}
-                    className="hover-card"
+            {/* Language Cards - Stacked Vertically */}
+            <div style={{
+                width: '100%',
+                maxWidth: '320px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+            }}>
+                {/* English */}
+                <button
+                    onClick={() => handleSelection('english')}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '16px 20px',
+                        backgroundColor: '#F5F7EF',
+                        border: '2px solid #C0D0B0',
+                        borderRadius: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    }}
                 >
-                    <span style={{ fontSize: '48px' }}>🇬🇧</span>
-                    <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-text-main)' }}>English</span>
-                </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '32px' }}>🇬🇧</span>
+                        <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: '#1F2937' }}>English</div>
+                            <div style={{ fontSize: '14px', color: '#6B7280' }}>Continue in English</div>
+                        </div>
+                    </div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
 
-                <div
-                    onClick={() => handleSelect('hebrew')}
-                    style={CardStyle}
-                    className="hover-card"
+                {/* Hebrew */}
+                <button
+                    onClick={() => handleSelection('hebrew')}
+                    dir="rtl"
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '16px 20px',
+                        backgroundColor: '#F5F7EF',
+                        border: '2px solid #C0D0B0',
+                        borderRadius: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    }}
                 >
-                    <span style={{ fontSize: '48px' }}>🇮🇱</span>
-                    <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-text-main)' }}>עברית</span>
-                </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '32px' }}>🇮🇱</span>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: '#1F2937' }}>עברית</div>
+                            <div style={{ fontSize: '14px', color: '#6B7280' }}>המשך בעברית</div>
+                        </div>
+                    </div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ transform: 'rotate(180deg)' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
             </div>
         </div>
     );
