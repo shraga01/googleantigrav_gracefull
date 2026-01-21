@@ -4,6 +4,7 @@ import { LLMService } from '../../services/llm';
 import { StorageService } from '../../services/storage';
 import { encryptEntry } from '../../services/encryption';
 import type { DailyEntry } from '../../types';
+import { ApiService } from '../../services/api';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { RandomProfileQuestion } from './RandomProfileQuestion';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,15 +31,27 @@ export const DailyPractice: React.FC = () => {
         const today = new Date().toLocaleDateString('en-CA');
         const existingEntry = StorageService.getEntryByDate(today);
 
+        // Check local storage first
         if (existingEntry) {
-            setOpeningSentence(existingEntry.openingSentence);
-            setSuggestions(existingEntry.suggestions);
-            setIsCompleted(true);
-            const content = existingEntry.userContent.content as string;
-            const parsedEntries = content.split('\n').filter(line => line.trim());
-            setEntries(parsedEntries.length >= 3 ? parsedEntries : ['', '', '']);
+            setDailyStateFromEntry(existingEntry);
             setIsLoading(false);
             return;
+        }
+
+        // If authenticated, check server state
+        if (isAuthenticated) {
+            try {
+                const serverEntry = await ApiService.getTodayEntry();
+                if (serverEntry) {
+                    console.log('✅ Found existing entry on server, syncing...');
+                    StorageService.saveEntry(serverEntry);
+                    setDailyStateFromEntry(serverEntry);
+                    setIsLoading(false);
+                    return;
+                }
+            } catch (err) {
+                console.warn('Failed to sync with server:', err);
+            }
         }
 
         if (Math.random() < 0.3) {
@@ -61,6 +74,15 @@ export const DailyPractice: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const setDailyStateFromEntry = (entry: DailyEntry) => {
+        setOpeningSentence(entry.openingSentence);
+        setSuggestions(entry.suggestions);
+        setIsCompleted(true);
+        const content = entry.userContent.content as string;
+        const parsedEntries = content.split('\n').filter(line => line.trim());
+        setEntries(parsedEntries.length >= 3 ? parsedEntries : ['', '', '']);
     };
 
     const handleEntryChange = (index: number, value: string) => {

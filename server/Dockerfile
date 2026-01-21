@@ -1,18 +1,19 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install --production
+# Install production dependencies only
+RUN npm ci --only=production
 
 # Copy application code
 COPY . .
 
-# Expose port
-EXPOSE 3001
+# Cloud Run uses PORT environment variable (default 8080)
+ENV PORT=8080
+EXPOSE 8080
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "index.js"]

@@ -132,7 +132,7 @@ GENERATE in ${user.language === 'hebrew' ? 'HEBREW ONLY' : 'ENGLISH ONLY'}.
 Return ONLY the greeting, no quotes.
 `,
 
-    suggestions: (user: UserProfile, recentEntries: DailyEntry[]) => `
+    suggestions: (user: UserProfile, _recentEntries: DailyEntry[]) => `
 ${SYSTEM_CONTEXT}
 
 TASK: Generate 3 SPECIFIC gratitude suggestions as examples for tonight.
