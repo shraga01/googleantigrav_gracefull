@@ -17,6 +17,10 @@ export const StorageService = {
         localStorage.setItem(KEYS.PROFILE, JSON.stringify(profile));
     },
 
+    clearUserProfile: (): void => {
+        localStorage.removeItem(KEYS.PROFILE);
+    },
+
     // Entries
     getEntries: (): DailyEntry[] => {
         const data = localStorage.getItem(KEYS.ENTRIES);

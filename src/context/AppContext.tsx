@@ -13,6 +13,7 @@ interface AppContextType {
     setLanguage: (lang: Language) => void;
     refreshProfile: () => void;
     setGoogleId: (id: string | null) => void;
+    logout: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -89,6 +90,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setGoogleIdState(id);
     };
 
+    const logout = async () => {
+        console.log('Logging out...');
+        // 1. Clear profile from storage
+        StorageService.clearUserProfile();
+        // 2. Clear React state
+        setUserProfile(null);
+        setIsAuthenticated(false);
+        setGoogleIdState(null);
+        // 3. Sign out of Firebase
+        const { signOut } = await import('../services/auth');
+        await signOut();
+        console.log('Logout complete');
+    };
+
     return (
         <AppContext.Provider value={{
             userProfile,
@@ -99,7 +114,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             updateProfile,
             setLanguage,
             refreshProfile,
-            setGoogleId
+            setGoogleId,
+            logout
         }}>
             {children}
         </AppContext.Provider>

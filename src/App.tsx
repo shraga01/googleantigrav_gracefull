@@ -42,9 +42,17 @@ const SettingsIcon = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { userProfile, isLoading } = useApp();
+  const { userProfile, isLoading, logout } = useApp();
   const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -76,6 +84,21 @@ const AppContent: React.FC = () => {
           <div className="title-english" style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 600 }}>
             Daily Appreciation
           </div>
+          {/* Sign Out Button */}
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '6px 12px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--color-text-muted)'
+            }}
+          >
+            {isHebrew ? 'התנתק' : 'Sign Out'}
+          </button>
         </header>
 
         {/* Main Content */}
