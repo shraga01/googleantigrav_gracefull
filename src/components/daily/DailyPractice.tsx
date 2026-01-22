@@ -7,6 +7,7 @@ import type { DailyEntry } from '../../types';
 import { ApiService } from '../../services/api';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { RandomProfileQuestion } from './RandomProfileQuestion';
+import { GradedInput } from './GradedInput';
 import { v4 as uuidv4 } from 'uuid';
 
 export const DailyPractice: React.FC = () => {
@@ -201,15 +202,13 @@ export const DailyPractice: React.FC = () => {
                 {/* Input Cards */}
                 <section className="flex flex-col content-spacing" style={{ gap: 'clamp(0.75rem, 2vw, 1rem)' }}>
                     {entries.map((entry, index) => (
-                        <div key={index} className="input-card">
-                            <input
-                                type="text"
-                                value={entry}
-                                onChange={(e) => handleEntryChange(index, e.target.value)}
-                                placeholder={suggestions[index] || (isHebrew ? `דבר ${index + 1}...` : `Thing ${index + 1}...`)}
-                                dir={isHebrew ? 'rtl' : 'ltr'}
-                            />
-                        </div>
+                        <GradedInput
+                            key={index}
+                            index={index}
+                            value={entry}
+                            onChange={(value) => handleEntryChange(index, value)}
+                            placeholder={suggestions[index] || (isHebrew ? `דבר ${index + 1}...` : `Thing ${index + 1}...`)}
+                        />
                     ))}
                 </section>
 
