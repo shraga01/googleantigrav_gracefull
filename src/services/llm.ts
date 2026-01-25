@@ -4,18 +4,26 @@ import type { UserProfile, DailyEntry } from '../types';
 // GEMINI AI CONFIGURATION
 // ==========================================
 
-// API Configuration - Using Gemini 2.0 Flash
+// API Configuration - Using Gemini 2.5 Flash
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const MODEL = 'gemini-2.0-flash-exp'; // Gemini 2.0 Flash
+const MODEL = 'gemini-2.5-flash'; // Gemini 2.5 Flash (stable)
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
 
-// Model Settings
+// Model Settings - Standard (fast responses)
 const MODEL_CONFIG = {
     temperature: 0.8,
     topP: 0.9,
     topK: 40,
     maxOutputTokens: 400,
     candidateCount: 1
+};
+
+// Model Settings - With Thinking (for complex reasoning tasks)
+const MODEL_CONFIG_WITH_THINKING = {
+    ...MODEL_CONFIG,
+    thinkingConfig: {
+        thinkingBudget: 1024  // tokens for internal reasoning
+    }
 };
 
 // Safety Settings
@@ -294,21 +302,22 @@ interface LLMResponse {
     error?: { message?: string };
 }
 
-async function callGeminiAPI(prompt: string): Promise<string | null> {
+async function callGeminiAPI(prompt: string, useThinking: boolean = false): Promise<string | null> {
     if (!API_KEY) {
         console.warn('⚠️ Gemini API key not configured');
         return null;
     }
 
     try {
-        console.log('🤖 Calling Gemini 2.0 Flash API...');
+        const config = useThinking ? MODEL_CONFIG_WITH_THINKING : MODEL_CONFIG;
+        console.log(`🤖 Calling Gemini 2.5 Flash API${useThinking ? ' (with thinking)' : ''}...`);
 
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: MODEL_CONFIG,
+                generationConfig: config,
                 safetySettings: SAFETY_SETTINGS
             })
         });
@@ -395,7 +404,7 @@ export const LLMService = {
         feedback: string;
         improvedVersion?: string;
     }> => {
-        const apiResult = await callGeminiAPI(PROMPTS.gradeEntry(entry, user));
+        const apiResult = await callGeminiAPI(PROMPTS.gradeEntry(entry, user), true); // Use thinking for better analysis
 
         if (apiResult) {
             try {
