@@ -9,7 +9,6 @@ import { LoadingSpinner } from '../common/LoadingSpinner';
 import { RandomProfileQuestion } from './RandomProfileQuestion';
 import { GradedInput } from './GradedInput';
 import { v4 as uuidv4 } from 'uuid';
-import { getTimeInfo } from '../../utils/timeUtils';
 
 export const DailyPractice: React.FC = () => {
     const { userProfile, googleId, isAuthenticated } = useApp();
@@ -20,14 +19,6 @@ export const DailyPractice: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const [affirmation, setAffirmation] = useState('');
     const [showRandomQuestion, setShowRandomQuestion] = useState(false);
-
-    // Time-based recommendation
-    const [timeInfo] = useState(() => getTimeInfo());
-    const [showEveningTip, setShowEveningTip] = useState(() => {
-        // Only show once per session if not evening
-        const dismissed = sessionStorage.getItem('eveningTipDismissed');
-        return !timeInfo.isOptimalTime && !dismissed;
-    });
 
     const isHebrew = userProfile?.language === 'hebrew';
 
@@ -69,15 +60,22 @@ export const DailyPractice: React.FC = () => {
         }
 
         try {
-            const [sentence, suggs] = await Promise.all([
-                LLMService.generateOpeningSentence(userProfile, []),
-                LLMService.generateSuggestions(userProfile, [])
-            ]);
-            setOpeningSentence(sentence);
+            // Simple personalized greeting (no AI needed)
+            const userName = userProfile.name || (isHebrew ? 'חבר/ה' : 'Friend');
+            const greeting = isHebrew
+                ? `שלום ${userName}, בואו נהרהר בשלושה רגעים ספציפיים מהיום שהביאו לך קלות או שמחה. מומלץ מאוד לתרגל בערב.`
+                : `Hello ${userName}, let's reflect on three specific moments from today that brought ease or joy. It is highly recommended that you practice in the evening.`;
+            setOpeningSentence(greeting);
+
+            // Still get AI suggestions
+            const suggs = await LLMService.generateSuggestions(userProfile, []);
             setSuggestions(suggs);
         } catch (e) {
             console.error(e);
-            setOpeningSentence(isHebrew ? 'היום הוא הזדמנות חדשה להבחין בחסד.' : 'Today is a new opportunity to notice grace.');
+            const userName = userProfile.name || (isHebrew ? 'חבר/ה' : 'Friend');
+            setOpeningSentence(isHebrew
+                ? `שלום ${userName}, בואו נהרהר בשלושה רגעים ספציפיים מהיום.`
+                : `Hello ${userName}, let's reflect on three specific moments from today.`);
             setSuggestions(isHebrew
                 ? ['מים זורמים', 'כוס קפה או תה חמה', 'היכולת ללכת']
                 : ['Running water', 'A warm cup of coffee', 'The ability to walk']);
@@ -93,11 +91,6 @@ export const DailyPractice: React.FC = () => {
         const content = entry.userContent.content as string;
         const parsedEntries = content.split('\n').filter(line => line.trim());
         setEntries(parsedEntries.length >= 3 ? parsedEntries : ['', '', '']);
-    };
-
-    const dismissEveningTip = () => {
-        sessionStorage.setItem('eveningTipDismissed', 'true');
-        setShowEveningTip(false);
     };
 
     const handleEntryChange = (index: number, value: string) => {
@@ -188,49 +181,6 @@ export const DailyPractice: React.FC = () => {
                     onComplete={() => setShowRandomQuestion(false)}
                     onSkip={() => setShowRandomQuestion(false)}
                 />
-            )}
-
-            {/* Evening recommendation banner */}
-            {showEveningTip && (
-                <div style={{
-                    background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginBottom: '16px',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                }}>
-                    <span style={{ fontSize: '24px' }}>🌙</span>
-                    <div style={{ flex: 1 }}>
-                        <p style={{
-                            margin: 0,
-                            fontSize: '14px',
-                            color: '#92400E',
-                            lineHeight: '1.5'
-                        }}>
-                            {isHebrew
-                                ? 'המחקר מראה שתרגול הכרת תודה בערב (17:00-21:00) יעיל יותר - זה הזמן להרהר על כל מה שקרה היום. אתה מוזמן להמשיך עכשיו או לחזור בערב.'
-                                : 'Research shows that evening practice (5-9 PM) is most effective - it\'s the ideal time to reflect on your whole day. You can continue now or come back in the evening.'}
-                        </p>
-                    </div>
-                    <button
-                        onClick={dismissEveningTip}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            fontSize: '18px',
-                            color: '#92400E',
-                            opacity: 0.7
-                        }}
-                        aria-label={isHebrew ? 'סגור' : 'Dismiss'}
-                    >
-                        ✕
-                    </button>
-                </div>
             )}
 
             <div className="animate-fadeIn pt-2 sm:pt-4">
