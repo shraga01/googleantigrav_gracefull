@@ -1,4 +1,5 @@
 import type { UserProfile, DailyEntry } from '../types';
+import { getTimeInfo, getTimeDescription, type TimeOfDay } from '../utils/timeUtils';
 
 // ==========================================
 // GEMINI AI CONFIGURATION
@@ -113,32 +114,65 @@ LANGUAGE RULES:
 // ==========================================
 
 const PROMPTS = {
-    openingSentence: (user: UserProfile, recentEntries: DailyEntry[]) => `
+    openingSentence: (user: UserProfile, recentEntries: DailyEntry[], timeOfDay: TimeOfDay = 'evening') => {
+        const timeInfo = getTimeInfo();
+        const timeDesc = getTimeDescription(timeOfDay, user.language === 'hebrew');
+        const isHebrew = user.language === 'hebrew';
+
+        // Time-specific context for the AI
+        const timeContext = {
+            morning: isHebrew
+                ? 'זהו בוקר - המשתמש מתחיל את היום שלו. עודד אותו לשים לב לדברים טובים שיקרו היום.'
+                : 'This is morning - user is starting their day. Encourage them to notice good things that will happen today.',
+            afternoon: isHebrew
+                ? 'זהו אחר הצהריים - המשתמש באמצע היום. עודד אותו לחשוב על דברים טובים שכבר קרו היום.'
+                : 'This is afternoon - user is mid-day. Encourage them to think about good things that already happened today.',
+            evening: isHebrew
+                ? 'זהו ערב - הזמן האידיאלי. המשתמש מסיים את היום ויכול להרהר על כל מה שקרה.'
+                : 'This is evening - the ideal time. User is ending their day and can reflect on everything that happened.',
+            night: isHebrew
+                ? 'זהו לילה מאוחר - המשתמש לפני השינה. עודד אותו לסיים את היום בהכרת תודה.'
+                : 'This is late night - user is before sleep. Encourage them to end the day with gratitude.'
+        };
+
+        return `
 ${SYSTEM_CONTEXT}
 
-TASK: Generate ONE evening greeting (1-2 sentences) to start tonight's gratitude practice.
+TASK: Generate ONE ${timeDesc} greeting (1-2 sentences) to start the gratitude practice.
 
 REQUIREMENTS:
-- This is an EVENING practice - user is reflecting on their day
+- ${timeContext[timeOfDay]}
 - Gently guide them toward SPECIFIC gratitude (not generic)
 - Warm and inviting tone
 - No questions - make statements
+- Include appropriate ${timeDesc} greeting (${isHebrew ? timeInfo.greeting.hebrew : timeInfo.greeting.english})
 
 USER PROFILE:
 ${buildUserContext(user)}
 
-LANGUAGE: ${user.language === 'hebrew' ? 'Hebrew (עברית) ONLY' : 'English ONLY'}
-DAY: ${new Date().toLocaleDateString('en-US', { weekday: 'long' })} evening
+LANGUAGE: ${isHebrew ? 'Hebrew (עברית) ONLY' : 'English ONLY'}
+DAY: ${new Date().toLocaleDateString('en-US', { weekday: 'long' })} ${timeDesc}
 STREAK: ${recentEntries.length} day${recentEntries.length !== 1 ? 's' : ''} of practice
 
-Examples of good openings:
-- "Take a moment to reflect on today's small kindnesses."
-- "Tonight, let's find the specific moments that made today meaningful."
-- "Before sleep, recall three concrete ways someone made your day easier."
+Examples of good ${timeDesc} openings:
+${timeOfDay === 'morning' ? `
+- "${isHebrew ? 'בוקר טוב! היום מזמין אותך לשים לב לרגעים הקטנים של חסד.' : 'Good morning! Today invites you to notice small moments of kindness.'}"
+- "${isHebrew ? 'בוקר של הזדמנויות חדשות. שים לב למי שיעזור לך היום.' : 'A morning of new opportunities. Notice who helps you today.'}"
+` : timeOfDay === 'afternoon' ? `
+- "${isHebrew ? 'צהריים טובים! עצור לרגע וחשוב על משהו טוב שכבר קרה היום.' : 'Good afternoon! Pause and think of something good that already happened today.'}"
+- "${isHebrew ? 'אמצע היום - הזדמנות להעריך את מה שכבר התרחש.' : 'Mid-day - an opportunity to appreciate what has already unfolded.'}"
+` : timeOfDay === 'evening' ? `
+- "${isHebrew ? 'ערב טוב! הגיע הזמן להרהר בחסדי היום.' : 'Good evening! Time to reflect on the kindnesses of today.'}"
+- "${isHebrew ? 'לפני שהיום נגמר, בוא נמצא שלושה רגעים ספציפיים של טוב.' : 'Before the day ends, find three specific moments of good.'}"
+` : `
+- "${isHebrew ? 'לילה טוב! לפני השינה, נזכר במי שהקל עליך היום.' : 'Good night! Before sleep, recall who made your day easier.'}"
+- "${isHebrew ? 'סוף יום מושלם להודות על הדברים הקטנים.' : 'A perfect end of day to be thankful for the small things.'}"
+`}
 
-GENERATE in ${user.language === 'hebrew' ? 'HEBREW ONLY' : 'ENGLISH ONLY'}.
+GENERATE in ${isHebrew ? 'HEBREW ONLY' : 'ENGLISH ONLY'}.
 Return ONLY the greeting, no quotes.
-`,
+`;
+    },
 
     suggestions: (user: UserProfile, _recentEntries: DailyEntry[]) => `
 ${SYSTEM_CONTEXT}
@@ -350,10 +384,11 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export const LLMService = {
     generateOpeningSentence: async (user: UserProfile, recentEntries: DailyEntry[]): Promise<string> => {
-        const apiResult = await callGeminiAPI(PROMPTS.openingSentence(user, recentEntries));
+        const timeInfo = getTimeInfo();
+        const apiResult = await callGeminiAPI(PROMPTS.openingSentence(user, recentEntries, timeInfo.timeOfDay));
 
         if (apiResult) {
-            console.log('✅ AI generated opening sentence');
+            console.log(`✅ AI generated ${timeInfo.timeOfDay} opening sentence`);
             return apiResult;
         }
 
