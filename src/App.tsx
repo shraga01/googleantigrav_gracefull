@@ -42,7 +42,7 @@ const SettingsIcon = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { userProfile, isLoading, logout } = useApp();
+  const { userProfile, isLoading, logout, refreshProfile } = useApp();
   const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
 
@@ -148,7 +148,10 @@ const AppContent: React.FC = () => {
   const handleLanguageSelected = () => setOnboardingStep('auth');
   const handleAuthCompleted = () => setOnboardingStep('welcome');
   const handleWelcomeCompleted = () => setOnboardingStep('profile');
-  const handleProfileCompleted = () => { };
+  const handleProfileCompleted = () => {
+    // Refresh profile to trigger AppContext reload and show main app
+    refreshProfile();
+  };
 
   const handleGoogleSignIn = async () => {
     handleAuthCompleted();
