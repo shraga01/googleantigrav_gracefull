@@ -8,6 +8,8 @@ import { ApiService } from '../../services/api';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { RandomProfileQuestion } from './RandomProfileQuestion';
 import { GradedInput } from './GradedInput';
+import { ScientificFactBanner } from '../common/ScientificFactBanner';
+import { getRandomScientificFact } from '../../services/scientificFacts';
 import { v4 as uuidv4 } from 'uuid';
 
 export const DailyPractice: React.FC = () => {
@@ -19,6 +21,8 @@ export const DailyPractice: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const [affirmation, setAffirmation] = useState('');
     const [showRandomQuestion, setShowRandomQuestion] = useState(false);
+    const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
+    const [showFactBanner, setShowFactBanner] = useState(false);
 
     const isHebrew = userProfile?.language === 'hebrew';
 
@@ -67,6 +71,15 @@ export const DailyPractice: React.FC = () => {
                 : `Hello ${userName}, let's reflect on three specific moments from today that brought ease or joy. It is highly recommended that you practice in the evening.`;
             setOpeningSentence(greeting);
 
+            // Load scientific fact (only if not dismissed today)
+            const today = new Date().toLocaleDateString('en-CA');
+            const dismissedFactDate = sessionStorage.getItem('scientific-fact-dismissed');
+            if (dismissedFactDate !== today) {
+                const fact = getRandomScientificFact(isHebrew ? 'hebrew' : 'english');
+                setScientificFact(fact);
+                setShowFactBanner(true);
+            }
+
             // Still get AI suggestions
             const suggs = await LLMService.generateSuggestions(userProfile, []);
             setSuggestions(suggs);
@@ -97,6 +110,12 @@ export const DailyPractice: React.FC = () => {
         const newEntries = [...entries];
         newEntries[index] = value;
         setEntries(newEntries);
+    };
+
+    const handleDismissFactBanner = () => {
+        const today = new Date().toLocaleDateString('en-CA');
+        sessionStorage.setItem('scientific-fact-dismissed', today);
+        setShowFactBanner(false);
     };
 
     const handleSave = async () => {
@@ -175,7 +194,8 @@ export const DailyPractice: React.FC = () => {
     }
 
     return (
-        <>
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="animate-fadeIn">
+            {/* Random Profile Question (30% chance) */}
             {showRandomQuestion && (
                 <RandomProfileQuestion
                     onComplete={() => setShowRandomQuestion(false)}
@@ -183,7 +203,17 @@ export const DailyPractice: React.FC = () => {
                 />
             )}
 
-            <div className="animate-fadeIn pt-2 sm:pt-4">
+            {/* Scientific Fact Banner */}
+            {showFactBanner && scientificFact && (
+                <ScientificFactBanner
+                    statement={scientificFact.statement}
+                    citation={scientificFact.citation}
+                    onDismiss={handleDismissFactBanner}
+                    isHebrew={isHebrew}
+                />
+            )}
+
+            <div className="pt-2 sm:pt-4">
                 {/* Headlines */}
                 <section className="text-center section-spacing">
                     <h1 className="title-main mb-3 sm:mb-4">
@@ -230,6 +260,6 @@ export const DailyPractice: React.FC = () => {
                     </button>
                 </section>
             </div>
-        </>
+        </div>
     );
 };

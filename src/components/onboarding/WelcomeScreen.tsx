@@ -41,13 +41,36 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                 color: '#6B7280',
                 textAlign: 'center',
                 maxWidth: '320px',
-                marginBottom: '32px',
+                marginBottom: '24px',
                 lineHeight: '1.6'
             }}>
                 {isHebrew
                     ? 'התחל את היום שלך עם הודיה. מצא את הטוב בכל רגע.'
                     : 'Start your day with gratitude. Find the good in every moment.'}
             </p>
+
+            {/* Mission Statement */}
+            <div className="mission-statement" style={{
+                background: 'linear-gradient(135deg, rgba(159, 179, 151, 0.1) 0%, rgba(159, 179, 151, 0.2) 100%)',
+                borderLeft: '3px solid #9FB397',
+                padding: '16px',
+                borderRadius: '8px',
+                maxWidth: '340px',
+                marginBottom: '32px',
+                width: '100%'
+            }}>
+                <p style={{
+                    fontSize: '13px',
+                    color: '#374151',
+                    lineHeight: '1.7',
+                    margin: 0,
+                    textAlign: isHebrew ? 'right' : 'left'
+                }}>
+                    {isHebrew
+                        ? 'המשימה שלנו היא להרים את המשקל הביולוגי והפסיכולוגי של החיים. אנו משתמשים בטכניקות הערכה מבוססות ראיות כדי לחדד מחדש את תגובת המוח ללחץ, לשפר את בריאות הלב והשינה, ולטפח תודעה עמידה ופרו-חברתית.'
+                        : 'Our mission is to lift the biological and psychological weight of life. We use evidence-based appreciation techniques to rewire the brain\'s response to stress, improve heart health and sleep, and cultivate a resilient, prosocial mind.'}
+                </p>
+            </div>
 
             {/* Features */}
             <div style={{
