@@ -2,6 +2,24 @@ import { getAuth } from 'firebase/auth';
 import type { UserProfile } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_TIMEOUT = 10000; // 10 seconds
+
+/**
+ * Helper function to fetch with timeout
+ */
+const fetchWithTimeout = async (url: string, options: RequestInit = {}): Promise<Response> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+    }
+};
 
 export const ApiService = {
     /**
@@ -30,7 +48,7 @@ export const ApiService = {
             const token = await ApiService.getToken();
             if (!token) return null;
 
-            const response = await fetch(`${API_URL}/profile`, {
+            const response = await fetchWithTimeout(`${API_URL}/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -50,7 +68,11 @@ export const ApiService = {
             console.log('✅ Profile fetched from server');
             return profile as UserProfile;
         } catch (error) {
-            console.error('Failed to fetch profile:', error);
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.warn('Profile fetch timed out');
+            } else {
+                console.error('Failed to fetch profile:', error);
+            }
             return null;
         }
     },
@@ -66,7 +88,7 @@ export const ApiService = {
                 return false;
             }
 
-            const response = await fetch(`${API_URL}/profile`, {
+            const response = await fetchWithTimeout(`${API_URL}/profile`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -97,7 +119,7 @@ export const ApiService = {
             if (!token) return null;
 
             const today = new Date().toLocaleDateString('en-CA');
-            const response = await fetch(`${API_URL}/entries/${today}`, {
+            const response = await fetchWithTimeout(`${API_URL}/entries/${today}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

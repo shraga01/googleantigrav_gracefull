@@ -149,12 +149,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const logout = async () => {
         console.log('Logging out...');
-        // 1. Clear React state (but DON'T clear localStorage - keep as cache)
+        // 1. Clear profile from localStorage (important for security - don't show old profile to new user)
+        StorageService.clearUserProfile();
+
+        // 2. Clear React state
         setUserProfile(null);
         setIsAuthenticated(false);
         setGoogleIdState(null);
 
-        // 2. Sign out of Firebase
+        // 3. Sign out of Firebase
         const { signOut } = await import('../services/auth');
         await signOut();
         console.log('Logout complete');
