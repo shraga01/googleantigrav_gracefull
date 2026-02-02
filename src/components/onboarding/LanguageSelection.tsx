@@ -28,17 +28,18 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
             {/* Title */}
             <h1 style={{
                 fontFamily: "'Playfair Display', serif",
-                fontSize: '28px',
-                fontWeight: 600,
-                color: '#4B5563',
+                fontSize: '32px',
+                fontWeight: 700,
+                color: 'white',
                 marginBottom: '8px',
-                textAlign: 'center'
+                textAlign: 'center',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
             }}>
                 Daily Appreciation
             </h1>
             <p style={{
                 fontSize: '16px',
-                color: '#6B7280',
+                color: 'rgba(255, 255, 255, 0.8)',
                 marginBottom: '40px',
                 textAlign: 'center'
             }}>
@@ -62,8 +63,9 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         padding: '16px 20px',
-                        backgroundColor: '#F5F7EF',
-                        border: '2px solid #C0D0B0',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
                         borderRadius: '16px',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease'
@@ -72,11 +74,11 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '32px' }}>🇬🇧</span>
                         <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '18px', fontWeight: 600, color: '#1F2937' }}>English</div>
-                            <div style={{ fontSize: '14px', color: '#6B7280' }}>Continue in English</div>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'white' }}>English</div>
+                            <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>Continue in English</div>
                         </div>
                     </div>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
@@ -91,8 +93,9 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         padding: '16px 20px',
-                        backgroundColor: '#F5F7EF',
-                        border: '2px solid #C0D0B0',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
                         borderRadius: '16px',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease'
@@ -101,11 +104,11 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '32px' }}>🇮🇱</span>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '18px', fontWeight: 600, color: '#1F2937' }}>עברית</div>
-                            <div style={{ fontSize: '14px', color: '#6B7280' }}>המשך בעברית</div>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'white' }}>עברית</div>
+                            <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>המשך בעברית</div>
                         </div>
                     </div>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ transform: 'rotate(180deg)' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="2" style={{ transform: 'rotate(180deg)' }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>

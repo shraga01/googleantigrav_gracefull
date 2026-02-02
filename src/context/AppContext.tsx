@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { UserProfile, Language } from '../types';
 import { StorageService } from '../services/storage';
-import { onAuthChange, getUserGoogleId } from '../services/auth';
+import { onAuthChange } from '../services/auth';
+import { ApiService } from '../services/api';
 
 interface AppContextType {
     userProfile: UserProfile | null;
@@ -9,9 +10,10 @@ interface AppContextType {
     isLoading: boolean;
     isAuthenticated: boolean;
     googleId: string | null;
-    updateProfile: (profile: UserProfile) => void;
+    updateProfile: (profile: UserProfile, syncToServer?: boolean) => void;
     setLanguage: (lang: Language) => void;
     refreshProfile: () => void;
+    fetchProfileFromServer: () => Promise<UserProfile | null>;
     setGoogleId: (id: string | null) => void;
     logout: () => Promise<void>;
 }
@@ -26,64 +28,119 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [googleId, setGoogleIdState] = useState<string | null>(null);
 
     useEffect(() => {
-        loadData();
+        // Initial load from localStorage
+        loadFromLocalStorage();
 
         // Listen to Firebase auth state changes
-        const unsubscribe = onAuthChange((user) => {
+        const unsubscribe = onAuthChange(async (user) => {
             if (user) {
+                console.log('Auth state: User signed in', user.uid);
                 setIsAuthenticated(true);
-                const gid = getUserGoogleId();
-                setGoogleIdState(gid);
+                setGoogleIdState(user.uid);
 
-                // If user signs in but no profile exists, they're in onboarding
-                // The profile will be created after they complete onboarding
+                // Check if cached profile matches current user
+                const cachedProfile = StorageService.getUserProfile();
+                if (cachedProfile && cachedProfile.userId === user.uid) {
+                    console.log('Using cached profile for user:', user.uid);
+                    setUserProfile(cachedProfile);
+                    setLanguageState(cachedProfile.language);
+                    updateDocumentDirection(cachedProfile.language);
+                } else {
+                    // Try to fetch profile from server
+                    console.log('Fetching profile from server for user:', user.uid);
+                    try {
+                        const serverProfile = await ApiService.getProfile();
+                        if (serverProfile) {
+                            console.log('Got profile from server');
+                            // Cache it locally
+                            StorageService.saveUserProfile(serverProfile);
+                            setUserProfile(serverProfile);
+                            setLanguageState(serverProfile.language);
+                            updateDocumentDirection(serverProfile.language);
+                        } else {
+                            console.log('No profile on server - user needs onboarding');
+                            // No profile exists - user needs to complete onboarding
+                            setUserProfile(null);
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch profile from server:', error);
+                        // Fall back to null - show onboarding
+                        setUserProfile(null);
+                    }
+                }
+                setIsLoading(false);
             } else {
+                console.log('Auth state: User signed out');
                 setIsAuthenticated(false);
                 setGoogleIdState(null);
+                setUserProfile(null);
+                setIsLoading(false);
             }
         });
 
         return () => unsubscribe();
     }, []);
 
-    const loadData = () => {
+    const loadFromLocalStorage = () => {
         setIsLoading(true);
         const profile = StorageService.getUserProfile();
         if (profile) {
             setUserProfile(profile);
             setLanguageState(profile.language);
-
-            // Update document direction based on language
-            document.documentElement.dir = profile.language === 'hebrew' ? 'rtl' : 'ltr';
-            document.documentElement.lang = profile.language === 'hebrew' ? 'he' : 'en';
+            updateDocumentDirection(profile.language);
         }
         setIsLoading(false);
     };
 
-    const updateProfile = (profile: UserProfile) => {
+    const updateDocumentDirection = (lang: Language) => {
+        document.documentElement.dir = lang === 'hebrew' ? 'rtl' : 'ltr';
+        document.documentElement.lang = lang === 'hebrew' ? 'he' : 'en';
+    };
+
+    const updateProfile = (profile: UserProfile, syncToServer = true) => {
+        // Save to localStorage
         StorageService.saveUserProfile(profile);
         setUserProfile(profile);
         setLanguageState(profile.language);
+        updateDocumentDirection(profile.language);
 
-        document.documentElement.dir = profile.language === 'hebrew' ? 'rtl' : 'ltr';
-        document.documentElement.lang = profile.language === 'hebrew' ? 'he' : 'en';
+        // Sync to server in background
+        if (syncToServer) {
+            ApiService.saveProfile(profile).catch(error => {
+                console.error('Failed to sync profile to server:', error);
+            });
+        }
     };
 
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);
+        updateDocumentDirection(lang);
+
         // If profile exists, update it too
         if (userProfile) {
             const updated = { ...userProfile, language: lang };
             updateProfile(updated);
-        } else {
-            // Just update UI for onboarding
-            document.documentElement.dir = lang === 'hebrew' ? 'rtl' : 'ltr';
-            document.documentElement.lang = lang === 'hebrew' ? 'he' : 'en';
         }
     };
 
     const refreshProfile = () => {
-        loadData();
+        loadFromLocalStorage();
+    };
+
+    const fetchProfileFromServer = async (): Promise<UserProfile | null> => {
+        try {
+            const serverProfile = await ApiService.getProfile();
+            if (serverProfile) {
+                StorageService.saveUserProfile(serverProfile);
+                setUserProfile(serverProfile);
+                setLanguageState(serverProfile.language);
+                updateDocumentDirection(serverProfile.language);
+            }
+            return serverProfile;
+        } catch (error) {
+            console.error('Failed to fetch profile from server:', error);
+            return null;
+        }
     };
 
     const setGoogleId = (id: string | null) => {
@@ -92,13 +149,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const logout = async () => {
         console.log('Logging out...');
-        // 1. Clear profile from storage
-        StorageService.clearUserProfile();
-        // 2. Clear React state
+        // 1. Clear React state (but DON'T clear localStorage - keep as cache)
         setUserProfile(null);
         setIsAuthenticated(false);
         setGoogleIdState(null);
-        // 3. Sign out of Firebase
+
+        // 2. Sign out of Firebase
         const { signOut } = await import('../services/auth');
         await signOut();
         console.log('Logout complete');
@@ -114,6 +170,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             updateProfile,
             setLanguage,
             refreshProfile,
+            fetchProfileFromServer,
             setGoogleId,
             logout
         }}>

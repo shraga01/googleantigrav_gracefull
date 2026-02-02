@@ -50,11 +50,12 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
 
             {/* Title */}
             <h1 style={{
-                fontSize: '24px',
+                fontSize: '28px',
                 fontWeight: 700,
-                color: '#2C3E50',
+                color: 'white',
                 marginBottom: '8px',
-                textAlign: 'center'
+                textAlign: 'center',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
             }}>
                 {isHebrew ? 'שמור על הפרטיות שלך' : 'Protect Your Privacy'}
             </h1>
@@ -62,7 +63,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
             {/* Subtitle */}
             <p style={{
                 fontSize: '15px',
-                color: '#6B7280',
+                color: 'rgba(255, 255, 255, 0.8)',
                 textAlign: 'center',
                 maxWidth: '320px',
                 marginBottom: '32px'
@@ -80,15 +81,16 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                     width: '100%',
                     maxWidth: '320px',
                     padding: '14px 20px',
-                    backgroundColor: 'white',
-                    border: '2px solid #E5E7EB',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    border: 'none',
                     borderRadius: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '12px',
                     cursor: 'pointer',
-                    marginBottom: '12px'
+                    marginBottom: '12px',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
                 }}
             >
                 {isLoading ? (
@@ -121,7 +123,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 alignItems: 'center',
                 gap: '8px',
                 fontSize: '14px',
-                color: '#6B7280',
+                color: 'rgba(255, 255, 255, 0.8)',
                 marginBottom: '24px'
             }}>
                 <span>🔒</span>
@@ -137,9 +139,9 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 maxWidth: '320px',
                 marginBottom: '24px'
             }}>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }}></div>
-                <span style={{ color: '#9CA3AF', fontSize: '14px' }}>{isHebrew ? 'או' : 'or'}</span>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }}></div>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }}></div>
+                <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>{isHebrew ? 'או' : 'or'}</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }}></div>
             </div>
 
             {/* Continue Anonymous */}
@@ -147,11 +149,13 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 onClick={onContinueAnonymously}
                 style={{
                     background: 'transparent',
-                    border: 'none',
-                    color: '#6B7280',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    color: 'rgba(255, 255, 255, 0.9)',
                     fontSize: '16px',
                     fontWeight: 500,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    padding: '12px 24px',
+                    borderRadius: '9999px'
                 }}
             >
                 {isHebrew ? 'המשך כאורח' : 'Continue as Guest'}
@@ -159,8 +163,8 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
 
             <p style={{
                 fontSize: '13px',
-                color: '#9CA3AF',
-                marginTop: '8px',
+                color: 'rgba(255, 255, 255, 0.6)',
+                marginTop: '12px',
                 textAlign: 'center',
                 maxWidth: '280px'
             }}>

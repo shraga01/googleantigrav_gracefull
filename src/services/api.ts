@@ -1,4 +1,5 @@
 import { getAuth } from 'firebase/auth';
+import type { UserProfile } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -11,6 +12,80 @@ export const ApiService = {
         const user = auth.currentUser;
         if (!user) return null;
         return user.getIdToken();
+    },
+
+    /**
+     * Get the current user's Firebase UID
+     */
+    getFirebaseUid: (): string | null => {
+        const auth = getAuth();
+        return auth.currentUser?.uid || null;
+    },
+
+    /**
+     * Fetch user profile from server
+     */
+    getProfile: async (): Promise<UserProfile | null> => {
+        try {
+            const token = await ApiService.getToken();
+            if (!token) return null;
+
+            const response = await fetch(`${API_URL}/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 404) {
+                console.log('No profile found on server');
+                return null;
+            }
+
+            if (!response.ok) {
+                console.warn('Failed to fetch profile from server');
+                return null;
+            }
+
+            const profile = await response.json();
+            console.log('✅ Profile fetched from server');
+            return profile as UserProfile;
+        } catch (error) {
+            console.error('Failed to fetch profile:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Save/update user profile to server
+     */
+    saveProfile: async (profile: UserProfile): Promise<boolean> => {
+        try {
+            const token = await ApiService.getToken();
+            if (!token) {
+                console.warn('No auth token, cannot save profile to server');
+                return false;
+            }
+
+            const response = await fetch(`${API_URL}/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(profile)
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to save profile to server');
+                return false;
+            }
+
+            console.log('✅ Profile saved to server');
+            return true;
+        } catch (error) {
+            console.error('Failed to save profile:', error);
+            return false;
+        }
     },
 
     /**
