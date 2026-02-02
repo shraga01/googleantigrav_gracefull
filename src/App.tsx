@@ -43,12 +43,35 @@ const SettingsIcon = () => (
 
 const AppContent: React.FC = () => {
   const { userProfile, isLoading, logout, refreshProfile } = useApp();
-  const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
+
+  // Initialize onboarding step based on whether profile already exists
+  const getInitialOnboardingStep = (): 'language' | 'auth' | 'welcome' | 'profile' => {
+    // Check localStorage directly to determine initial state
+    const existingProfile = localStorage.getItem('daily_app_profile');
+    if (existingProfile) {
+      // If profile exists but context doesn't have it yet, we'll refresh it
+      return 'profile'; // This will trigger profile load
+    }
+    return 'language';
+  };
+
+  const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>(getInitialOnboardingStep);
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
+
+  // Effect to refresh profile if we detect one exists but isn't loaded
+  React.useEffect(() => {
+    const existingProfile = localStorage.getItem('daily_app_profile');
+    if (existingProfile && !userProfile && !isLoading) {
+      console.log('Found existing profile in localStorage, refreshing...');
+      refreshProfile();
+    }
+  }, [userProfile, isLoading, refreshProfile]);
 
   const handleLogout = async () => {
     try {
       await logout();
+      // Reset onboarding step after logout
+      setOnboardingStep('language');
     } catch (error) {
       console.error('Logout failed:', error);
     }
