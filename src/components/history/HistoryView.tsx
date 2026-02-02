@@ -4,31 +4,43 @@ import { decryptEntry } from '../../services/encryption';
 import type { DailyEntry } from '../../types';
 import { useApp } from '../../context/AppContext';
 
+// Helper to detect if content looks encrypted (base64-like)
+const looksEncrypted = (content: string): boolean => {
+    // Check if it looks like base64 encoded (mostly alphanumeric with +/= and long)
+    if (content.length > 40 && /^[A-Za-z0-9+/=]+$/.test(content.trim())) {
+        return true;
+    }
+    return false;
+};
+
 // Component to handle decryption of a single entry
 const DecryptedContent: React.FC<{ content: string; googleId: string | null; isAuthenticated: boolean }> = ({ content, googleId, isAuthenticated }) => {
     const [decrypted, setDecrypted] = useState<string>('');
     const [isDecrypting, setIsDecrypting] = useState(true);
-    const [error, setError] = useState(false);
 
     useEffect(() => {
         const decrypt = async () => {
+            // If content doesn't look encrypted, show as-is
+            if (!looksEncrypted(content)) {
+                setDecrypted(content);
+                setIsDecrypting(false);
+                return;
+            }
+
+            // Try to decrypt
             if (isAuthenticated && googleId) {
                 try {
                     const decryptedText = await decryptEntry(content, googleId);
                     setDecrypted(decryptedText);
                 } catch (err) {
                     console.error('Decryption failed:', err);
-                    setError(true);
-                    // If decryption fails, the content might be plain text (old entries)
-                    // Try to show it as-is if it looks like normal text
-                    if (content && !content.includes('==') && content.length < 200) {
-                        setDecrypted(content);
-                    } else {
-                        setDecrypted('🔒 Unable to decrypt this entry');
-                    }
+                    // Content is encrypted but we can't decrypt it
+                    // This happens when key changed (e.g., old UUID vs new Firebase UID)
+                    setDecrypted('🔒 This entry was encrypted with a different account key');
                 }
             } else {
-                setDecrypted(content);
+                // Not authenticated, can't decrypt
+                setDecrypted('🔒 Sign in to view this entry');
             }
             setIsDecrypting(false);
         };
@@ -38,10 +50,6 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
 
     if (isDecrypting) {
         return <div style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.6)' }}>Decrypting...</div>;
-    }
-
-    if (error) {
-        return <div style={{ color: 'rgba(255,255,255,0.7)' }}>{decrypted}</div>;
     }
 
     return (
