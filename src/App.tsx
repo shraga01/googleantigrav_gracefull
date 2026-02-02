@@ -65,40 +65,90 @@ const AppContent: React.FC = () => {
 
     return (
       <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen">
-        {/* Header - Explicit inline styles for guaranteed horizontal alignment */}
+        {/* Header */}
         <header style={{
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          position: 'relative',
           width: '100%',
-          padding: '20px 20px 12px 20px'
+          padding: '16px 16px 12px 16px',
+          zIndex: 10
         }}>
-          {/* Streak Pill */}
-          <div className="streak-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px' }}>
-            <span style={{ fontSize: '16px' }}>✨</span>
-            <span style={{ fontWeight: 700, fontSize: '16px' }}>{streak.currentStreak}</span>
-            <span style={{ fontSize: '14px', fontWeight: 500 }}>{isHebrew ? 'יום' : 'day'}</span>
+          {/* Streak Badge - Gold gradient circle */}
+          <div style={{
+            position: 'absolute',
+            top: '16px',
+            left: isHebrew ? 'auto' : '16px',
+            right: isHebrew ? '16px' : 'auto',
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to bottom right, #FFD700, #FFA500)',
+            border: '2px solid white',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            zIndex: 20
+          }}>
+            <span style={{ fontSize: '14px', marginBottom: '2px' }}>⭐</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, lineHeight: 1 }}>
+              {isHebrew ? `יום ${streak.currentStreak}` : `Day ${streak.currentStreak}`}
+            </span>
           </div>
-          {/* Title */}
-          <div className="title-english" style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 600 }}>
-            Daily Appreciation
-          </div>
-          {/* Sign Out Button */}
+
+          {/* Sign Out Button - Top right */}
           <button
             onClick={handleLogout}
             style={{
+              position: 'absolute',
+              top: '16px',
+              right: isHebrew ? 'auto' : '16px',
+              left: isHebrew ? '16px' : 'auto',
               padding: '6px 12px',
               fontSize: '13px',
               cursor: 'pointer',
-              background: 'transparent',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--color-text-muted)'
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '20px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              zIndex: 20
             }}
           >
             {isHebrew ? 'התנתק' : 'Sign Out'}
           </button>
+
+          {/* Centered Titles */}
+          <div style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: '8px'
+          }}>
+            <h1 className="title-hebrew" style={{
+              fontSize: '32px',
+              fontWeight: 700,
+              color: 'white',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+              margin: 0
+            }}>
+              {isHebrew ? 'יום הודיה' : 'Gratitude Day'}
+            </h1>
+            <h2 className="title-english" style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: '24px',
+              fontWeight: 600,
+              color: 'white',
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              letterSpacing: '0.05em',
+              marginTop: '4px'
+            }}>
+              Daily Appreciation
+            </h2>
+          </div>
         </header>
 
         {/* Main Content */}
