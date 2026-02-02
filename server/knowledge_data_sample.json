@@ -1,0 +1,38 @@
+[
+    {
+        "category": "neural_benefits",
+        "title": "Gratitude Changes Brain Structure",
+        "content": "A 2016 study published in NeuroImage found that gratitude journaling for just 2 weeks showed changes in the medial prefrontal cortex, the brain region associated with learning and decision making.",
+        "source": "Kini et al., NeuroImage, 2016",
+        "citation": "doi:10.1016/j.neuroimage.2015.12.040",
+        "language": "english",
+        "use_cases": [
+            "affirmation",
+            "streak_milestone"
+        ]
+    },
+    {
+        "category": "mental_health",
+        "title": "Gratitude Reduces Depression",
+        "content": "Research shows that people who practice gratitude regularly report 25% lower levels of depression and anxiety compared to control groups.",
+        "source": "Emmons & McCullough, 2003",
+        "citation": "Journal of Personality and Social Psychology",
+        "language": "english",
+        "use_cases": [
+            "struggling_user",
+            "affirmation"
+        ]
+    },
+    {
+        "category": "neural_benefits",
+        "title": "הכרת תודה משנה את מבנה המוח",
+        "content": "מחקר משנת 2016 שפורסם ב-NeuroImage מצא שניהול יומן תודה במשך שבועיים בלבד הראה שינויים בקליפת המוח הקדם-מצחית המדיאלית, אזור המוח הקשור ללמידה וקבלת החלטות.",
+        "source": "Kini et al., NeuroImage, 2016",
+        "citation": "doi:10.1016/j.neuroimage.2015.12.040",
+        "language": "hebrew",
+        "use_cases": [
+            "affirmation",
+            "streak_milestone"
+        ]
+    }
+]
