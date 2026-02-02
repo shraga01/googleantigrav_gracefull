@@ -19,7 +19,13 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
                 } catch (err) {
                     console.error('Decryption failed:', err);
                     setError(true);
-                    setDecrypted('🔒 Unable to decrypt this entry');
+                    // If decryption fails, the content might be plain text (old entries)
+                    // Try to show it as-is if it looks like normal text
+                    if (content && !content.includes('==') && content.length < 200) {
+                        setDecrypted(content);
+                    } else {
+                        setDecrypted('🔒 Unable to decrypt this entry');
+                    }
                 }
             } else {
                 setDecrypted(content);
@@ -31,17 +37,17 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
     }, [content, googleId, isAuthenticated]);
 
     if (isDecrypting) {
-        return <div className="italic text-gray-400">Decrypting...</div>;
+        return <div style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.6)' }}>Decrypting...</div>;
     }
 
     if (error) {
-        return <div className="text-gray-400">{decrypted}</div>;
+        return <div style={{ color: 'rgba(255,255,255,0.7)' }}>{decrypted}</div>;
     }
 
     return (
-        <div className="whitespace-pre-wrap leading-relaxed text-gray-800">
+        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'white' }}>
             {decrypted.split('\n').map((line, i) => (
-                <div key={i} className="py-1">{line}</div>
+                <div key={i} style={{ padding: '4px 0' }}>{line}</div>
             ))}
         </div>
     );
@@ -59,9 +65,17 @@ export const HistoryView: React.FC = () => {
 
     if (entries.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-                <div className="text-6xl mb-4">📖</div>
-                <p className="text-lg text-gray-500">
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '60vh',
+                textAlign: 'center',
+                padding: '24px'
+            }}>
+                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📖</div>
+                <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>
                     {isHebrew ? 'עדיין אין היסטוריה. התחל לתרגל!' : 'No history yet. Start practicing!'}
                 </p>
             </div>
@@ -70,28 +84,67 @@ export const HistoryView: React.FC = () => {
 
     return (
         <div className="animate-fadeIn">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            <h2 style={{
+                fontSize: '24px',
+                fontWeight: 700,
+                color: 'white',
+                marginBottom: '24px',
+                textAlign: 'center',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            }}>
                 {isHebrew ? 'יומן הוקרת תודה' : 'Appreciation Journal'}
             </h2>
 
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {entries.map((entry) => (
-                    <div key={entry.entryId} className="card card-sage">
+                    <div
+                        key={entry.entryId}
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '16px',
+                            padding: '20px'
+                        }}
+                    >
                         {/* Header */}
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-sm text-gray-500">{entry.date}</span>
-                            <span className="streak-pill text-sm px-2 py-0.5 rounded-full">
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '12px'
+                        }}>
+                            <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>{entry.date}</span>
+                            <span style={{
+                                fontSize: '14px',
+                                background: 'linear-gradient(135deg, #FFA500, #FFD700)',
+                                color: 'white',
+                                padding: '4px 12px',
+                                borderRadius: '9999px',
+                                fontWeight: 600
+                            }}>
                                 🔥 {entry.streakDay}
                             </span>
                         </div>
 
                         {/* Opening sentence */}
-                        <div className="font-semibold text-gray-700 mb-3">
+                        <div style={{
+                            fontWeight: 600,
+                            color: 'white',
+                            marginBottom: '12px',
+                            textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                        }}>
                             {entry.openingSentence}
                         </div>
 
                         {/* Content */}
-                        <div className="bg-white/50 rounded-xl p-4 border-l-4 border-olive-btn">
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            borderLeft: isHebrew ? 'none' : '4px solid #FFA500',
+                            borderRight: isHebrew ? '4px solid #FFA500' : 'none'
+                        }}>
                             {entry.userContent.type === 'text' ? (
                                 <DecryptedContent
                                     content={entry.userContent.content as string}
@@ -100,8 +153,8 @@ export const HistoryView: React.FC = () => {
                                 />
                             ) : (
                                 <div>
-                                    <audio controls src={entry.userContent.content as string} className="w-full" />
-                                    <div className="text-xs text-gray-500 mt-2">
+                                    <audio controls src={entry.userContent.content as string} style={{ width: '100%' }} />
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>
                                         Duration: {Math.round(entry.userContent.duration || 0)}s
                                     </div>
                                 </div>
