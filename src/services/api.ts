@@ -174,5 +174,31 @@ export const ApiService = {
             console.error('Failed to save entry:', error);
             return false;
         }
+    },
+
+    /**
+     * Get user streak from server
+     */
+    getStreak: async (): Promise<{ currentStreak: number; longestStreak: number; totalDaysPracticed: number; lastPracticeDate: string | null } | null> => {
+        try {
+            const token = await ApiService.getToken();
+            if (!token) return null;
+
+            const response = await fetchWithTimeout(`${API_URL}/streak`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to fetch streak from server');
+                return null;
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to fetch streak:', error);
+            return null;
+        }
     }
 };

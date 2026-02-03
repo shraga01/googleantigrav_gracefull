@@ -13,7 +13,7 @@ import { getRandomScientificFact } from '../../services/scientificFacts';
 import { v4 as uuidv4 } from 'uuid';
 
 export const DailyPractice: React.FC = () => {
-    const { userProfile, googleId, isAuthenticated } = useApp();
+    const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
     const [isLoading, setIsLoading] = useState(true);
     const [openingSentence, setOpeningSentence] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -167,7 +167,9 @@ export const DailyPractice: React.FC = () => {
 
         // Sync to server if authenticated
         if (isAuthenticated) {
-            ApiService.saveEntry(newEntry).catch(err => {
+            ApiService.saveEntry(newEntry).then(() => {
+                refreshStreak();
+            }).catch(err => {
                 console.error('Failed to sync entry to server:', err);
             });
         }

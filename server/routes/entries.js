@@ -80,11 +80,13 @@ router.post('/', authenticateToken, async (req, res) => {
         await entry.save();
 
         // Update streak
-        const streak = await Streak.findOne({ userId: req.user.userId });
-        if (streak) {
-            streak.updateStreak(date);
-            await streak.save();
+        let streak = await Streak.findOne({ userId: req.user.userId });
+        if (!streak) {
+            streak = new Streak({ userId: req.user.userId });
         }
+
+        streak.updateStreak(date);
+        await streak.save();
 
         res.status(201).json(entry);
     } catch (error) {

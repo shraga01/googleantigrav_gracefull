@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { UserProfile, Language } from '../types';
+import type { UserProfile, Language, StreakData } from '../types';
 import { StorageService } from '../services/storage';
 import { onAuthChange } from '../services/auth';
 import { ApiService } from '../services/api';
@@ -15,6 +15,8 @@ interface AppContextType {
     refreshProfile: () => void;
     fetchProfileFromServer: () => Promise<UserProfile | null>;
     setGoogleId: (id: string | null) => void;
+    streak: StreakData;
+    refreshStreak: () => void;
     logout: () => Promise<void>;
 }
 
@@ -26,6 +28,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [googleId, setGoogleIdState] = useState<string | null>(null);
+    const [streak, setStreak] = useState<StreakData>(StorageService.getStreak());
 
     useEffect(() => {
         // Initial load from localStorage
@@ -33,42 +36,50 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         // Listen to Firebase auth state changes
         const unsubscribe = onAuthChange(async (user) => {
+            console.log('🔄 onAuthChange triggered, user:', user?.uid || 'null');
             if (user) {
                 console.log('Auth state: User signed in', user.uid);
                 setIsAuthenticated(true);
                 setGoogleIdState(user.uid);
 
+                // Fetch streak 
+                fetchStreakFromServer();
+
                 // Check if cached profile matches current user
                 const cachedProfile = StorageService.getUserProfile();
+                console.log('🔍 Cached profile:', cachedProfile?.userId || 'null');
+
                 if (cachedProfile && cachedProfile.userId === user.uid) {
-                    console.log('Using cached profile for user:', user.uid);
+                    console.log('✅ Using cached profile for user:', user.uid);
                     setUserProfile(cachedProfile);
                     setLanguageState(cachedProfile.language);
                     updateDocumentDirection(cachedProfile.language);
+                    setIsLoading(false);
                 } else {
                     // Try to fetch profile from server
-                    console.log('Fetching profile from server for user:', user.uid);
+                    console.log('🌐 Fetching profile from server for user:', user.uid);
                     try {
                         const serverProfile = await ApiService.getProfile();
+                        console.log('📥 Server response:', serverProfile ? 'Profile found' : 'No profile');
                         if (serverProfile) {
-                            console.log('Got profile from server');
+                            console.log('✅ Got profile from server, setting state...');
                             // Cache it locally
                             StorageService.saveUserProfile(serverProfile);
                             setUserProfile(serverProfile);
                             setLanguageState(serverProfile.language);
                             updateDocumentDirection(serverProfile.language);
                         } else {
-                            console.log('No profile on server - user needs onboarding');
+                            console.log('⚠️ No profile on server - user needs onboarding');
                             // No profile exists - user needs to complete onboarding
                             setUserProfile(null);
                         }
                     } catch (error) {
-                        console.error('Failed to fetch profile from server:', error);
+                        console.error('❌ Failed to fetch profile from server:', error);
                         // Fall back to null - show onboarding
                         setUserProfile(null);
                     }
+                    setIsLoading(false);
                 }
-                setIsLoading(false);
             } else {
                 console.log('Auth state: User signed out');
                 setIsAuthenticated(false);
@@ -143,6 +154,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
 
+    const fetchStreakFromServer = async () => {
+        try {
+            const serverStreak = await ApiService.getStreak();
+            if (serverStreak) {
+                // Ensure array fields initialized
+                const fullStreak: StreakData = {
+                    milestonesAchieved: [],
+                    ...serverStreak
+                };
+                StorageService.updateStreak(fullStreak);
+                setStreak(fullStreak);
+            }
+        } catch (error) {
+            console.error('Failed to fetch streak:', error);
+        }
+    };
+
     const setGoogleId = (id: string | null) => {
         setGoogleIdState(id);
     };
@@ -156,6 +184,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUserProfile(null);
         setIsAuthenticated(false);
         setGoogleIdState(null);
+        setStreak({
+            currentStreak: 0,
+            longestStreak: 0,
+            totalDaysPracticed: 0,
+            lastPracticeDate: null,
+            milestonesAchieved: []
+        });
 
         // 3. Sign out of Firebase
         const { signOut } = await import('../services/auth');
@@ -175,6 +210,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             refreshProfile,
             fetchProfileFromServer,
             setGoogleId,
+            streak,
+            refreshStreak: fetchStreakFromServer,
             logout
         }}>
             {children}

@@ -53,7 +53,7 @@ router.put('/', authenticateToken, async (req, res) => {
         const user = await User.findOneAndUpdate(
             { userId: req.user.userId },
             { $set: updates },
-            { new: true, runValidators: true }
+            { new: true, runValidators: true, upsert: true, setDefaultsOnInsert: true }
         );
 
         if (!user) {

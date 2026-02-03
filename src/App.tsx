@@ -9,7 +9,6 @@ import { HistoryView } from './components/history/HistoryView';
 import { StatsDashboard } from './components/stats/StatsDashboard';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
-import { StorageService } from './services/storage';
 
 // Navigation Icons - responsive sizes handled in CSS
 const SunIcon = () => (
@@ -42,36 +41,48 @@ const SettingsIcon = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { userProfile, isLoading, logout, refreshProfile } = useApp();
+  const { userProfile, isLoading, isAuthenticated, logout, refreshProfile, setLanguage, fetchProfileFromServer } = useApp();
 
-  // Initialize onboarding step based on whether profile already exists
-  const getInitialOnboardingStep = (): 'language' | 'auth' | 'welcome' | 'profile' => {
-    // Check localStorage directly to determine initial state
-    const existingProfile = localStorage.getItem('daily_app_profile');
-    if (existingProfile) {
-      // If profile exists but context doesn't have it yet, we'll refresh it
-      return 'profile'; // This will trigger profile load
-    }
-    return 'language';
-  };
-
-  const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>(getInitialOnboardingStep);
+  // Track which step of the onboarding flow ONLY when actually onboarding
+  // This resets naturally when the component unmounts or when we have a profile
+  const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
 
-  // Effect to refresh profile if we detect one exists but isn't loaded
+  // Track if we've already checked for server profile after auth
+  const [hasCheckedServerProfile, setHasCheckedServerProfile] = useState(false);
+
+  // When user becomes authenticated, check if they have a profile on the server
   React.useEffect(() => {
-    const existingProfile = localStorage.getItem('daily_app_profile');
-    if (existingProfile && !userProfile && !isLoading) {
-      console.log('Found existing profile in localStorage, refreshing...');
-      refreshProfile();
+    const checkServerProfile = async () => {
+      if (isAuthenticated && !userProfile && !hasCheckedServerProfile && !isLoading) {
+        console.log('User authenticated but no local profile, checking server...');
+        setHasCheckedServerProfile(true);
+        const serverProfile = await fetchProfileFromServer();
+        if (serverProfile) {
+          console.log('Found profile on server, skipping onboarding');
+          // Profile is now loaded into context, main app will render
+        } else {
+          console.log('No profile on server, user needs to complete profile setup');
+          // Skip to profile setup since they're already authenticated
+          setOnboardingStep('profile');
+        }
+      }
+    };
+    checkServerProfile();
+  }, [isAuthenticated, userProfile, hasCheckedServerProfile, isLoading, fetchProfileFromServer]);
+
+  // Reset state when user logs out
+  React.useEffect(() => {
+    if (!isAuthenticated && !isLoading) {
+      setOnboardingStep('language');
+      setHasCheckedServerProfile(false);
     }
-  }, [userProfile, isLoading, refreshProfile]);
+  }, [isAuthenticated, isLoading]);
 
   const handleLogout = async () => {
     try {
       await logout();
-      // Reset onboarding step after logout
-      setOnboardingStep('language');
+      // State will reset via the useEffect above
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -84,7 +95,7 @@ const AppContent: React.FC = () => {
   // If we have a profile, show the main app
   if (userProfile) {
     const isHebrew = userProfile.language === 'hebrew';
-    const streak = StorageService.getStreak();
+    const { streak } = useApp();
 
     return (
       <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen">
@@ -119,6 +130,28 @@ const AppContent: React.FC = () => {
               {isHebrew ? `יום ${streak.currentStreak}` : `Day ${streak.currentStreak}`}
             </span>
           </div>
+
+          {/* Language Button */}
+          <button
+            onClick={() => setLanguage(isHebrew ? 'english' : 'hebrew')}
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: isHebrew ? 'auto' : '100px', // Next to Sign Out
+              left: isHebrew ? '100px' : 'auto',
+              padding: '6px 12px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '20px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              zIndex: 20
+            }}
+          >
+            {isHebrew ? '🇺🇸 EN' : '🇮🇱 HE'}
+          </button>
 
           {/* Sign Out Button - Top right */}
           <button
