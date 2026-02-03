@@ -141,5 +141,38 @@ export const ApiService = {
             console.error('Failed to fetch today\'s entry:', error);
             return null;
         }
+    },
+
+    /**
+     * Save/update daily entry to server
+     */
+    saveEntry: async (entry: any): Promise<boolean> => {
+        try {
+            const token = await ApiService.getToken();
+            if (!token) {
+                console.warn('No auth token, cannot save entry to server');
+                return false;
+            }
+
+            const response = await fetchWithTimeout(`${API_URL}/entries`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(entry)
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to save entry to server');
+                return false;
+            }
+
+            console.log('✅ Entry saved to server');
+            return true;
+        } catch (error) {
+            console.error('Failed to save entry:', error);
+            return false;
+        }
     }
 };

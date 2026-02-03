@@ -165,6 +165,13 @@ export const DailyPractice: React.FC = () => {
         };
         StorageService.saveEntry(newEntry);
 
+        // Sync to server if authenticated
+        if (isAuthenticated) {
+            ApiService.saveEntry(newEntry).catch(err => {
+                console.error('Failed to sync entry to server:', err);
+            });
+        }
+
         const affirm = await LLMService.generateAffirmation(userProfile);
         setAffirmation(affirm);
         setIsCompleted(true);
