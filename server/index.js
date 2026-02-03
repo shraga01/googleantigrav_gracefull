@@ -12,9 +12,27 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Allowed origins for CORS
+const allowedOrigins = [
+    'http://localhost:5173',                       // Local dev
+    'https://daily-appreciation-app-dev.web.app',  // Firebase Hosting dev
+    'https://daily-appreciation-app.web.app',      // Firebase Hosting prod
+    'https://daily-appreciation-app-275bf.web.app' // Firebase default domain
+];
+
 // Middleware
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' })); // Increased limit for audio blobs
