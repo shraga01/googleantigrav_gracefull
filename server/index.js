@@ -14,10 +14,11 @@ const PORT = process.env.PORT || 3001;
 
 // Allowed origins for CORS
 const allowedOrigins = [
-    'http://localhost:5173',                       // Local dev
-    'https://daily-appreciation-app-dev.web.app',  // Firebase Hosting dev
-    'https://daily-appreciation-app.web.app',      // Firebase Hosting prod
-    'https://daily-appreciation-app-275bf.web.app' // Firebase default domain
+    'http://localhost:5173',                                    // Local dev
+    'https://daily-appreciation-app-dev.web.app',               // Firebase Hosting dev
+    'https://daily-appreciation-app.web.app',                   // Firebase Hosting prod
+    'https://daily-appreciation-app-275bf.web.app',             // Firebase default domain
+    'https://daily-appreciation-app-275bf--dev-qia4t16c.web.app' // Firebase preview channel
 ];
 
 // Middleware
