@@ -56,18 +56,17 @@ html {
 /* ==================== */
 
 body {
-  background-color: #fff1f2;
+  background-color: #2e1065;
   background-image:
-    radial-gradient(circle at 0% 0%, #ffe4e6 0%, transparent 50%),
-    radial-gradient(circle at 100% 0%, #fef3c7 0%, transparent 50%),
-    radial-gradient(circle at 50% 100%, #e0f2fe 0%, transparent 50%);
+    radial-gradient(circle at 0% 0%, #8A2BE2, transparent 50%),
+    radial-gradient(circle at 100% 0%, #FF69B4, transparent 50%),
+    radial-gradient(circle at 50% 100%, #00FFFF, transparent 50%);
   background-size: cover;
   background-attachment: fixed;
   font-family: 'Rubik', sans-serif;
   min-height: 100vh;
-  color: #1f2937;
-  /* Dark Gray */
-  text-shadow: none;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
