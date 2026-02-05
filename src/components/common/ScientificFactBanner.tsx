@@ -19,7 +19,7 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
             dir={isHebrew ? 'rtl' : 'ltr'}
             style={{
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
+                color: 'black',
                 padding: '16px 20px',
                 borderRadius: '12px',
                 marginBottom: '20px',
@@ -86,7 +86,7 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: 'white',
+                        color: 'black',
                         fontSize: '18px',
                         flexShrink: 0,
                         transition: 'background 0.2s',

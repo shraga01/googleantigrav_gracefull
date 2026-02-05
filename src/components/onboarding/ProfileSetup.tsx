@@ -106,8 +106,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                     marginBottom: '24px',
                     fontSize: '28px',
                     fontWeight: 700,
-                    color: 'white',
-                    textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                    color: 'black',
                     lineHeight: 1.3
                 }}>
                     {isHebrew ? currentQuestion.he : currentQuestion.en}
@@ -131,7 +130,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                             padding: '12px 0',
                             background: 'transparent',
                             border: 'none',
-                            color: 'white',
+                            color: 'black',
                             width: '100%'
                         }}
                     />
@@ -151,8 +150,8 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                     style={{
                         flex: 1,
                         background: 'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        color: 'rgba(255, 255, 255, 0.8)',
+                        border: '1px solid rgba(0, 0, 0, 0.3)',
+                        color: 'rgba(0, 0, 0, 0.8)',
                         borderRadius: '9999px',
                         padding: '14px 24px'
                     }}
@@ -165,7 +164,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                     style={{
                         flex: 2,
                         background: 'linear-gradient(to right, #FFB6C1, #FF69B4)',
-                        color: 'white',
+                        color: 'black',
                         borderRadius: '9999px',
                         padding: '14px 24px',
                         fontWeight: 700,

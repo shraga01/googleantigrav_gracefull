@@ -105,7 +105,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                     maxWidth: '320px',
                     padding: '16px',
                     background: 'linear-gradient(to right, #FFB6C1, #FF69B4)',
-                    color: 'white',
+                    color: 'black',
                     fontSize: '18px',
                     fontWeight: 700,
                     border: 'none',

@@ -92,14 +92,14 @@ export const RandomProfileQuestion: React.FC<Props> = ({ onComplete, onSkip }) =
                 width: '100%',
                 border: '1px solid rgba(255, 255, 255, 0.3)',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-                color: 'white',
+                color: 'black',
                 textAlign: 'center'
             }}>
                 <div style={{ fontSize: '40px', marginBottom: '16px' }}>🤔</div>
 
                 <h3 style={{
                     marginBottom: '8px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    color: 'rgba(0, 0, 0, 0.7)',
                     fontSize: '14px',
                     textTransform: 'uppercase',
                     letterSpacing: '1px'
@@ -125,7 +125,7 @@ export const RandomProfileQuestion: React.FC<Props> = ({ onComplete, onSkip }) =
                         style={{
                             background: 'rgba(255, 255, 255, 0.2)',
                             border: '1px solid rgba(255, 255, 255, 0.3)',
-                            color: 'white'
+                            color: 'black'
                         }}
                     />
                 </div>
@@ -138,7 +138,7 @@ export const RandomProfileQuestion: React.FC<Props> = ({ onComplete, onSkip }) =
                             flex: 1,
                             background: 'rgba(255, 255, 255, 0.1)',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
-                            color: 'white'
+                            color: 'black'
                         }}
                     >
                         {isHebrew ? 'דלג' : 'Skip'}
@@ -150,7 +150,7 @@ export const RandomProfileQuestion: React.FC<Props> = ({ onComplete, onSkip }) =
                             flex: 1,
                             background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
                             border: 'none',
-                            color: 'white'
+                            color: 'black'
                         }}
                     >
                         {isHebrew ? 'שמור' : 'Save'}

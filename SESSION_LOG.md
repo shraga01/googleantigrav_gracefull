@@ -11,9 +11,11 @@
 - [x] **Component Updates**: Updated History View and Modals to match Light Theme.
 
 ### ⏭️ Next Steps (for other computer)
-- [ ] Pull latest changes from Google Drive.
-- [ ] Review this log file.
-- [ ] Continue from where we left off.
+- [ ] **Pull latest changes**: Run `git pull origin dev`.
+- [ ] **Review**: The new Light Theme is now active.
+- [ ] **Continue Deployment**: Resume from `NEXT_STEPS.md`.
+
+*Last Synced: 2026-02-05 (Commit: fix(ui): force apply light theme css changes)*
 
 ---
 *This file is auto-updated by the AI Assistant to maintain context.*

@@ -65,8 +65,8 @@ body {
   background-attachment: fixed;
   font-family: 'Rubik', sans-serif;
   min-height: 100vh;
-  color: white;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  color: black;
+  text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -137,7 +137,7 @@ body {
 /* Section subtitle */
 .subtitle {
   font-size: clamp(0.875rem, 2vw, 1rem);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.7);
   font-weight: 500;
 }
 
@@ -300,15 +300,15 @@ body {
 .card-prompt {
   font-size: clamp(1.25rem, 3vw, 1.5rem);
   font-weight: 500;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: black;
+  text-shadow: none;
 }
 
 .card-answer {
   font-size: clamp(2.5rem, 6vw, 3.5rem);
   font-weight: 800;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: black;
+  text-shadow: none;
   line-height: 1.2;
 }
 
@@ -351,12 +351,12 @@ body {
   background: transparent;
   border: none;
   outline: none;
-  color: white;
+  color: black;
 }
 
 .input-card input::placeholder,
 .input-card textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 0.5);
 }
 
 /* ==================== */
@@ -399,7 +399,7 @@ body {
 
 .btn-primary {
   background: linear-gradient(to right, #FFB6C1, #FF69B4);
-  color: white;
+  color: black;
   border-radius: 9999px;
   padding: 0.875rem 1.5rem;
   font-weight: 600;
@@ -416,8 +416,8 @@ body {
 
 .btn-ghost {
   background: transparent;
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.3);
   border-radius: 9999px;
   cursor: pointer;
   font-weight: 500;
@@ -428,7 +428,7 @@ body {
 
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: white;
+  color: black;
 }
 
 /* ==================== */
@@ -468,7 +468,7 @@ body {
 }
 
 .nav-item:hover {
-  color: white;
+  color: rgba(0, 0, 0, 0.8);
 }
 
 .nav-item.active {
