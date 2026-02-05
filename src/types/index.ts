@@ -42,3 +42,16 @@ export interface StreakData {
     lastPracticeDate: string | null; // YYYY-MM-DD
     milestonesAchieved: string[];
 }
+
+// API Response Types
+export interface ApiStreakResponse {
+    currentStreak: number;
+    longestStreak: number;
+    totalDaysPracticed: number;
+    lastPracticeDate: string | null;
+}
+
+export interface ApiEntryResponse extends DailyEntry {
+    // Server may add additional fields
+    serverTimestamp?: number;
+}

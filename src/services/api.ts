@@ -1,5 +1,5 @@
 import { getAuth } from 'firebase/auth';
-import type { UserProfile } from '../types';
+import type { UserProfile, DailyEntry, ApiStreakResponse, ApiEntryResponse } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const API_TIMEOUT = 30000; // 30 seconds - increased for Cloud Run cold starts
@@ -113,7 +113,7 @@ export const ApiService = {
     /**
      * Fetch all entries from server
      */
-    getEntries: async (): Promise<any[]> => {
+    getEntries: async (): Promise<ApiEntryResponse[]> => {
         try {
             const token = await ApiService.getToken();
             if (!token) return [];
@@ -172,7 +172,7 @@ export const ApiService = {
     /**
      * Save/update daily entry to server
      */
-    saveEntry: async (entry: any): Promise<boolean> => {
+    saveEntry: async (entry: DailyEntry): Promise<boolean> => {
         try {
             const token = await ApiService.getToken();
             if (!token) {
@@ -205,7 +205,7 @@ export const ApiService = {
     /**
      * Get user streak from server
      */
-    getStreak: async (): Promise<{ currentStreak: number; longestStreak: number; totalDaysPracticed: number; lastPracticeDate: string | null } | null> => {
+    getStreak: async (): Promise<ApiStreakResponse | null> => {
         try {
             const token = await ApiService.getToken();
             if (!token) return null;

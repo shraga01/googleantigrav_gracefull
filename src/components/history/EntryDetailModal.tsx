@@ -78,7 +78,6 @@ export const EntryDetailModal: React.FC<EntryDetailModalProps> = ({ entry, onClo
                 <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50/50">
                     <div>
                         <div className="text-gray-800 font-medium">{entry.date}</div>
-                        <div className="text-[10px] text-gray-400">v.Modal.Rapid</div>
                     </div>
                     <button
                         onClick={onClose}
