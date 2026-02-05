@@ -52,10 +52,9 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
             <h1 style={{
                 fontSize: '28px',
                 fontWeight: 700,
-                color: 'white',
+                color: 'black',
                 marginBottom: '8px',
-                textAlign: 'center',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                textAlign: 'center'
             }}>
                 {isHebrew ? 'שמור על הפרטיות שלך' : 'Protect Your Privacy'}
             </h1>
@@ -63,7 +62,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
             {/* Subtitle */}
             <p style={{
                 fontSize: '15px',
-                color: 'rgba(255, 255, 255, 0.8)',
+                color: 'rgba(0, 0, 0, 0.7)',
                 textAlign: 'center',
                 maxWidth: '320px',
                 marginBottom: '32px'
@@ -123,7 +122,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 alignItems: 'center',
                 gap: '8px',
                 fontSize: '14px',
-                color: 'rgba(255, 255, 255, 0.8)',
+                color: 'rgba(0, 0, 0, 0.7)',
                 marginBottom: '24px'
             }}>
                 <span>🔒</span>
@@ -139,9 +138,9 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 maxWidth: '320px',
                 marginBottom: '24px'
             }}>
-                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }}></div>
-                <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>{isHebrew ? 'או' : 'or'}</span>
-                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }}></div>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                <span style={{ color: 'rgba(0, 0, 0, 0.5)', fontSize: '14px' }}>{isHebrew ? 'או' : 'or'}</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
             </div>
 
             {/* Continue Anonymous */}
@@ -149,8 +148,8 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 onClick={onContinueAnonymously}
                 style={{
                     background: 'transparent',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    border: '1px solid rgba(0, 0, 0, 0.3)',
+                    color: 'rgba(0, 0, 0, 0.8)',
                     fontSize: '16px',
                     fontWeight: 500,
                     cursor: 'pointer',
@@ -163,7 +162,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
 
             <p style={{
                 fontSize: '13px',
-                color: 'rgba(255, 255, 255, 0.6)',
+                color: 'rgba(0, 0, 0, 0.5)',
                 marginTop: '12px',
                 textAlign: 'center',
                 maxWidth: '280px'

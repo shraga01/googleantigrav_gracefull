@@ -30,16 +30,15 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
                 fontFamily: "'Playfair Display', serif",
                 fontSize: '32px',
                 fontWeight: 700,
-                color: 'white',
+                color: 'black',
                 marginBottom: '8px',
-                textAlign: 'center',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                textAlign: 'center'
             }}>
                 Daily Appreciation
             </h1>
             <p style={{
                 fontSize: '16px',
-                color: 'rgba(255, 255, 255, 0.8)',
+                color: 'rgba(0, 0, 0, 0.7)',
                 marginBottom: '40px',
                 textAlign: 'center'
             }}>
@@ -74,11 +73,11 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '32px' }}>🇬🇧</span>
                         <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'white' }}>English</div>
-                            <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>Continue in English</div>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'black' }}>English</div>
+                            <div style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)' }}>Continue in English</div>
                         </div>
                     </div>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0, 0, 0, 0.5)" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
@@ -104,11 +103,11 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '32px' }}>🇮🇱</span>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'white' }}>עברית</div>
-                            <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>המשך בעברית</div>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'black' }}>עברית</div>
+                            <div style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)' }}>המשך בעברית</div>
                         </div>
                     </div>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="2" style={{ transform: 'rotate(180deg)' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0, 0, 0, 0.5)" strokeWidth="2" style={{ transform: 'rotate(180deg)' }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
