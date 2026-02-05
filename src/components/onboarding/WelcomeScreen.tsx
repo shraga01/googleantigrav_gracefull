@@ -28,10 +28,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             <h1 style={{
                 fontSize: '32px',
                 fontWeight: 700,
-                color: 'white',
+                color: 'black',
                 marginBottom: '12px',
-                textAlign: 'center',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                textAlign: 'center'
             }}>
                 {isHebrew ? 'ברוכים הבאים' : 'Welcome'}
             </h1>
@@ -39,7 +38,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             {/* Subtitle */}
             <p style={{
                 fontSize: '16px',
-                color: 'rgba(255, 255, 255, 0.8)',
+                color: 'rgba(0, 0, 0, 0.7)',
                 textAlign: 'center',
                 maxWidth: '320px',
                 marginBottom: '24px',
@@ -64,7 +63,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             }}>
                 <p style={{
                     fontSize: '13px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    color: 'rgba(0, 0, 0, 0.8)',
                     lineHeight: '1.7',
                     margin: 0,
                     textAlign: isHebrew ? 'right' : 'left'
@@ -84,15 +83,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                 gap: '12px',
                 marginBottom: '40px'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'white' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'black' }}>
                     <span style={{ fontSize: '24px' }}>🌱</span>
                     <span>{isHebrew ? 'פשוט ומהיר - רק 3 דברים ביום' : 'Simple & fast - just 3 things a day'}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'white' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'black' }}>
                     <span style={{ fontSize: '24px' }}>✨</span>
                     <span>{isHebrew ? 'עקוב אחר ההתקדמות שלך' : 'Track your progress & streaks'}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'white' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'black' }}>
                     <span style={{ fontSize: '24px' }}>🔒</span>
                     <span>{isHebrew ? 'פרטי ומאובטח' : 'Private & encrypted'}</span>
                 </div>
