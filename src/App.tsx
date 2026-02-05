@@ -47,6 +47,7 @@ const AppContent: React.FC = () => {
   // This resets naturally when the component unmounts or when we have a profile
   const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Track if we've already checked for server profile after auth
   const [hasCheckedServerProfile, setHasCheckedServerProfile] = useState(false);
@@ -131,49 +132,129 @@ const AppContent: React.FC = () => {
             </span>
           </div>
 
-          {/* Language Button */}
-          <button
-            onClick={() => setLanguage(isHebrew ? 'english' : 'hebrew')}
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: isHebrew ? 'auto' : '100px', // Next to Sign Out
-              left: isHebrew ? '100px' : 'auto',
-              padding: '6px 12px',
-              fontSize: '13px',
-              cursor: 'pointer',
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '20px',
-              color: 'rgba(255, 255, 255, 0.8)',
-              zIndex: 20
-            }}
-          >
-            {isHebrew ? '🇺🇸 EN' : '🇮🇱 HE'}
-          </button>
+          {/* Hamburger Menu */}
+          <div style={{
+            position: 'absolute',
+            top: '16px',
+            right: isHebrew ? 'auto' : '16px',
+            left: isHebrew ? '16px' : 'auto',
+            zIndex: 30
+          }}>
+            {/* Hamburger Icon */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px'
+              }}
+            >
+              <span style={{ width: '18px', height: '2px', background: 'white', borderRadius: '1px' }} />
+              <span style={{ width: '18px', height: '2px', background: 'white', borderRadius: '1px' }} />
+              <span style={{ width: '18px', height: '2px', background: 'white', borderRadius: '1px' }} />
+            </button>
 
-          {/* Sign Out Button - Top right */}
-          <button
-            onClick={handleLogout}
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: isHebrew ? 'auto' : '16px',
-              left: isHebrew ? '16px' : 'auto',
-              padding: '6px 12px',
-              fontSize: '13px',
-              cursor: 'pointer',
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '20px',
-              color: 'rgba(255, 255, 255, 0.8)',
-              zIndex: 20
-            }}
-          >
-            {isHebrew ? 'התנתק' : 'Sign Out'}
-          </button>
+            {/* Dropdown Menu */}
+            {menuOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '48px',
+                right: isHebrew ? 'auto' : '0',
+                left: isHebrew ? '0' : 'auto',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                minWidth: '160px',
+                overflow: 'hidden'
+              }}>
+                {/* User Info */}
+                <div style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #8A2BE2, #FF69B4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 700
+                  }}>
+                    {userProfile.name?.charAt(0).toUpperCase() || '👤'}
+                  </div>
+                  <span style={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>
+                    {userProfile.name || (isHebrew ? 'משתמש' : 'User')}
+                  </span>
+                </div>
+
+                {/* Language Toggle */}
+                <button
+                  onClick={() => {
+                    setLanguage(isHebrew ? 'english' : 'hebrew');
+                    setMenuOpen(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    color: '#333',
+                    textAlign: isHebrew ? 'right' : 'left'
+                  }}
+                >
+                  <span>{isHebrew ? '🇺🇸' : '🇮🇱'}</span>
+                  <span>{isHebrew ? 'English' : 'עברית'}</span>
+                </button>
+
+                {/* Sign Out */}
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMenuOpen(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    color: '#e53e3e',
+                    textAlign: isHebrew ? 'right' : 'left'
+                  }}
+                >
+                  <span>🚪</span>
+                  <span>{isHebrew ? 'התנתק' : 'Sign Out'}</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Centered Titles */}
           <div style={{
