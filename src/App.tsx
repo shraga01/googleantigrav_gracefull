@@ -182,7 +182,7 @@ const AppContent: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingTop: '8px'
+            paddingTop: '48px'
           }}>
             <h2 className="title-english" style={{
               fontFamily: "'Playfair Display', serif",
