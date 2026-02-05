@@ -184,9 +184,6 @@ const AppContent: React.FC = () => {
             justifyContent: 'center',
             paddingTop: '8px'
           }}>
-            {/* REMOVED Gratitude Day Text as requested */}
-            {/* <h1 className="title-hebrew" ... > ... </h1> */}
-            
             <h2 className="title-english" style={{
               fontFamily: "'Playfair Display', serif",
               fontSize: '24px',
