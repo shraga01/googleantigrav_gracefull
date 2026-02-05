@@ -366,7 +366,7 @@ body {
 /* Save Button - Glossy gradient */
 .save-btn {
   background: linear-gradient(to right, #FFB6C1, #FF69B4);
-  color: white;
+  color: black;
   border-radius: 9999px;
   height: 3rem;
   font-size: clamp(1rem, 2.5vw, 1.25rem);
