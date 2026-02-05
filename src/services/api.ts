@@ -111,6 +111,32 @@ export const ApiService = {
     },
 
     /**
+     * Fetch all entries from server
+     */
+    getEntries: async (): Promise<any[]> => {
+        try {
+            const token = await ApiService.getToken();
+            if (!token) return [];
+
+            const response = await fetchWithTimeout(`${API_URL}/entries`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to fetch entries from server');
+                return [];
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to fetch entries:', error);
+            return [];
+        }
+    },
+
+    /**
      * Check if there is an entry for today on the server
      */
     getTodayEntry: async () => {

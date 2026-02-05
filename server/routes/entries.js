@@ -66,6 +66,15 @@ router.post('/', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Entry already exists for this date' });
         }
 
+        // Update streak FIRST to get the correct streakDay for this entry
+        let streak = await Streak.findOne({ userId: req.user.userId });
+        if (!streak) {
+            streak = new Streak({ userId: req.user.userId });
+        }
+
+        streak.updateStreak(date);
+        await streak.save();
+
         const entry = new Entry({
             entryId,
             userId: req.user.userId,
@@ -74,19 +83,10 @@ router.post('/', authenticateToken, async (req, res) => {
             suggestions,
             userContent,
             completedAt,
-            streakDay
+            streakDay: streak.currentStreak // Use the updated streak from server
         });
 
         await entry.save();
-
-        // Update streak
-        let streak = await Streak.findOne({ userId: req.user.userId });
-        if (!streak) {
-            streak = new Streak({ userId: req.user.userId });
-        }
-
-        streak.updateStreak(date);
-        await streak.save();
 
         res.status(201).json(entry);
     } catch (error) {

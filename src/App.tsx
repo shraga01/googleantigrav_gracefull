@@ -184,21 +184,15 @@ const AppContent: React.FC = () => {
             justifyContent: 'center',
             paddingTop: '8px'
           }}>
-            <h1 className="title-hebrew" style={{
-              fontSize: '32px',
-              fontWeight: 700,
-              color: 'white',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-              margin: 0
-            }}>
-              {isHebrew ? 'יום הודיה' : 'Gratitude Day'}
-            </h1>
+            {/* REMOVED Gratitude Day Text as requested */}
+            {/* <h1 className="title-hebrew" ... > ... </h1> */}
+            
             <h2 className="title-english" style={{
               fontFamily: "'Playfair Display', serif",
               fontSize: '24px',
               fontWeight: 600,
-              color: 'white',
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              color: 'var(--color-text-primary)', // Updated for Light Theme
+              textShadow: 'none',
               letterSpacing: '0.05em',
               marginTop: '4px'
             }}>
