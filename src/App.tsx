@@ -167,14 +167,14 @@ const AppContent: React.FC = () => {
             {menuOpen && (
               <div style={{
                 position: 'absolute',
-                top: '48px',
+                top: '58px',
                 right: isHebrew ? 'auto' : '0',
                 left: isHebrew ? '0' : 'auto',
                 background: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '12px',
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                minWidth: '160px',
+                minWidth: '180px',
                 overflow: 'hidden'
               }}>
                 {/* User Info */}
@@ -204,6 +204,88 @@ const AppContent: React.FC = () => {
                   </span>
                 </div>
 
+                {/* Navigation Items */}
+                <button
+                  onClick={() => { setCurrentTab('daily'); setMenuOpen(false); }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: currentTab === 'daily' ? 'rgba(138, 43, 226, 0.1)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    color: currentTab === 'daily' ? '#8A2BE2' : '#333',
+                    fontWeight: currentTab === 'daily' ? 600 : 400
+                  }}
+                >
+                  <span>☀️</span>
+                  <span>{isHebrew ? 'היום' : 'Today'}</span>
+                </button>
+
+                <button
+                  onClick={() => { setCurrentTab('history'); setMenuOpen(false); }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: currentTab === 'history' ? 'rgba(138, 43, 226, 0.1)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    color: currentTab === 'history' ? '#8A2BE2' : '#333',
+                    fontWeight: currentTab === 'history' ? 600 : 400
+                  }}
+                >
+                  <span>📖</span>
+                  <span>{isHebrew ? 'יומן' : 'Journal'}</span>
+                </button>
+
+                <button
+                  onClick={() => { setCurrentTab('stats'); setMenuOpen(false); }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: currentTab === 'stats' ? 'rgba(138, 43, 226, 0.1)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    color: currentTab === 'stats' ? '#8A2BE2' : '#333',
+                    fontWeight: currentTab === 'stats' ? 600 : 400
+                  }}
+                >
+                  <span>📊</span>
+                  <span>{isHebrew ? 'מדדים' : 'Stats'}</span>
+                </button>
+
+                <button
+                  onClick={() => { setCurrentTab('settings'); setMenuOpen(false); }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: currentTab === 'settings' ? 'rgba(138, 43, 226, 0.1)' : 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    color: currentTab === 'settings' ? '#8A2BE2' : '#333',
+                    fontWeight: currentTab === 'settings' ? 600 : 400
+                  }}
+                >
+                  <span>⚙️</span>
+                  <span>{isHebrew ? 'הגדרות' : 'Settings'}</span>
+                </button>
+
                 {/* Language Toggle */}
                 <button
                   onClick={() => {
@@ -220,8 +302,7 @@ const AppContent: React.FC = () => {
                     alignItems: 'center',
                     gap: '10px',
                     fontSize: '14px',
-                    color: '#333',
-                    textAlign: isHebrew ? 'right' : 'left'
+                    color: '#333'
                   }}
                 >
                   <span>{isHebrew ? '🇺🇸' : '🇮🇱'}</span>
@@ -245,8 +326,7 @@ const AppContent: React.FC = () => {
                     alignItems: 'center',
                     gap: '10px',
                     fontSize: '14px',
-                    color: '#e53e3e',
-                    textAlign: isHebrew ? 'right' : 'left'
+                    color: '#e53e3e'
                   }}
                 >
                   <span>🚪</span>
@@ -286,38 +366,6 @@ const AppContent: React.FC = () => {
           {currentTab === 'stats' && <StatsDashboard />}
           {currentTab === 'settings' && <SettingsMenu />}
         </main >
-
-        {/* Bottom Navigation */}
-        < nav className="nav-container" >
-          <div
-            className={`nav-item ${currentTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('settings')}
-          >
-            <SettingsIcon />
-            <span>{isHebrew ? 'הגדרות' : 'Settings'}</span>
-          </div>
-          <div
-            className={`nav-item ${currentTab === 'stats' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('stats')}
-          >
-            <ChartIcon />
-            <span>{isHebrew ? 'מדדים' : 'Stats'}</span>
-          </div>
-          <div
-            className={`nav-item ${currentTab === 'history' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('history')}
-          >
-            <BookIcon />
-            <span>{isHebrew ? 'יומן' : 'Journal'}</span>
-          </div>
-          <div
-            className={`nav-item ${currentTab === 'daily' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('daily')}
-          >
-            <SunIcon />
-            <span>{isHebrew ? 'היום' : 'Today'}</span>
-          </div>
-        </nav >
       </div >
     );
   }
