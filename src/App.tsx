@@ -113,8 +113,8 @@ const AppContent: React.FC = () => {
             top: '16px',
             left: isHebrew ? 'auto' : '16px',
             right: isHebrew ? '16px' : 'auto',
-            width: '64px',
-            height: '64px',
+            width: '50px',
+            height: '50px',
             borderRadius: '50%',
             background: 'linear-gradient(to bottom right, #FFD700, #FFA500)',
             border: '2px solid white',
@@ -126,8 +126,8 @@ const AppContent: React.FC = () => {
             color: 'white',
             zIndex: 20
           }}>
-            <span style={{ fontSize: '14px', marginBottom: '2px' }}>⭐</span>
-            <span style={{ fontSize: '14px', fontWeight: 700, lineHeight: 1 }}>
+            <span style={{ fontSize: '12px', marginBottom: '1px' }}>⭐</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, lineHeight: 1 }}>
               {isHebrew ? `יום ${streak.currentStreak}` : `Day ${streak.currentStreak}`}
             </span>
           </div>
@@ -144,8 +144,8 @@ const AppContent: React.FC = () => {
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               style={{
-                width: '40px',
-                height: '40px',
+                width: '50px',
+                height: '50px',
                 borderRadius: '50%',
                 background: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(10px)',
@@ -155,12 +155,12 @@ const AppContent: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '4px'
+                gap: '5px'
               }}
             >
-              <span style={{ width: '18px', height: '2px', background: 'white', borderRadius: '1px' }} />
-              <span style={{ width: '18px', height: '2px', background: 'white', borderRadius: '1px' }} />
-              <span style={{ width: '18px', height: '2px', background: 'white', borderRadius: '1px' }} />
+              <span style={{ width: '22px', height: '2px', background: 'white', borderRadius: '1px' }} />
+              <span style={{ width: '22px', height: '2px', background: 'white', borderRadius: '1px' }} />
+              <span style={{ width: '22px', height: '2px', background: 'white', borderRadius: '1px' }} />
             </button>
 
             {/* Dropdown Menu */}
@@ -277,18 +277,18 @@ const AppContent: React.FC = () => {
               Daily Appreciation
             </h2>
           </div>
-        </header>
+        </header >
 
         {/* Main Content */}
-        <main className="container-main page-content">
+        < main className="container-main page-content" >
           {currentTab === 'daily' && <DailyPractice />}
           {currentTab === 'history' && <HistoryView />}
           {currentTab === 'stats' && <StatsDashboard />}
           {currentTab === 'settings' && <SettingsMenu />}
-        </main>
+        </main >
 
         {/* Bottom Navigation */}
-        <nav className="nav-container">
+        < nav className="nav-container" >
           <div
             className={`nav-item ${currentTab === 'settings' ? 'active' : ''}`}
             onClick={() => setCurrentTab('settings')}
@@ -317,8 +317,8 @@ const AppContent: React.FC = () => {
             <SunIcon />
             <span>{isHebrew ? 'היום' : 'Today'}</span>
           </div>
-        </nav>
-      </div>
+        </nav >
+      </div >
     );
   }
 
