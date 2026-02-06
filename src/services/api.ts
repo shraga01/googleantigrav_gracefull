@@ -170,34 +170,35 @@ export const ApiService = {
     },
 
     /**
-     * Save/update daily entry to server
+     * Record entry completion - only updates streak (content not stored for privacy)
      */
     saveEntry: async (entry: DailyEntry): Promise<boolean> => {
         try {
             const token = await ApiService.getToken();
             if (!token) {
-                console.warn('No auth token, cannot save entry to server');
+                console.warn('No auth token, cannot record entry on server');
                 return false;
             }
 
+            // Only send date - content is NOT sent for privacy
             const response = await fetchWithTimeout(`${API_URL}/entries`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(entry)
+                body: JSON.stringify({ date: entry.date })
             });
 
             if (!response.ok) {
-                console.warn('Failed to save entry to server');
+                console.warn('Failed to record entry on server');
                 return false;
             }
 
-            console.log('✅ Entry saved to server');
+            console.log('✅ Entry recorded (streak updated, content not stored for privacy)');
             return true;
         } catch (error) {
-            console.error('Failed to save entry:', error);
+            console.error('Failed to record entry:', error);
             return false;
         }
     },

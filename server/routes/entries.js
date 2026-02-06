@@ -1,98 +1,67 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
-import Entry from '../models/Entry.js';
 import Streak from '../models/Streak.js';
 
 const router = express.Router();
 
-// Get all entries for user
+// Get entries - returns empty (entries are not stored for privacy)
 router.get('/', authenticateToken, async (req, res) => {
-    try {
-        const entries = await Entry.find({ userId: req.user.userId })
-            .sort({ date: -1 })
-            .lean();
-
-        res.json(entries);
-    } catch (error) {
-        console.error('Get entries error:', error);
-        res.status(500).json({ error: 'Failed to get entries' });
-    }
+    // Entries are not stored on server for privacy
+    // Frontend uses local storage only
+    res.json([]);
 });
 
-// Get entry by date
+// Get entry by date - returns 404 (entries are not stored)
 router.get('/:date', authenticateToken, async (req, res) => {
-    try {
-        const entry = await Entry.findOne({
-            userId: req.user.userId,
-            date: req.params.date
-        }).lean();
-
-        if (!entry) {
-            return res.status(404).json({ error: 'Entry not found' });
-        }
-
-        res.json(entry);
-    } catch (error) {
-        console.error('Get entry error:', error);
-        res.status(500).json({ error: 'Failed to get entry' });
-    }
+    // Entries are not stored on server for privacy
+    res.status(404).json({ error: 'Entries are stored locally only for privacy' });
 });
 
-// Create new entry
+// Record entry completion - only updates streak, does NOT save entry content
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const {
-            entryId,
-            date,
-            openingSentence,
-            suggestions,
-            userContent,
-            completedAt,
-            streakDay
-        } = req.body;
+        const { date } = req.body;
 
-        // Validate required fields
-        if (!entryId || !date || !openingSentence || !userContent) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        if (!date) {
+            return res.status(400).json({ error: 'Date is required' });
         }
 
-        // Check if entry already exists for this date
-        const existingEntry = await Entry.findOne({
-            userId: req.user.userId,
-            date
-        });
-
-        if (existingEntry) {
-            return res.status(400).json({ error: 'Entry already exists for this date' });
-        }
-
-        // Update streak FIRST to get the correct streakDay for this entry
+        // Update streak only (no entry content saved for privacy)
         let streak = await Streak.findOne({ userId: req.user.userId });
         if (!streak) {
             streak = new Streak({ userId: req.user.userId });
         }
 
+        // Check if already practiced today
+        if (streak.lastPracticeDate === date) {
+            return res.json({
+                success: true,
+                message: 'Already practiced today',
+                streak: {
+                    currentStreak: streak.currentStreak,
+                    longestStreak: streak.longestStreak,
+                    totalDaysPracticed: streak.totalDaysPracticed
+                }
+            });
+        }
+
         streak.updateStreak(date);
         await streak.save();
 
-        const entry = new Entry({
-            entryId,
-            userId: req.user.userId,
-            date,
-            openingSentence,
-            suggestions,
-            userContent,
-            completedAt,
-            streakDay: streak.currentStreak // Use the updated streak from server
+        res.status(201).json({
+            success: true,
+            message: 'Entry recorded (content not stored for privacy)',
+            streak: {
+                currentStreak: streak.currentStreak,
+                longestStreak: streak.longestStreak,
+                totalDaysPracticed: streak.totalDaysPracticed
+            }
         });
-
-        await entry.save();
-
-        res.status(201).json(entry);
     } catch (error) {
-        console.error('Create entry error:', error);
-        res.status(500).json({ error: 'Failed to create entry' });
+        console.error('Record entry error:', error);
+        res.status(500).json({ error: 'Failed to record entry' });
     }
 });
 
 export default router;
+
