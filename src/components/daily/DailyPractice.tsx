@@ -8,9 +8,16 @@ import { ApiService } from '../../services/api';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { RandomProfileQuestion } from './RandomProfileQuestion';
 import { GradedInput } from './GradedInput';
+import { ProgressBar } from './ProgressBar';
 import { ScientificFactBanner } from '../common/ScientificFactBanner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
 import { v4 as uuidv4 } from 'uuid';
+
+interface GradeResult {
+    score: number;
+    feedback: string;
+    improvedVersion?: string;
+}
 
 export const DailyPractice: React.FC = () => {
     const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
@@ -23,6 +30,11 @@ export const DailyPractice: React.FC = () => {
     const [showRandomQuestion, setShowRandomQuestion] = useState(false);
     const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
     const [showFactBanner, setShowFactBanner] = useState(false);
+
+    // New State for Sequential Flow
+    const [currentStep, setCurrentStep] = useState(0);
+    const [grades, setGrades] = useState<(GradeResult | null)[]>([null, null, null]);
+    const [isGrading, setIsGrading] = useState(false);
 
     const isHebrew = userProfile?.language === 'hebrew';
 
@@ -106,10 +118,51 @@ export const DailyPractice: React.FC = () => {
         setEntries(parsedEntries.length >= 3 ? parsedEntries : ['', '', '']);
     };
 
-    const handleEntryChange = (index: number, value: string) => {
+    const handleEntryChange = (value: string) => {
         const newEntries = [...entries];
-        newEntries[index] = value;
+        newEntries[currentStep] = value;
         setEntries(newEntries);
+
+        // Clear grade if user edits after grading (requires re-check)
+        // Only if currently graded
+        if (grades[currentStep]) {
+            const newGrades = [...grades];
+            newGrades[currentStep] = null;
+            setGrades(newGrades);
+        }
+    };
+
+    const handleCheck = async () => {
+        const currentText = entries[currentStep];
+        if (!currentText.trim() || !userProfile) return;
+
+        setIsGrading(true);
+        try {
+            const result = await LLMService.gradeEntry(currentText, userProfile);
+            // Convert 0-3 score to 0-100%
+            const percentScore = Math.round((result.score / 3) * 100);
+
+            const newGrades = [...grades];
+            newGrades[currentStep] = {
+                score: percentScore,
+                feedback: result.feedback,
+                improvedVersion: result.improvedVersion
+            };
+            setGrades(newGrades);
+        } catch (error) {
+            console.error('Grading failed:', error);
+            alert(isHebrew ? 'שגיאה בבדיקה, אנא נסה שוב' : 'Error checking entry, please try again');
+        } finally {
+            setIsGrading(false);
+        }
+    };
+
+    const handleContinue = () => {
+        if (currentStep < 2) {
+            setCurrentStep(currentStep + 1);
+        } else {
+            handleSave();
+        }
     };
 
     const handleDismissFactBanner = () => {
@@ -123,11 +176,13 @@ export const DailyPractice: React.FC = () => {
 
         const filledEntries = entries.filter(e => e.trim().length > 0);
         if (filledEntries.length < 3) {
+            // Should not happen in new flow, but safe guard
             alert(isHebrew ? 'אנא כתוב לפחות 3 דברים' : 'Please write at least 3 things');
             return;
         }
 
         let contentToSave = entries.join('\n');
+        setIsLoading(true); // Re-use loading state for save
 
         if (isAuthenticated && googleId) {
             try {
@@ -136,6 +191,7 @@ export const DailyPractice: React.FC = () => {
             } catch (error) {
                 console.error('❌ Encryption failed:', error);
                 alert('Failed to encrypt entry. Please try again.');
+                setIsLoading(false);
                 return;
             }
         }
@@ -177,6 +233,7 @@ export const DailyPractice: React.FC = () => {
         const affirm = await LLMService.generateAffirmation(userProfile);
         setAffirmation(affirm);
         setIsCompleted(true);
+        setIsLoading(false);
     };
 
     if (isLoading) {
@@ -202,8 +259,12 @@ export const DailyPractice: React.FC = () => {
         );
     }
 
+    const currentGrade = grades[currentStep];
+    const isStepComplete = !!currentGrade; // Step is complete if it has a grade result
+    const hasText = entries[currentStep].trim().length > 0;
+
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="animate-fadeIn">
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="animate-fadeIn max-w-xl mx-auto">
             {/* Random Profile Question (30% chance) */}
             {showRandomQuestion && (
                 <RandomProfileQuestion
@@ -222,52 +283,83 @@ export const DailyPractice: React.FC = () => {
                 />
             )}
 
-            <div className="pt-2 sm:pt-4">
-                {/* Headlines */}
-                <section className="text-center section-spacing">
-                    <h1 className="title-main mb-3 sm:mb-4">
-                        {openingSentence}
+            <div className="pt-2 sm:pt-4 pb-24">
+                {/* Progress Bar */}
+                <ProgressBar
+                    currentStep={currentStep}
+                    grades={grades}
+                />
+
+                {/* Question Section */}
+                <section className="text-center section-spacing mb-6">
+                    <h1 className="title-main mb-2">
+                        {isHebrew ? `רגע ${currentStep + 1}` : `Moment ${currentStep + 1}`}
                     </h1>
-                    <p className="subtitle" style={{ marginBottom: '8px' }}>
-                        {isHebrew ? 'כתוב שלושה דברים ספציפיים להעריך:' : 'Write three SPECIFIC things to appreciate:'}
-                    </p>
-                    {/* Specificity hint */}
-                    <p style={{
-                        fontSize: '13px',
-                        color: '#6B7280',
-                        maxWidth: '300px',
-                        margin: '0 auto',
-                        lineHeight: '1.4'
-                    }}>
-                        {isHebrew
-                            ? '💡 הנוסחה: מעשה קונקרטי + אדם + איך זה הקל עליך'
-                            : '💡 Formula: Concrete act + Person + How it helped you'}
-                    </p>
                 </section>
 
-                {/* Input Cards */}
-                <section className="flex flex-col content-spacing" style={{ gap: 'clamp(0.75rem, 2vw, 1rem)' }}>
-                    {entries.map((entry, index) => (
-                        <GradedInput
-                            key={index}
-                            index={index}
-                            value={entry}
-                            onChange={(value) => handleEntryChange(index, value)}
-                            placeholder={suggestions[index] || (isHebrew ? `דבר ${index + 1}...` : `Thing ${index + 1}...`)}
-                        />
-                    ))}
-                </section>
+                {/* Input Card */}
+                <div className="animate-slideUp">
+                    <GradedInput
+                        index={currentStep}
+                        value={entries[currentStep]}
+                        onChange={handleEntryChange}
+                        placeholder={isHebrew ? 'פרט/י כאן...' : 'Elaborate here...'}
+                        exampleAnswer={suggestions[currentStep]}
+                        gradeResult={currentGrade}
+                        isLoading={isGrading}
+                    />
+                </div>
 
-                {/* Save Button */}
-                <section className="mt-8 sm:mt-12 mb-6 sm:mb-10">
-                    <button
-                        onClick={handleSave}
-                        className="save-btn"
-                        disabled={entries.filter(e => e.trim()).length < 3}
-                    >
-                        {isHebrew ? 'שמור' : 'Save'}
-                    </button>
-                </section>
+                {/* Action Button - Inline below input, matching onboarding style */}
+                <div style={{ marginTop: '16px' }}>
+                    {!isStepComplete ? (
+                        <button
+                            onClick={handleCheck}
+                            disabled={!hasText || isGrading}
+                            style={{
+                                width: '100%',
+                                padding: '16px',
+                                background: (!hasText || isGrading)
+                                    ? 'linear-gradient(to right, #e0e0e0, #c0c0c0)'
+                                    : 'linear-gradient(to right, #FFB6C1, #FF69B4)',
+                                color: (!hasText || isGrading) ? '#999' : 'black',
+                                fontSize: '18px',
+                                fontWeight: 700,
+                                border: 'none',
+                                borderRadius: '9999px',
+                                cursor: (!hasText || isGrading) ? 'not-allowed' : 'pointer',
+                                boxShadow: (!hasText || isGrading)
+                                    ? 'none'
+                                    : '0 4px 15px rgba(255, 105, 180, 0.4)',
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            {isGrading
+                                ? (isHebrew ? 'בודק...' : 'Checking...')
+                                : (isHebrew ? 'בדיקה ✓' : 'Check ✓')}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleContinue}
+                            style={{
+                                width: '100%',
+                                padding: '16px',
+                                background: 'linear-gradient(to right, #FFB6C1, #FF69B4)',
+                                color: 'black',
+                                fontSize: '18px',
+                                fontWeight: 700,
+                                border: 'none',
+                                borderRadius: '9999px',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 15px rgba(255, 105, 180, 0.4)'
+                            }}
+                        >
+                            {currentStep < 2
+                                ? (isHebrew ? 'המשך' : 'Continue')
+                                : (isHebrew ? 'סיים ושמור 🎉' : 'Finish & Save 🎉')}
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

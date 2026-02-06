@@ -1,13 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { LLMService } from '../../services/llm';
+import React from 'react';
 import { useApp } from '../../context/AppContext';
-
-interface GradedInputProps {
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-    index: number;
-}
 
 interface GradeResult {
     score: number;
@@ -15,16 +7,26 @@ interface GradeResult {
     improvedVersion?: string;
 }
 
+interface GradedInputProps {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    exampleAnswer?: string;
+    index: number;
+    gradeResult: GradeResult | null;
+    isLoading: boolean;
+}
+
 export const GradedInput: React.FC<GradedInputProps> = ({
     value,
     onChange,
     placeholder,
-    index
+    exampleAnswer,
+    index,
+    gradeResult,
+    isLoading
 }) => {
     const { userProfile } = useApp();
-    const [grade, setGrade] = useState<GradeResult | null>(null);
-    const [isGrading, setIsGrading] = useState(false);
-
     const isHebrew = userProfile?.language === 'hebrew';
 
     // Get color based on score (0-100)
@@ -34,35 +36,8 @@ export const GradedInput: React.FC<GradedInputProps> = ({
         return '#22c55e'; // Green
     };
 
-    // Grade the entry when user stops typing (on blur)
-    const handleBlur = useCallback(async () => {
-        if (!value.trim() || !userProfile) return;
-
-        setIsGrading(true);
-        try {
-            const result = await LLMService.gradeEntry(value, userProfile);
-            // Convert 0-3 score to 0-100%
-            const percentScore = Math.round((result.score / 3) * 100);
-            setGrade({
-                score: percentScore,
-                feedback: result.feedback,
-                improvedVersion: result.improvedVersion
-            });
-        } catch (error) {
-            console.error('Grading failed:', error);
-        } finally {
-            setIsGrading(false);
-        }
-    }, [value, userProfile]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        onChange(e.target.value);
-        // Clear grade when user starts typing again
-        if (grade) setGrade(null);
-    };
-
-    const scoreColor = grade ? getColor(grade.score) : 'transparent';
-    const scoreWidth = grade ? `${grade.score}%` : '0%';
+    const scoreColor = gradeResult ? getColor(gradeResult.score) : 'transparent';
+    const scoreWidth = gradeResult ? `${gradeResult.score}%` : '0%';
 
     return (
         <div style={{ marginBottom: '20px' }}>
@@ -70,9 +45,11 @@ export const GradedInput: React.FC<GradedInputProps> = ({
             <div style={{
                 position: 'relative',
                 borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
                 border: '1px solid var(--color-border)',
-                background: 'var(--color-card-bg)'
+                background: 'var(--color-card-bg)',
+                transition: 'border-color 0.3s ease',
+                borderColor: gradeResult ? scoreColor : 'var(--color-border)',
+                minHeight: '140px'
             }}>
                 {/* Progress bar background */}
                 <div style={{
@@ -82,14 +59,15 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                     height: '100%',
                     width: scoreWidth,
                     backgroundColor: scoreColor,
-                    opacity: 0.15,
+                    opacity: 0.1,
                     transition: 'width 0.3s ease, background-color 0.3s ease',
                     pointerEvents: 'none',
-                    zIndex: 0
+                    zIndex: 0,
+                    borderRadius: 'var(--radius-md)'
                 }} />
 
                 {/* Score badge */}
-                {grade && (
+                {gradeResult && (
                     <div style={{
                         position: 'absolute',
                         top: '8px',
@@ -104,80 +82,108 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                         zIndex: 2
                     }}>
-                        {grade.score}%
+                        {gradeResult.score}%
                     </div>
                 )}
 
                 {/* Textarea */}
                 <textarea
                     value={value}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder || (isHebrew ? `דבר ${index + 1}...` : `Thing ${index + 1}...`)}
-                    rows={2}
+                    rows={3}
+                    disabled={isLoading || !!gradeResult}
                     style={{
                         width: '100%',
                         padding: '16px',
-                        paddingRight: grade ? '60px' : '16px',
+                        paddingBottom: exampleAnswer && !value && !gradeResult ? '40px' : '16px',
+                        paddingRight: gradeResult ? '60px' : '16px',
                         border: 'none',
                         outline: 'none',
-                        fontSize: 'var(--font-size-md)',
+                        fontSize: 'var(--font-size-lg)',
                         fontFamily: 'inherit',
                         resize: 'none',
                         background: 'transparent',
                         position: 'relative',
-                        zIndex: 1
+                        zIndex: 1,
+                        minHeight: '100px'
                     }}
                 />
+
+                {/* Example answer inside box - light gray text */}
+                {exampleAnswer && !value && !gradeResult && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '16px',
+                        left: '16px',
+                        right: '16px',
+                        color: '#C0C0C0',
+                        fontSize: 'var(--font-size-lg)',
+                        lineHeight: 1.4,
+                        pointerEvents: 'none',
+                        zIndex: 0
+                    }}>
+                        💡 {exampleAnswer}
+                    </div>
+                )}
             </div>
 
             {/* Feedback area */}
-            {isGrading && (
+            {isLoading && (
                 <div style={{
                     marginTop: '8px',
-                    fontSize: '13px',
+                    fontSize: '14px',
                     color: 'var(--color-text-muted)',
-                    fontStyle: 'italic'
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    padding: '12px',
+                    animation: 'pulse 1.5s infinite'
                 }}>
-                    {isHebrew ? 'בודק...' : 'Evaluating...'}
+                    {isHebrew ? '✨ בודק וחושב...' : '✨ Analyzing thoughtful response...'}
                 </div>
             )}
 
-            {grade && !isGrading && (
-                <div style={{
-                    marginTop: '8px',
-                    fontSize: '13px',
-                    padding: '12px',
-                    backgroundColor: `${scoreColor}10`,
-                    borderRadius: 'var(--radius-sm)',
+            {gradeResult && !isLoading && (
+                <div className="animate-scaleIn" style={{
+                    marginTop: '12px',
+                    fontSize: '14px',
+                    padding: '16px',
+                    backgroundColor: `${scoreColor}10`, // 10% opacity hex
+                    borderRadius: 'var(--radius-md)',
                     borderLeft: `3px solid ${scoreColor}`
                 }}>
-                    <p style={{ margin: 0, color: 'var(--color-text-main)' }}>
-                        {grade.feedback}
+                    <p style={{ margin: 0, color: 'var(--color-text-main)', lineHeight: 1.5 }}>
+                        {gradeResult.feedback}
                     </p>
-                    {grade.improvedVersion && grade.score < 100 && (
-                        <p style={{
-                            margin: '8px 0 0 0',
-                            fontSize: '12px',
-                            color: 'var(--color-text-muted)'
+
+                    {gradeResult.improvedVersion && gradeResult.score < 100 && (
+                        <div style={{
+                            marginTop: '12px',
+                            paddingTop: '12px',
+                            borderTop: '1px solid rgba(0,0,0,0.05)'
                         }}>
-                            💡 {isHebrew ? 'דוגמה לשיפור:' : 'Example improvement:'}{' '}
-                            <em>{grade.improvedVersion}</em>
-                        </p>
-                    )}
-                    {grade.score < 50 && (
-                        <p style={{
-                            margin: '8px 0 0 0',
-                            fontSize: '12px',
-                            color: 'var(--color-text-muted)'
-                        }}>
-                            {isHebrew
-                                ? '💪 הנוסחה מבוססת מחקר מדעי. המשך לתרגל!'
-                                : '💪 This formula is science-based. Keep practicing!'}
-                        </p>
+                            <p style={{
+                                margin: 0,
+                                fontSize: '12px',
+                                color: 'var(--color-text-muted)',
+                                fontWeight: 500
+                            }}>
+                                💡 {isHebrew ? 'כדאי לנסות:' : 'Try this:'}
+                            </p>
+                            <p style={{
+                                margin: '4px 0 0 0',
+                                fontSize: '14px',
+                                fontStyle: 'italic',
+                                color: 'var(--color-text-primary)'
+                            }}>
+                                "{gradeResult.improvedVersion}"
+                            </p>
+                        </div>
                     )}
                 </div>
             )}
         </div>
     );
 };
+
+
