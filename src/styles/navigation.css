@@ -117,6 +117,16 @@
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
+/* 8. SCIENCE (Microscope) - Green/Emerald */
+.nav-icon-science {
+    background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
+}
+
+/* 9. BOLT (Idea/Energy) - Yellow/Gold */
+.nav-icon-bolt {
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+}
+
 /* Small variant for lists/headers */
 .nav-icon-3d.small {
     width: 36px;

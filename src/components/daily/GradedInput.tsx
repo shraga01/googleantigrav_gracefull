@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import '../../styles/navigation.css';
 
 interface GradeResult {
     score: number;
@@ -121,9 +122,17 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                         fontSize: 'var(--font-size-lg)',
                         lineHeight: 1.4,
                         pointerEvents: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
                         zIndex: 0
                     }}>
-                        💡 {exampleAnswer}
+                        <div className="nav-icon-3d small nav-icon-bolt" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
+                            <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))' }}>
+                                <path d="M7 2v11h3v9l7-12h-4l4-8z" />
+                            </svg>
+                        </div>
+                        <span>{exampleAnswer}</span>
                     </div>
                 )}
             </div>
@@ -162,14 +171,22 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                             paddingTop: '12px',
                             borderTop: '1px solid rgba(0,0,0,0.05)'
                         }}>
-                            <p style={{
+                            <div style={{
                                 margin: 0,
                                 fontSize: '12px',
                                 color: 'var(--color-text-muted)',
-                                fontWeight: 500
+                                fontWeight: 500,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
                             }}>
-                                💡 {isHebrew ? 'כדאי לנסות:' : 'Try this:'}
-                            </p>
+                                <div className="nav-icon-3d small nav-icon-bolt" style={{ width: '20px', height: '20px', flexShrink: 0 }}>
+                                    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '12px', height: '12px', color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))' }}>
+                                        <path d="M7 2v11h3v9l7-12h-4l4-8z" />
+                                    </svg>
+                                </div>
+                                <span>{isHebrew ? 'כדאי לנסות:' : 'Try this:'}</span>
+                            </div>
                             <p style={{
                                 margin: '4px 0 0 0',
                                 fontSize: '14px',
