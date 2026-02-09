@@ -10,6 +10,7 @@ import { StatsDashboard } from './components/stats/StatsDashboard';
 import { SettingsMenu } from './components/settings/SettingsMenu';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { AppHeader } from './components/layout/AppHeader';
+import { BottomNav } from './components/layout/BottomNav';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const AppContent: React.FC = () => {
@@ -65,7 +66,7 @@ const AppContent: React.FC = () => {
     const isHebrew = userProfile.language === 'hebrew';
 
     return (
-      <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen">
+      <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen relative pb-24">
         <AppHeader
           currentTab={currentTab}
           setCurrentTab={setCurrentTab}
@@ -79,6 +80,9 @@ const AppContent: React.FC = () => {
           {currentTab === 'stats' && <StatsDashboard />}
           {currentTab === 'settings' && <SettingsMenu />}
         </main>
+
+        {/* Bottom Navigation */}
+        <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
       </div>
     );
   }

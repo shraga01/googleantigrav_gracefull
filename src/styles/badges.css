@@ -1,0 +1,284 @@
+/* ==================== */
+/* BADGE SYSTEM STYLES  */
+/* 3D Badge Icons matching Stitch mockup */
+/* ==================== */
+
+/* Glass Card Effect */
+.badge-glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.badge-glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.badge-glass-card.locked {
+    opacity: 0.5;
+}
+
+/* ==================== */
+/* 3D BADGE ICON STYLES */
+/* ==================== */
+
+/* Base badge icon container */
+.badge-icon {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        inset 0 -8px 16px rgba(0, 0, 0, 0.15),
+        inset 0 8px 16px rgba(255, 255, 255, 0.2);
+}
+
+/* Glossy overlay effect */
+.badge-icon::before {
+    content: '';
+    position: absolute;
+    top: 5%;
+    left: 15%;
+    width: 70%;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* First Complete - Gold Coin */
+.badge-icon-first-step {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+    border: 3px solid #FFE55C;
+}
+
+.badge-icon-first-step .badge-number {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #8B4513;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Perfect Day - Pink 3D Star */
+.badge-icon-perfect-day {
+    background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 50%, #FF1493 100%);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.badge-icon-perfect-day::after {
+    content: '⭐';
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Week Champion - Laurel Wreath */
+.badge-icon-week-champion {
+    background: linear-gradient(135deg, #98D8C8 0%, #56ab91 50%, #2d6a4f 100%);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.badge-icon-week-champion .badge-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Streak Master - Glass Orbs */
+.badge-icon-streak-14,
+.badge-icon-streak-21,
+.badge-icon-streak-28 {
+    background: linear-gradient(135deg, rgba(103, 232, 249, 0.8) 0%, rgba(56, 189, 248, 0.6) 50%, rgba(14, 165, 233, 0.8) 100%);
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 8px 32px rgba(56, 189, 248, 0.4),
+        inset 0 -8px 16px rgba(0, 0, 0, 0.1),
+        inset 0 8px 16px rgba(255, 255, 255, 0.4);
+}
+
+.badge-icon-streak-14 .badge-number,
+.badge-icon-streak-21 .badge-number,
+.badge-icon-streak-28 .badge-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #00CED1 0%, #1E90FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 28-day streak - Rainbow rings effect */
+.badge-icon-streak-28 {
+    background: conic-gradient(from 0deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #ff6b6b);
+}
+
+.badge-icon-streak-28::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(230, 230, 250, 0.8) 100%);
+}
+
+.badge-icon-streak-28 .badge-number {
+    position: relative;
+    z-index: 1;
+}
+
+/* Milestones - Gradient Journals */
+.badge-icon-milestone-10,
+.badge-icon-milestone-25,
+.badge-icon-milestone-50,
+.badge-icon-milestone-100 {
+    background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.75rem;
+    width: 3.5rem;
+    height: 4.5rem;
+}
+
+.badge-icon-milestone-10 .badge-number,
+.badge-icon-milestone-25 .badge-number,
+.badge-icon-milestone-50 .badge-number,
+.badge-icon-milestone-100 .badge-number {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.badge-icon-milestone-25 {
+    background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+}
+
+.badge-icon-milestone-50 {
+    background: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%);
+}
+
+.badge-icon-milestone-100 {
+    background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);
+}
+
+/* Social Badges */
+.badge-icon-community-sharer {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.badge-icon-community-sharer::after {
+    content: '🤝';
+    font-size: 2rem;
+}
+
+.badge-icon-friend-recruiter {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.badge-icon-friend-recruiter::after {
+    content: '👥';
+    font-size: 2rem;
+}
+
+/* Badge text styling */
+.badge-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    margin-top: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Locked badge overlay */
+.badge-locked {
+    filter: grayscale(1) brightness(0.5);
+}
+
+.badge-unlocked {
+    box-shadow:
+        0 0 20px rgba(255, 215, 0, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Badge grid layout - Fully Adaptive */
+.badge-grid-3,
+.badge-grid-4,
+.badge-grid-2 {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    justify-content: center;
+    width: 100%;
+}
+
+/* On very small screens, ensure at least 2 columns if possible */
+@media (max-width: 350px) {
+
+    .badge-grid-3,
+    .badge-grid-4,
+    .badge-grid-2 {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 0.5rem;
+    }
+}
+
+/* Desktop adjustments for better spacing */
+@media (min-width: 640px) {
+
+    .badge-grid-3,
+    .badge-grid-4,
+    .badge-grid-2 {
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+}
+
+/* Adjust icon sizes for smaller screens */
+@media (max-width: 400px) {
+    .badge-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .badge-icon::after {
+        font-size: 1.5rem !important;
+    }
+
+    .badge-number {
+        font-size: 1.25rem !important;
+    }
+
+    .badge-name {
+        font-size: 0.65rem;
+    }
+}
+
+/* Animation for newly unlocked badges */
+@keyframes badgeUnlock {
+    0% {
+        transform: scale(0.5) rotate(-180deg);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.2) rotate(10deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.badge-new {
+    animation: badgeUnlock 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}

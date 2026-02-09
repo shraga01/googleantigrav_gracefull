@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Daily Appreciation App</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Font Awesome for Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<!-- Google Fonts: Rubik for Hebrew support and rounded look -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration for Custom Colors and Fonts -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Rubik', 'sans-serif'],
+          },
+          colors: {
+            'app-purple': '#8A2BE2',
+            'app-cyan': '#00FFFF',
+            'app-pink': '#FF69B4',
+            'card-peach': '#FFDAB9',
+            'nav-active': '#FFA500',
+          },
+          boxShadow: {
+            'text': '0 2px 4px rgba(0,0,0,0.3)',
+            'card': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            'glow': '0 0 15px rgba(255, 165, 0, 0.6)',
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom CSS for gradients and specific effects not covered by Tailwind utilities -->
+<style data-purpose="custom-backgrounds">
+    /* Main background with abstract blobs */
+    .bg-abstract {
+      background-color: #2e1065; /* Deep purple base */
+      background-image: 
+        radial-gradient(circle at 0% 0%, #8A2BE2, transparent 50%),
+        radial-gradient(circle at 100% 0%, #FF69B4, transparent 50%),
+        radial-gradient(circle at 50% 100%, #00FFFF, transparent 50%);
+      background-size: cover;
+      background-attachment: fixed;
+    }
+
+    /* Glossy card gradient - Updated */
+    .card-gradient {
+      background: linear-gradient(135deg, #FFDAB9 0%, #FF69B4 100%);
+    }
+
+    /* Glossy button gradient */
+    .btn-glossy {
+      background: linear-gradient(to bottom, #ffb3ba 0%, #ffdfba 100%);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Text stroke effect */
+    .text-stroke {
+      -webkit-text-stroke: 1px rgba(0,0,0,0.1);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Stronger text stroke */
+    .title-stroke {
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+  </style>
+<style data-purpose="layout-utilities">
+    body {
+      overflow: hidden; /* Prevent scrolling for app-like feel on desktop */
+    }
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-abstract text-white h-screen flex flex-col items-center relative font-sans">
+<!-- BEGIN: Header Section -->
+<!-- Contains the badge, date/title, and main English heading -->
+<header class="w-full p-4 relative z-10 pt-4" data-purpose="header">
+<!-- Badge: Absolute Top Left -->
+<div class="absolute top-4 left-4 z-20 w-16 h-16 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFA500] border-2 border-white shadow-lg flex flex-col items-center justify-center text-white">
+<i class="fas fa-star text-sm mb-0.5"></i>
+<span class="text-sm font-bold leading-none">יום 1</span>
+</div>
+<!-- Centered Titles -->
+<div class="w-full flex flex-col items-center justify-center mt-2">
+<h1 class="text-4xl font-bold text-white text-stroke" lang="he">יום הודיה</h1>
+<h2 class="text-3xl font-bold text-center text-white title-stroke tracking-wide mt-1">
+        Daily Appreciation
+      </h2>
+</div></header>
+<!-- END: Header Section -->
+<!-- BEGIN: Main Content / Card Stack -->
+<!-- The central interactive element featuring stacked cards -->
+<main class="flex-grow w-full flex justify-center items-center relative px-6 py-2" data-purpose="main-content">
+<!-- Stack Container -->
+<div class="relative w-full max-w-sm aspect-[3/4]">
+<!-- Back Card 2 (Yellow/Orange) - Furthest back -->
+<div class="absolute inset-0 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-3xl transform rotate-[5deg] scale-95 opacity-90 shadow-lg translate-y-4" data-purpose="card-back-2"></div>
+<!-- Back Card 1 (Teal/Cyan) - Middle -->
+<div class="absolute inset-0 bg-gradient-to-br from-cyan-300 to-teal-400 rounded-3xl transform -rotate-[5deg] scale-95 opacity-90 shadow-lg translate-y-2" data-purpose="card-back-1"></div>
+<!-- Main Card (Pink/Peach) - Front -->
+<div class="absolute inset-0 bg-gradient-to-br from-[#FFDAB9] to-[#FF69B4] rounded-3xl shadow-[0_10px_20px_rgba(0,0,0,0.2)] p-6 flex flex-col items-center justify-between text-center relative overflow-hidden" data-purpose="card-front"><div class="absolute inset-0 pointer-events-none rounded-3xl" style="background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.4), transparent 60%); z-index: 0;"></div>
+<!-- Abstract curve decoration on card (simulating the background waves in the image) -->
+<div class="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+<svg class="w-full h-full" viewbox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<path d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.6,-46.6C91.4,-34.1,98.1,-19.2,95.8,-5.3C93.5,8.6,82.2,21.5,70.6,31.7C59,41.9,47.1,49.5,35.2,55.9C23.3,62.3,11.4,67.5,-1.9,70.8C-15.2,74.1,-29.9,75.5,-42.6,70.1C-55.3,64.7,-66,52.5,-74.3,39.1C-82.6,25.7,-88.5,11.1,-86.6,-2.6C-84.7,-16.3,-75,-29.1,-64.1,-39.6C-53.2,-50.1,-41.1,-58.3,-28.7,-66.4C-16.3,-74.5,-3.6,-82.5,7.8,-95.9L44.7,-76.4Z" fill="#FFFFFF" transform="translate(100 100)"></path>
+</svg>
+</div>
+<!-- Card Content Container -->
+<div class="relative z-10 flex flex-col items-center justify-center flex-grow w-full space-y-8">
+<!-- Prompt Text -->
+<div>
+<p class="text-xl md:text-2xl font-medium text-white drop-shadow-md mb-2">
+              הנה דבר אחד
+            </p>
+<p class="text-xl md:text-2xl font-medium text-white drop-shadow-md">
+              להעריך:
+            </p>
+</div>
+<!-- Answer Text (Larger) -->
+<div class="py-4">
+<p class="text-5xl md:text-6xl font-extrabold text-white drop-shadow-md leading-tight" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    חיבוק חם של
+  </p>
+<p class="text-5xl md:text-6xl font-extrabold text-white drop-shadow-md leading-tight mt-2" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    אדם אהוב
+  </p>
+</div>
+</div>
+<!-- Save Button -->
+<button class="relative z-10 bg-gradient-to-r from-[#FFB6C1] to-[#FF69B4] text-white font-bold text-xl py-3 px-10 rounded-full shadow-lg hover:scale-105 transition-transform duration-200 mt-4 mb-4">
+          שמור
+        </button>
+</div>
+</div>
+</main>
+<!-- END: Main Content -->
+<!-- BEGIN: Bottom Navigation -->
+<!-- Fixed bottom glassmorphism navigation bar -->
+<nav class="w-full bg-white/20 backdrop-blur-md border-t border-white/30 safe-area-bottom sticky bottom-0 z-50 rounded-t-3xl" data-purpose="bottom-nav">
+<div class="flex justify-around items-center p-3">
+<!-- Nav Item 1: Settings -->
+<a class="flex flex-col items-center text-white/70 hover:text-white transition-colors" href="#">
+<div class="text-2xl mb-1">
+<i class="fas fa-cog"></i>
+</div>
+<span class="text-sm font-medium">הגדרות</span>
+</a>
+<!-- Nav Item 2: Metrics -->
+<a class="flex flex-col items-center text-white/70 hover:text-white transition-colors" href="#">
+<div class="text-2xl mb-1">
+<i class="fas fa-chart-bar"></i>
+</div>
+<span class="text-sm font-medium">מדדים</span>
+</a>
+<!-- Nav Item 3: Journal -->
+<a class="flex flex-col items-center text-white/70 hover:text-white transition-colors" href="#">
+<div class="text-2xl mb-1">
+<i class="fas fa-book"></i>
+</div>
+<span class="text-sm font-medium">יומן</span>
+</a>
+<!-- Nav Item 4: Today (Active) -->
+<a class="flex flex-col items-center text-[#FFA500] transition-colors relative" href="#">
+<div class="text-3xl mb-1 shadow-glow rounded-full">
+<i class="fas fa-sun"></i>
+</div>
+<span class="text-sm font-bold drop-shadow-md">היום</span>
+<!-- Active indicator dot -->
+<span class="absolute -bottom-2 w-1 h-1 bg-[#FFA500] rounded-full"></span>
+</a></div>
+</nav>
+<!-- END: Bottom Navigation -->
+</body></html>

@@ -1,0 +1,161 @@
+/* ==================== */
+/* 3D BOTTOM NAVIGATION */
+/* ==================== */
+
+.bottom-nav-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 35px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.nav-item {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-item.active {
+    transform: translateY(-15px) scale(1.1);
+}
+
+/* 3D Icon Base Design (Sphere/Squircle) */
+.nav-icon-3d {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    /* Circle by default */
+    position: relative;
+    box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.2),
+        inset 0 -4px 8px rgba(0, 0, 0, 0.2),
+        inset 0 4px 8px rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Glossy Overlay */
+.nav-icon-3d::after {
+    content: '';
+    position: absolute;
+    top: 5%;
+    left: 15%;
+    width: 60%;
+    height: 35%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Active State Glow */
+.nav-item.active .nav-icon-3d {
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.3),
+        inset 0 -4px 8px rgba(0, 0, 0, 0.2),
+        inset 0 4px 8px rgba(255, 255, 255, 0.5),
+        0 0 15px rgba(255, 255, 255, 0.2);
+    /* Outer glow */
+}
+
+/* ==================== */
+/* SPECIFIC ICONS       */
+/* ==================== */
+
+/* 1. TODAY (Sun/Home) - Gold/Orange */
+.nav-icon-today {
+    background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);
+}
+
+/* 2. JOURNAL (Book) - Blue/Cyan */
+.nav-icon-journal {
+    background: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
+}
+
+/* 3. STATS (Chart) - Purple/Pink */
+.nav-icon-stats {
+    background: linear-gradient(135deg, #FF69B4 0%, #8A2BE2 100%);
+}
+
+/* 4. SETTINGS (Gear) - Silver/Gray */
+.nav-icon-settings {
+    background: linear-gradient(135deg, #E0E0E0 0%, #9E9E9E 100%);
+}
+
+/* 5. LOGOUT (Door) - Red */
+.nav-icon-logout {
+    background: linear-gradient(135deg, #FF512F 0%, #DD2476 100%);
+}
+
+/* 6. STREAK (Fire) - Gold/Orange/Red */
+.nav-icon-streak {
+    background: linear-gradient(135deg, #FFD700 0%, #FF4500 100%);
+}
+
+/* 7. LANGUAGE (Globe) - Teal/Blue */
+.nav-icon-language {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Small variant for lists/headers */
+.nav-icon-3d.small {
+    width: 36px;
+    height: 36px;
+    box-shadow:
+        0 2px 5px rgba(0, 0, 0, 0.2),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+}
+
+.nav-icon-3d.small svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Inner Icon Color */
+.nav-icon-3d svg {
+    color: white;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+    width: 24px;
+    height: 24px;
+    z-index: 2;
+}
+
+/* Label Styling */
+.nav-label {
+    position: absolute;
+    bottom: -20px;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+}
+
+.nav-item.active .nav-label {
+    opacity: 1;
+    transform: translateY(0);
+}
