@@ -29,7 +29,6 @@ export const DailyPractice: React.FC = () => {
     const [affirmation, setAffirmation] = useState('');
     const [showRandomQuestion, setShowRandomQuestion] = useState(false);
     const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
-    const [showFactBanner, setShowFactBanner] = useState(false);
 
     // New State for Sequential Flow
     const [currentStep, setCurrentStep] = useState(0);
@@ -83,14 +82,9 @@ export const DailyPractice: React.FC = () => {
                 : `Hello ${userName}, let's reflect on three specific moments from today that brought ease or joy. It is highly recommended that you practice in the evening.`;
             setOpeningSentence(greeting);
 
-            // Load scientific fact (only if not dismissed today)
-            const today = new Date().toLocaleDateString('en-CA');
-            const dismissedFactDate = sessionStorage.getItem('scientific-fact-dismissed');
-            if (dismissedFactDate !== today) {
-                const fact = getRandomScientificFact(isHebrew ? 'hebrew' : 'english');
-                setScientificFact(fact);
-                setShowFactBanner(true);
-            }
+            // Load scientific fact
+            const fact = getRandomScientificFact(isHebrew ? 'hebrew' : 'english');
+            setScientificFact(fact);
 
             // Still get AI suggestions
             const suggs = await LLMService.generateSuggestions(userProfile, []);
@@ -163,12 +157,6 @@ export const DailyPractice: React.FC = () => {
         } else {
             handleSave();
         }
-    };
-
-    const handleDismissFactBanner = () => {
-        const today = new Date().toLocaleDateString('en-CA');
-        sessionStorage.setItem('scientific-fact-dismissed', today);
-        setShowFactBanner(false);
     };
 
     const handleSave = async () => {
