@@ -274,11 +274,10 @@ export const DailyPractice: React.FC = () => {
             )}
 
             {/* Scientific Fact Banner */}
-            {showFactBanner && scientificFact && (
+            {scientificFact && (
                 <ScientificFactBanner
                     statement={scientificFact.statement}
                     citation={scientificFact.citation}
-                    onDismiss={handleDismissFactBanner}
                     isHebrew={isHebrew}
                 />
             )}
