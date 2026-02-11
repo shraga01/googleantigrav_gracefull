@@ -21,9 +21,9 @@ interface GradedInputProps {
 export const GradedInput: React.FC<GradedInputProps> = ({
     value,
     onChange,
-    placeholder,
+    placeholder: _placeholder,
     exampleAnswer,
-    index,
+    index: _index,
     gradeResult,
     isLoading
 }) => {
@@ -111,7 +111,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                 <textarea
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    placeholder={placeholder || (isHebrew ? `דבר ${index + 1}...` : `Thing ${index + 1}...`)}
+                    placeholder={""}
                     rows={3}
                     disabled={isLoading || !!gradeResult}
                     style={{
