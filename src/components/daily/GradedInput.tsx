@@ -42,6 +42,24 @@ export const GradedInput: React.FC<GradedInputProps> = ({
 
     return (
         <div style={{ marginBottom: '20px' }}>
+            {/* Fixed Formula Text */}
+            <div style={{
+                marginBottom: '8px',
+                fontSize: '14px',
+                color: 'var(--color-text-secondary)',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+            }}>
+                <span>💡</span>
+                <span>
+                    {isHebrew
+                        ? 'נוסחה: מעשה ספציפי + אדם + איך זה עזר לך'
+                        : 'Formula: Concrete act + Person + How it helped you'}
+                </span>
+            </div>
+
             {/* Suggested Answer / AI Prompt */}
             {exampleAnswer && !value && !gradeResult && (
                 <div style={{
