@@ -42,6 +42,26 @@ export const GradedInput: React.FC<GradedInputProps> = ({
 
     return (
         <div style={{ marginBottom: '20px' }}>
+            {/* Suggested Answer / AI Prompt */}
+            {exampleAnswer && !value && !gradeResult && (
+                <div style={{
+                    marginBottom: '12px',
+                    color: '#666',
+                    fontSize: '14px',
+                    lineHeight: 1.4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                }}>
+                    <div className="nav-icon-3d small nav-icon-bolt" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
+                        <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))' }}>
+                            <path d="M7 2v11h3v9l7-12h-4l4-8z" />
+                        </svg>
+                    </div>
+                    <span>{exampleAnswer}</span>
+                </div>
+            )}
+
             {/* Input container with progress bar */}
             <div style={{
                 position: 'relative',
@@ -112,29 +132,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                 />
 
                 {/* Example answer inside box - light gray text */}
-                {exampleAnswer && !value && !gradeResult && (
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '16px',
-                        left: '16px',
-                        right: '16px',
-                        color: '#C0C0C0',
-                        fontSize: 'var(--font-size-lg)',
-                        lineHeight: 1.4,
-                        pointerEvents: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        zIndex: 0
-                    }}>
-                        <div className="nav-icon-3d small nav-icon-bolt" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
-                            <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))' }}>
-                                <path d="M7 2v11h3v9l7-12h-4l4-8z" />
-                            </svg>
-                        </div>
-                        <span>{exampleAnswer}</span>
-                    </div>
-                )}
+
             </div>
 
             {/* Feedback area */}
