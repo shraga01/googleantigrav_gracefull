@@ -37,7 +37,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
                 className={`nav-item ${currentTab === 'daily' ? 'active' : ''}`}
                 onClick={() => setCurrentTab('daily')}
             >
-                <div className="nav-icon-3d nav-icon-today">
+                <div className="nav-icon-simple">
                     <Icons.Home />
                 </div>
                 <span className="nav-label">{isHebrew ? 'היום' : 'Today'}</span>
@@ -48,7 +48,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
                 className={`nav-item ${currentTab === 'history' ? 'active' : ''}`}
                 onClick={() => setCurrentTab('history')}
             >
-                <div className="nav-icon-3d nav-icon-journal">
+                <div className="nav-icon-simple">
                     <Icons.Book />
                 </div>
                 <span className="nav-label">{isHebrew ? 'יומן' : 'Journal'}</span>
@@ -59,7 +59,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
                 className={`nav-item ${currentTab === 'stats' ? 'active' : ''}`}
                 onClick={() => setCurrentTab('stats')}
             >
-                <div className="nav-icon-3d nav-icon-stats">
+                <div className="nav-icon-simple">
                     <Icons.Chart />
                 </div>
                 <span className="nav-label">{isHebrew ? 'מדדים' : 'Stats'}</span>

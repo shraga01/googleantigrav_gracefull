@@ -25,26 +25,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
             {/* Streak Badge - Fire 3D Icon */}
             <div style={{
                 position: 'absolute',
-                top: '12px',
+                top: '16px',
                 left: isHebrew ? 'auto' : '16px',
                 right: isHebrew ? '16px' : 'auto',
                 zIndex: 20,
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: '8px'
             }}>
-                <div className="nav-icon-3d nav-icon-streak" style={{ width: '42px', height: '42px' }}>
+                <div className="nav-icon-simple" style={{ width: '24px', height: '24px', color: '#FF4500' }}>
                     <HeaderIcons.Fire />
                 </div>
                 <span style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    color: '#FF4500',
-                    marginTop: '2px',
-                    background: 'rgba(255,255,255,0.8)',
-                    padding: '1px 6px',
-                    borderRadius: '10px',
-                    backdropFilter: 'blur(4px)'
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    color: 'white'
                 }}>
                     {isHebrew ? `יום ${streak.currentStreak}` : `Day ${streak.currentStreak}`}
                 </span>
@@ -58,27 +54,26 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                 left: isHebrew ? '16px' : 'auto',
                 zIndex: 30
             }}>
-                {/* Hamburger Icon */}
+                {/* Profile Avatar Button */}
                 <button
                     onClick={() => setMenuOpen(!menuOpen)}
                     style={{
-                        width: '50px',
-                        height: '50px',
-                        borderRadius: '50%',
-                        background: 'rgba(255, 255, 255, 0.15)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        width: '40px',
+                        height: '40px',
+                        background: 'transparent',
+                        border: 'none',
                         cursor: 'pointer',
                         display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '5px'
+                        transition: 'transform 0.2s',
+                        transform: menuOpen ? 'scale(0.95)' : 'scale(1)',
+                        color: 'white'
                     }}
                 >
-                    <span style={{ width: '22px', height: '2px', background: 'white', borderRadius: '1px' }} />
-                    <span style={{ width: '22px', height: '2px', background: 'white', borderRadius: '1px' }} />
-                    <span style={{ width: '22px', height: '2px', background: 'white', borderRadius: '1px' }} />
+                    <div className="nav-icon-simple" style={{ width: '28px', height: '28px' }}>
+                        <HeaderIcons.User />
+                    </div>
                 </button>
 
                 {/* Dropdown Menu */}
@@ -126,7 +121,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                         {/* Navigation Items - Settings Only */}
                         <MenuButton
                             icon="Settings"
-                            is3D={true}
+                            is3D={false}
                             iconType="nav-icon-settings"
                             label={isHebrew ? 'הגדרות' : 'Settings'}
                             isActive={currentTab === 'settings'}
@@ -168,7 +163,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                                 color: '#e53e3e'
                             }}
                         >
-                            <div className="nav-icon-3d small nav-icon-logout">
+                            <div className="nav-icon-simple" style={{ width: '20px', height: '20px' }}>
                                 <HeaderIcons.Logout />
                             </div>
                             <span>{isHebrew ? 'התנתק' : 'Sign Out'}</span>
@@ -206,6 +201,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
 
 // SVG Icons for Header
 const HeaderIcons = {
+    User: () => (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+        </svg>
+    ),
     Settings: () => (
         <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
@@ -264,7 +264,11 @@ const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, isActive, onClick,
                 {icon === 'Language' && <HeaderIcons.Globe />}
             </div>
         ) : (
-            <span>{icon}</span>
+            <div className="nav-icon-simple" style={{ width: '20px', height: '20px' }}>
+                {icon === 'Settings' && <HeaderIcons.Settings />}
+                {icon === 'Logout' && <HeaderIcons.Logout />}
+                {icon === 'Language' && <HeaderIcons.Globe />}
+            </div>
         )}
         <span>{label}</span>
     </button>

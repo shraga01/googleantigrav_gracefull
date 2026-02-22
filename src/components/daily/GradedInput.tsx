@@ -89,7 +89,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
 
                 {/* Score badge */}
                 {gradeResult && (
-                    <div style={{
+                    <div className={gradeResult.score === 100 ? 'animate-successBounce' : 'animate-scaleIn'} style={{
                         position: 'absolute',
                         top: '8px',
                         right: isHebrew ? 'auto' : '8px',

@@ -33,7 +33,7 @@ export async function signInWithGoogle(): Promise<UserCredential> {
         const result = await signInWithPopup(auth, googleProvider);
         console.log('✅ Google sign-in successful');
         return result;
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
         console.error('❌ Google sign-in failed:', error);
 
         // Handle specific error cases

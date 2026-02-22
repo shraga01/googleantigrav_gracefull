@@ -261,14 +261,7 @@ export const DailyPractice: React.FC = () => {
                 />
             )}
 
-            {/* Scientific Fact Banner */}
-            {scientificFact && (
-                <ScientificFactBanner
-                    statement={scientificFact.statement}
-                    citation={scientificFact.citation}
-                    isHebrew={isHebrew}
-                />
-            )}
+
 
             <div className="pt-2 sm:pt-4 pb-24">
                 {/* Progress Bar */}
@@ -347,6 +340,17 @@ export const DailyPractice: React.FC = () => {
                         </button>
                     )}
                 </div>
+
+                {/* Scientific Fact Banner - Moved to bottom for better UX */}
+                {scientificFact && (
+                    <div className="mt-8">
+                        <ScientificFactBanner
+                            statement={scientificFact.statement}
+                            citation={scientificFact.citation}
+                            isHebrew={isHebrew}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

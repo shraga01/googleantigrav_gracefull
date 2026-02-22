@@ -174,6 +174,7 @@ Return ONLY the greeting, no quotes.
 `;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     suggestions: (user: UserProfile, _recentEntries: DailyEntry[]) => `
 ${SYSTEM_CONTEXT}
 
@@ -409,7 +410,7 @@ export const LLMService = {
                         return parsed.slice(0, 3);
                     }
                 }
-            } catch (e) {
+            } catch {
                 console.warn('Failed to parse suggestions');
             }
         }
@@ -447,7 +448,7 @@ export const LLMService = {
                 if (jsonMatch) {
                     return JSON.parse(jsonMatch[0]);
                 }
-            } catch (e) {
+            } catch {
                 console.warn('Failed to parse grading');
             }
         }

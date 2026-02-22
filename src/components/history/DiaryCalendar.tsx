@@ -62,24 +62,23 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
         : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8 border border-white/20 shadow-xl">
-            {/* Header */}
-            <div className="flex items-center justify-center gap-8 mb-6">
-                <button onClick={handlePrevMonth} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white">
-                    ←
+        <div className="mb-8 relative overflow-hidden px-2">
+            {/* Header - Minimal and Clean */}
+            <div className="flex items-center justify-between mb-8 relative z-10 px-4">
+                <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors active:scale-90">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <h3 className="text-xl font-bold text-white text-center min-w-[140px]">
-                    {/* min-w ensures title doesn't jump too much when changing months */}
+                <h3 className="text-2xl font-bold text-white text-center tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
                     {monthLabel}
                 </h3>
-                <button onClick={handleNextMonth} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white">
-                    →
+                <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors active:scale-90">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
 
             {/* Days of Week */}
             <div
-                className="gap-1 mb-2 text-center text-white/50 text-xs font-medium uppercase tracking-wider"
+                className="gap-2 mb-4 text-center text-[#FF69B4] text-[12px] font-bold uppercase tracking-widest relative z-10"
                 style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(7, 1fr)',
@@ -87,13 +86,13 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
                 }}
             >
                 {weekDays.map(d => (
-                    <div key={d}>{d}</div>
+                    <div key={d} className="h-6">{d}</div>
                 ))}
             </div>
 
-            {/* Calendar Grid */}
+            {/* Calendar Grid - Borderless */}
             <div
-                className="gap-2"
+                className="gap-y-4 gap-x-2 relative z-10"
                 style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(7, 1fr)',
@@ -102,12 +101,13 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
             >
                 {days.map((d, index) => {
                     if (!d.day || !d.dateStr) {
-                        return <div key={`empty-${index}`} className="aspect-square" />;
+                        return <div key={`empty-${index}`} className="aspect-square min-h-[44px]" />;
                     }
 
                     const entry = entries.find(e => e.date === d.dateStr);
                     const isToday = d.dateStr === new Date().toLocaleDateString('en-CA');
 
+                    // Minimal Colorful Design: Flat, vibrant circles for entries.
                     return (
                         <div
                             key={d.dateStr}
@@ -116,24 +116,25 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
                                 if (entry) onSelectEntry(entry);
                             }}
                             className={`
-                                aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all duration-200
-                                ${entry
-                                    ? 'bg-gradient-to-br from-amber-400/20 to-orange-500/20 border border-amber-500/50 cursor-pointer hover:scale-105'
-                                    : 'bg-white/5 border border-white/10'
-                                }
-                                ${isToday ? 'ring-2 ring-white/70' : ''}
+                                flex flex-col items-center justify-center relative transition-transform duration-200 min-h-[44px] min-w-[44px]
+                                ${entry ? 'cursor-pointer hover:scale-110' : 'cursor-default'}
                             `}
                         >
-                            <span className={`text-sm ${entry ? 'font-bold text-white' : 'text-white/40'}`}>
-                                {d.day}
-                            </span>
+                            {/* The Day Circle Indicator */}
+                            <div className={`
+                                w-10 h-10 rounded-full flex flex-col items-center justify-center relative
+                                ${entry ? 'bg-[#FF69B4] text-white shadow-lg shadow-pink-500/40' : 'bg-transparent text-white/40'}
+                                ${isToday && !entry ? 'border-2 border-white/30 text-white' : ''}
+                                ${isToday && entry ? 'ring-2 ring-white ring-offset-2 ring-offset-[#2e1065]' : ''}
+                            `}>
+                                <span className={`text-[15px] ${entry ? 'font-bold' : 'font-medium'}`}>
+                                    {d.day}
+                                </span>
+                            </div>
 
+                            {/* Tiny dot below the circle for extra visual flair if there's an entry (Optional but clean) */}
                             {entry && (
-                                <div className="mt-1">
-                                    <span className="text-xs">
-                                        {entry.qualityScore && entry.qualityScore >= 80 ? '⭐' : '✅'}
-                                    </span>
-                                </div>
+                                <div className="absolute -bottom-2 w-1.5 h-1.5 bg-[#FFD700] rounded-full" />
                             )}
                         </div>
                     );
