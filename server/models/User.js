@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema({
     challenges: String,
     dreams: String,
     goals: String,
+    unlockedBadges: [{
+        code: String,
+        awardedAt: { type: Number, default: () => Date.now() }
+    }],
     createdAt: {
         type: Number,
         default: () => Date.now()

@@ -19,6 +19,10 @@ const streakSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    practiceDates: {
+        type: [String], // Array of YYYY-MM-DD strings
+        default: []
+    },
     lastPracticeDate: {
         type: String, // Format: YYYY-MM-DD
         default: null
@@ -29,33 +33,38 @@ const streakSchema = new mongoose.Schema({
 
 // Method to update streak after new entry
 streakSchema.methods.updateStreak = function (newEntryDate) {
-    const today = new Date(newEntryDate);
-    const lastDate = this.lastPracticeDate ? new Date(this.lastPracticeDate) : null;
+    if (!this.practiceDates) {
+        this.practiceDates = [];
+    }
 
-    if (!lastDate) {
-        // First entry
-        this.currentStreak = 1;
-        this.longestStreak = 1;
-        this.totalDaysPracticed = 1;
-    } else {
-        const daysDiff = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+    // Only add if not already in the array
+    if (!this.practiceDates.includes(newEntryDate)) {
+        this.practiceDates.push(newEntryDate);
+        this.totalDaysPracticed += 1;
+        this.lastPracticeDate = newEntryDate;
 
-        if (daysDiff === 1) {
-            // Consecutive day
-            this.currentStreak += 1;
-            this.longestStreak = Math.max(this.longestStreak, this.currentStreak);
-        } else if (daysDiff > 1) {
-            // Streak broken
+        // Keep array sorted chronologically
+        this.practiceDates.sort();
+
+        // Calculate legacy streaks just to maintain backwards compatibility 
+        // with old frontend hooks until they are fully migrated
+        const today = new Date(newEntryDate);
+        const lastDate = this.lastPracticeDate ? new Date(this.lastPracticeDate) : null;
+
+        if (!lastDate || this.practiceDates.length === 1) {
             this.currentStreak = 1;
-        }
-        // If daysDiff === 0, same day, don't increment
-
-        if (daysDiff >= 1) {
-            this.totalDaysPracticed += 1;
+            this.longestStreak = 1;
+        } else {
+            const daysDiff = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+            if (daysDiff === 1) {
+                this.currentStreak += 1;
+                this.longestStreak = Math.max(this.longestStreak, this.currentStreak);
+            } else if (daysDiff > 1) {
+                this.currentStreak = 1;
+            }
         }
     }
 
-    this.lastPracticeDate = newEntryDate;
     return this;
 };
 

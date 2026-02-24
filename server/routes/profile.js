@@ -25,6 +25,7 @@ router.get('/', authenticateToken, async (req, res) => {
             challenges: user.challenges,
             dreams: user.dreams,
             goals: user.goals,
+            unlockedBadges: user.unlockedBadges || [],
             createdAt: user.createdAt,
             isAnonymous: user.isAnonymous
         });
@@ -72,6 +73,7 @@ router.put('/', authenticateToken, async (req, res) => {
             challenges: user.challenges,
             dreams: user.dreams,
             goals: user.goals,
+            unlockedBadges: user.unlockedBadges || [],
             createdAt: user.createdAt,
             isAnonymous: user.isAnonymous
         });

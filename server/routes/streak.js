@@ -19,7 +19,8 @@ router.get('/', authenticateToken, async (req, res) => {
             currentStreak: streak.currentStreak,
             longestStreak: streak.longestStreak,
             totalDaysPracticed: streak.totalDaysPracticed,
-            lastPracticeDate: streak.lastPracticeDate
+            lastPracticeDate: streak.lastPracticeDate,
+            practiceDates: streak.practiceDates || []
         });
     } catch (error) {
         console.error('Get streak error:', error);

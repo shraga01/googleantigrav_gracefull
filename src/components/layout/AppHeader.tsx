@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { FluentIcon } from '../common/FluentIcon';
 
 interface AppHeaderProps {
     currentTab: 'daily' | 'history' | 'stats' | 'settings';
@@ -15,6 +16,34 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
 
     const isHebrew = userProfile.language === 'hebrew';
 
+    // Calculate Weekly Consistency Level
+    const calculateConsistency = () => {
+        if (!streak.practiceDates || streak.practiceDates.length === 0) {
+            return { level: 0, textEn: 'Building Habit...', textHe: 'בונה הרגל...', icon: <FluentIcon name="Seedling" size={20} /> };
+        }
+
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        let countLast7Days = 0;
+        for (const dateStr of streak.practiceDates) {
+            const date = new Date(dateStr);
+            if (date >= sevenDaysAgo && date <= now) {
+                countLast7Days++;
+            }
+        }
+
+        if (countLast7Days >= 5) {
+            return { level: 3, textEn: 'Weekly Master', textHe: 'מאסטר שבועי', icon: <FluentIcon name="Fire" size={20} /> };
+        } else if (countLast7Days >= 3) {
+            return { level: 2, textEn: 'Consistent', textHe: 'עקבי', icon: <FluentIcon name="Star" size={20} /> };
+        } else {
+            return { level: 1, textEn: 'Building Habit', textHe: 'בונה הרגל', icon: <FluentIcon name="Sparkles" size={20} /> };
+        }
+    };
+
+    const consistency = calculateConsistency();
+
     return (
         <header style={{
             position: 'relative',
@@ -22,7 +51,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
             padding: '16px 16px 12px 16px',
             zIndex: 10
         }}>
-            {/* Streak Badge - Fire 3D Icon */}
+            {/* Left Side: Stats (Consistency & Total Days) */}
             <div style={{
                 position: 'absolute',
                 top: '16px',
@@ -34,16 +63,44 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                 alignItems: 'center',
                 gap: '8px'
             }}>
-                <div className="nav-icon-simple" style={{ width: '24px', height: '24px', color: '#FF4500' }}>
-                    <HeaderIcons.Fire />
-                </div>
-                <span style={{
-                    fontSize: '15px',
-                    fontWeight: 700,
-                    color: 'white'
+                {/* Total Days counter */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    backdropFilter: 'blur(4px)'
                 }}>
-                    {isHebrew ? `יום ${streak.currentStreak}` : `Day ${streak.currentStreak}`}
-                </span>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <FluentIcon name="Star" size={16} />
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'white' }}>
+                        {isHebrew ? `${streak.totalDaysPracticed || 0} ימים סה"כ` : `${streak.totalDaysPracticed || 0} Total Days`}
+                    </span>
+                </div>
+
+                {/* Consistency Level */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <span style={{ display: 'flex', alignItems: 'center', height: '20px' }}>{consistency.icon}</span>
+                    <span style={{
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: 'white'
+                    }}>
+                        {isHebrew ? consistency.textHe : consistency.textEn}
+                    </span>
+                </div>
             </div>
 
             {/* Hamburger Menu */}
@@ -71,8 +128,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                         color: 'white'
                     }}
                 >
-                    <div className="nav-icon-simple" style={{ width: '28px', height: '28px' }}>
-                        <HeaderIcons.User />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FluentIcon name="User" size={28} />
                     </div>
                 </button>
 
@@ -163,8 +220,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                                 color: '#e53e3e'
                             }}
                         >
-                            <div className="nav-icon-simple" style={{ width: '20px', height: '20px' }}>
-                                <HeaderIcons.Logout />
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <FluentIcon name="Logout" size={20} style={{ filter: 'grayscale(1) brightness(0.8) sepia(1) hue-rotate(-50deg) saturate(3)' }} />
                             </div>
                             <span>{isHebrew ? 'התנתק' : 'Sign Out'}</span>
                         </button>
@@ -199,34 +256,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
     );
 };
 
-// SVG Icons for Header
-const HeaderIcons = {
-    User: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-        </svg>
-    ),
-    Settings: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-        </svg>
-    ),
-    Logout: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
-        </svg>
-    ),
-    Fire: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z" />
-        </svg>
-    ),
-    Globe: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z" />
-        </svg>
-    )
-};
+// Icons are now rendered via FluentIcon using actual 3D PNG/GIF assets
 
 // Helper component for menu buttons
 interface MenuButtonProps {
@@ -258,16 +288,16 @@ const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, isActive, onClick,
         }}
     >
         {is3D ? (
-            <div className={`nav-icon-3d small ${iconType}`}>
-                {icon === 'Settings' && <HeaderIcons.Settings />}
-                {icon === 'Logout' && <HeaderIcons.Logout />}
-                {icon === 'Language' && <HeaderIcons.Globe />}
+            <div className={`nav-icon-3d small ${iconType}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {icon === 'Settings' && <FluentIcon name="Settings" size={16} />}
+                {icon === 'Logout' && <FluentIcon name="Logout" size={16} />}
+                {icon === 'Language' && <FluentIcon name="Globe" size={16} />}
             </div>
         ) : (
-            <div className="nav-icon-simple" style={{ width: '20px', height: '20px' }}>
-                {icon === 'Settings' && <HeaderIcons.Settings />}
-                {icon === 'Logout' && <HeaderIcons.Logout />}
-                {icon === 'Language' && <HeaderIcons.Globe />}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {icon === 'Settings' && <FluentIcon name="Settings" size={20} />}
+                {icon === 'Logout' && <FluentIcon name="Logout" size={20} />}
+                {icon === 'Language' && <FluentIcon name="Globe" size={20} />}
             </div>
         )}
         <span>{label}</span>

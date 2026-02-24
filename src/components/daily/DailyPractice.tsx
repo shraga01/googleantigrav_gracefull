@@ -12,6 +12,8 @@ import { ProgressBar } from './ProgressBar';
 import { ScientificFactBanner } from '../common/ScientificFactBanner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
 import { v4 as uuidv4 } from 'uuid';
+import '../../styles/badges.css';
+import { FluentIcon } from '../common/FluentIcon';
 
 interface GradeResult {
     score: number;
@@ -20,7 +22,7 @@ interface GradeResult {
 }
 
 export const DailyPractice: React.FC = () => {
-    const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
+    const { userProfile, googleId, isAuthenticated, refreshStreak, setNewlyUnlockedBadges } = useApp();
     const [isLoading, setIsLoading] = useState(true);
     const [openingSentence, setOpeningSentence] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -211,8 +213,12 @@ export const DailyPractice: React.FC = () => {
 
         // Sync to server if authenticated
         if (isAuthenticated) {
-            ApiService.saveEntry(newEntry).then(() => {
+            ApiService.saveEntry(newEntry).then((res) => {
                 refreshStreak();
+                // Check if any badges were unlocked during this save
+                if (res.newBadges && res.newBadges.length > 0) {
+                    setNewlyUnlockedBadges(res.newBadges);
+                }
             }).catch(err => {
                 console.error('Failed to sync entry to server:', err);
             });
@@ -230,17 +236,20 @@ export const DailyPractice: React.FC = () => {
 
     if (isCompleted) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] text-center animate-fadeIn">
-                <div className="text-5xl sm:text-6xl mb-4">🎉</div>
-                <div className="streak-pill mb-4 sm:mb-6" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px' }}>
-                    <span className="text-xl sm:text-2xl">✨</span>
-                    <span className="streak-number">{StorageService.getStreak().currentStreak}</span>
-                    <span className="streak-label">{isHebrew ? 'ימים' : 'days'}</span>
+            <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] text-center animate-fadeIn px-4">
+                <div className="streak-pill mt-4 mb-4" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
+                    <FluentIcon name="Star" size={28} />
+                    <span className="streak-number text-2xl font-bold font-sans">{StorageService.getStreak().currentStreak}</span>
+                    <span className="streak-label text-xl font-bold font-sans">{isHebrew ? 'ימים' : 'days'}</span>
                 </div>
-                <h2 className="title-main text-center mb-3 sm:mb-4 px-4">
+
+                {/* Extra vertical spacing added here */}
+                <div style={{ height: '32px' }}></div>
+
+                <h2 className="title-main text-center mb-4 sm:mb-6 px-4" style={{ lineHeight: '1.4' }}>
                     {affirmation || (isHebrew ? 'כל הכבוד!' : 'Well done!')}
                 </h2>
-                <p className="subtitle">
+                <p className="subtitle mt-2">
                     {isHebrew ? 'נתראה מחר' : 'See you tomorrow'}
                 </p>
             </div>
@@ -290,33 +299,39 @@ export const DailyPractice: React.FC = () => {
                     />
                 </div>
 
-                {/* Action Button - Inline below input, matching onboarding style */}
-                <div style={{ marginTop: '16px' }}>
+                {/* Action Button - Equal spacing matching input margin */}
+                <div style={{ marginTop: '24px' }}>
                     {!isStepComplete ? (
                         <button
                             onClick={handleCheck}
                             disabled={!hasText || isGrading}
+                            className={!hasText || isGrading ? '' : 'animate-pulseOnHover'}
                             style={{
                                 width: '100%',
                                 padding: '16px',
                                 background: (!hasText || isGrading)
-                                    ? 'linear-gradient(to right, #e0e0e0, #c0c0c0)'
+                                    ? 'rgba(255, 182, 193, 0.25)'  // Soft, cohesive disabled state instead of gray
                                     : 'linear-gradient(to right, #FFB6C1, #FF69B4)',
-                                color: (!hasText || isGrading) ? '#999' : 'black',
+                                color: (!hasText || isGrading) ? '#d280a5' : 'black',
                                 fontSize: '18px',
                                 fontWeight: 700,
-                                border: 'none',
+                                border: (!hasText || isGrading) ? '2px dashed rgba(255, 182, 193, 0.4)' : 'none',
                                 borderRadius: '9999px',
                                 cursor: (!hasText || isGrading) ? 'not-allowed' : 'pointer',
                                 boxShadow: (!hasText || isGrading)
                                     ? 'none'
                                     : '0 4px 15px rgba(255, 105, 180, 0.4)',
-                                transition: 'all 0.3s ease'
+                                transition: 'all 0.3s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '12px'
                             }}
                         >
-                            {isGrading
-                                ? (isHebrew ? 'בודק...' : 'Checking...')
-                                : (isHebrew ? 'בדיקה ✓' : 'Check ✓')}
+                            <span>{isGrading ? (isHebrew ? 'בודק...' : 'Checking...') : (isHebrew ? 'בדיקה' : 'Check')}</span>
+                            <div className={`badge-icon ${isGrading ? 'badge-icon-loading' : 'badge-icon-check'} badge-unlocked`} style={{ transform: 'scale(0.4)', margin: '-20px', filter: (!hasText && !isGrading) ? 'grayscale(0.8) opacity(0.5)' : 'none' }}>
+                                <FluentIcon name={isGrading ? "Loading" : "Check"} size={40} />
+                            </div>
                         </button>
                     ) : (
                         <button
@@ -331,19 +346,24 @@ export const DailyPractice: React.FC = () => {
                                 border: 'none',
                                 borderRadius: '9999px',
                                 cursor: 'pointer',
-                                boxShadow: '0 4px 15px rgba(255, 105, 180, 0.4)'
+                                boxShadow: '0 4px 15px rgba(255, 105, 180, 0.4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '12px'
                             }}
                         >
-                            {currentStep < 2
-                                ? (isHebrew ? 'המשך' : 'Continue')
-                                : (isHebrew ? 'סיים ושמור 🎉' : 'Finish & Save 🎉')}
+                            <span>{currentStep < 2 ? (isHebrew ? 'המשך' : 'Continue') : (isHebrew ? 'סיים ושמור' : 'Finish & Save')}</span>
+                            <div className="badge-icon badge-icon-continue badge-unlocked" style={{ transform: 'scale(0.4)', margin: '-20px' }}>
+                                <FluentIcon name="Sparkles" size={40} />
+                            </div>
                         </button>
                     )}
                 </div>
 
-                {/* Scientific Fact Banner - Moved to bottom for better UX */}
+                {/* Scientific Fact Banner - Exact equal spacing as above */}
                 {scientificFact && (
-                    <div className="mt-8">
+                    <div style={{ marginTop: '24px' }}>
                         <ScientificFactBanner
                             statement={scientificFact.statement}
                             citation={scientificFact.citation}

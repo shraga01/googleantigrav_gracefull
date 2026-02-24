@@ -2,24 +2,35 @@ import React from 'react';
 import '../../styles/navigation.css';
 import { useApp } from '../../context/AppContext';
 
-// Simple SVG Icons
-const Icons = {
-    Home: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3L4 9v12h5v-7h6v7h5V9z" />
-        </svg>
-    ),
-    Book: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" />
-        </svg>
-    ),
-    Chart: () => (
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
-        </svg>
-    )
-};
+// Navigation Icons - responsive sizes handled in CSS
+const SunIcon = () => (
+    <svg viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="12" r="5" />
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+    </svg>
+);
+
+const BookIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+);
+
+const ChartIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="12" width="4" height="9" />
+        <rect x="10" y="6" width="4" height="15" />
+        <rect x="17" y="3" width="4" height="18" />
+    </svg>
+);
+
+const SettingsIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+);
 
 interface BottomNavProps {
     currentTab: 'daily' | 'history' | 'stats' | 'settings';
@@ -31,39 +42,35 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
     const isHebrew = userProfile?.language === 'hebrew';
 
     return (
-        <div className="bottom-nav-container">
-            {/* 1. Today / Home */}
+        <nav className="nav-container">
             <div
-                className={`nav-item ${currentTab === 'daily' ? 'active' : ''}`}
-                onClick={() => setCurrentTab('daily')}
+                className={`nav-item ${currentTab === 'settings' ? 'active' : ''}`}
+                onClick={() => setCurrentTab('settings')}
             >
-                <div className="nav-icon-simple">
-                    <Icons.Home />
-                </div>
-                <span className="nav-label">{isHebrew ? 'היום' : 'Today'}</span>
+                <SettingsIcon />
+                <span>{isHebrew ? 'הגדרות' : 'Settings'}</span>
             </div>
-
-            {/* 2. Journal / History */}
-            <div
-                className={`nav-item ${currentTab === 'history' ? 'active' : ''}`}
-                onClick={() => setCurrentTab('history')}
-            >
-                <div className="nav-icon-simple">
-                    <Icons.Book />
-                </div>
-                <span className="nav-label">{isHebrew ? 'יומן' : 'Journal'}</span>
-            </div>
-
-            {/* 3. Stats */}
             <div
                 className={`nav-item ${currentTab === 'stats' ? 'active' : ''}`}
                 onClick={() => setCurrentTab('stats')}
             >
-                <div className="nav-icon-simple">
-                    <Icons.Chart />
-                </div>
-                <span className="nav-label">{isHebrew ? 'מדדים' : 'Stats'}</span>
+                <ChartIcon />
+                <span>{isHebrew ? 'מדדים' : 'Stats'}</span>
             </div>
-        </div>
+            <div
+                className={`nav-item ${currentTab === 'history' ? 'active' : ''}`}
+                onClick={() => setCurrentTab('history')}
+            >
+                <BookIcon />
+                <span>{isHebrew ? 'יומן' : 'Journal'}</span>
+            </div>
+            <div
+                className={`nav-item ${currentTab === 'daily' ? 'active' : ''}`}
+                onClick={() => setCurrentTab('daily')}
+            >
+                <SunIcon />
+                <span>{isHebrew ? 'היום' : 'Today'}</span>
+            </div>
+        </nav>
     );
 };

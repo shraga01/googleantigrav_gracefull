@@ -172,12 +172,12 @@ export const ApiService = {
     /**
      * Record entry completion - only updates streak (content not stored for privacy)
      */
-    saveEntry: async (entry: DailyEntry): Promise<boolean> => {
+    saveEntry: async (entry: DailyEntry): Promise<{ success: boolean; newBadges?: string[]; allBadges?: any[] }> => {
         try {
             const token = await ApiService.getToken();
             if (!token) {
                 console.warn('No auth token, cannot record entry on server');
-                return false;
+                return { success: false };
             }
 
             // Only send date - content is NOT sent for privacy
@@ -192,14 +192,15 @@ export const ApiService = {
 
             if (!response.ok) {
                 console.warn('Failed to record entry on server');
-                return false;
+                return { success: false };
             }
 
+            const data = await response.json();
             console.log('✅ Entry recorded (streak updated, content not stored for privacy)');
-            return true;
+            return { success: true, newBadges: data.newBadges, allBadges: data.allBadges };
         } catch (error) {
             console.error('Failed to record entry:', error);
-            return false;
+            return { success: false };
         }
     },
 

@@ -15,6 +15,7 @@ export interface UserProfile {
     joys?: string;
     challenges?: string;
     otherInfo?: string;
+    unlockedBadges?: { code: string; awardedAt: number; }[];
     createdAt: number;
     reminderTime?: string;
 }
@@ -40,6 +41,7 @@ export interface StreakData {
     longestStreak: number;
     totalDaysPracticed: number;
     lastPracticeDate: string | null; // YYYY-MM-DD
+    practiceDates?: string[];
     milestonesAchieved: string[];
 }
 
@@ -49,6 +51,7 @@ export interface ApiStreakResponse {
     longestStreak: number;
     totalDaysPracticed: number;
     lastPracticeDate: string | null;
+    practiceDates?: string[];
 }
 
 export interface ApiEntryResponse extends DailyEntry {

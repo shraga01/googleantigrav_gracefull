@@ -18,6 +18,8 @@ interface AppContextType {
     streak: StreakData;
     refreshStreak: () => void;
     logout: () => Promise<void>;
+    newlyUnlockedBadges: string[];
+    setNewlyUnlockedBadges: (badges: string[]) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -29,6 +31,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [googleId, setGoogleIdState] = useState<string | null>(null);
     const [streak, setStreak] = useState<StreakData>(StorageService.getStreak());
+    const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<string[]>([]);
 
     useEffect(() => {
         // Initial load from localStorage
@@ -190,6 +193,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             longestStreak: 0,
             totalDaysPracticed: 0,
             lastPracticeDate: null,
+            practiceDates: [],
             milestonesAchieved: []
         });
 
@@ -213,7 +217,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setGoogleId,
             streak,
             refreshStreak: fetchStreakFromServer,
-            logout
+            logout,
+            newlyUnlockedBadges,
+            setNewlyUnlockedBadges
         }}>
             {children}
         </AppContext.Provider>

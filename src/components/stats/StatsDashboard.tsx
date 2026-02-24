@@ -79,7 +79,11 @@ export const StatsDashboard: React.FC = () => {
                 padding: '1.5rem',
                 marginTop: '1rem'
             }}>
-                <BadgeList badges={[]} isLoading={false} isHebrew={isHebrew} />
+                <BadgeList
+                    unlockedBadgeCodes={userProfile?.unlockedBadges?.map(b => b.code) || []}
+                    isLoading={false}
+                    isHebrew={isHebrew}
+                />
             </div>
         </div>
     );

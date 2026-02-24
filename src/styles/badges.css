@@ -73,12 +73,6 @@
     border: 3px solid rgba(255, 255, 255, 0.4);
 }
 
-.badge-icon-perfect-day::after {
-    content: '⭐';
-    font-size: 2rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
 /* Week Champion - Laurel Wreath */
 .badge-icon-week-champion {
     background: linear-gradient(135deg, #98D8C8 0%, #56ab91 50%, #2d6a4f 100%);
@@ -173,19 +167,48 @@
     border: 3px solid rgba(255, 255, 255, 0.3);
 }
 
-.badge-icon-community-sharer::after {
-    content: '🤝';
-    font-size: 2rem;
-}
-
 .badge-icon-friend-recruiter {
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     border: 3px solid rgba(255, 255, 255, 0.3);
 }
 
-.badge-icon-friend-recruiter::after {
-    content: '👥';
-    font-size: 2rem;
+/* ==================== */
+/* IN-APP USAGE ICONS (Daily Practice, etc) */
+/* ==================== */
+
+/* Science Fact - Blue/Cyan Orb */
+.badge-icon-science {
+    background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Practice Action Check - Pink Orb */
+.badge-icon-check {
+    background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 50%, #FF1493 100%);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Practice Action Continue - Gold Orb */
+.badge-icon-continue {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Practice Action Loading - Green Orb */
+.badge-icon-loading {
+    background: linear-gradient(135deg, #98D8C8 0%, #56ab91 50%, #2d6a4f 100%);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    animation: rotateLoading 2s linear infinite;
+}
+
+@keyframes rotateLoading {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Badge text styling */
@@ -281,4 +304,95 @@
 
 .badge-new {
     animation: badgeUnlock 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ==================== */
+/* GLOBAL BADGE POPUP OVERLAY */
+/* ==================== */
+
+.badge-overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+    /* Let any clicks go through if user taps screen */
+    transition: opacity 0.5s ease;
+}
+
+.badge-overlay-backdrop.fading-out {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    transition-delay: 0.3s;
+    /* keep backdrop slightly longer while badge flies away */
+}
+
+.badge-overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* initial big explosive popup */
+    animation: badgeOverlayPopup 2s cubic-bezier(0.34, 1.56, 0.4, 1.2) forwards;
+}
+
+.badge-overlay-animating-out {
+    /* 0.8s fly-down to bottom nav */
+    animation: badgeOverlayFlyToNav 0.8s cubic-bezier(0.5, 0, 0.2, 1) forwards !important;
+}
+
+.badge-overlay-glow {
+    box-shadow:
+        0 0 60px rgba(255, 215, 0, 0.5),
+        0 15px 50px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes badgeOverlayPopup {
+    0% {
+        transform: scale(0.1) translateY(100px);
+        opacity: 0;
+    }
+
+    15% {
+        transform: scale(1.3) translateY(0);
+        opacity: 1;
+    }
+
+    25% {
+        transform: scale(1.1) translateY(0);
+        opacity: 1;
+    }
+
+    35% {
+        transform: scale(1.15) translateY(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.15) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes badgeOverlayFlyToNav {
+    0% {
+        transform: scale(1.15) translateY(0);
+        opacity: 1;
+    }
+
+    40% {
+        transform: scale(1.2) translateY(-20px);
+        opacity: 1;
+    }
+
+    /* slight pull back before launch */
+    100% {
+        /* Travel towards Stats tab (bottom right-ish generally on mobile) */
+        transform: scale(0.2) translateY(45vh) translateX(25vw);
+        opacity: 0;
+    }
 }

@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import type { Badge } from '../../types/badges';
 import '../../styles/badges.css';
+import { FluentIcon } from '../common/FluentIcon';
+import type { FluentIconName } from '../common/FluentIcon';
 
-interface BadgeListProps {
-    badges: Badge[];
-    isLoading?: boolean;
-    isHebrew?: boolean;
-}
 
 // Map badge codes to their CSS class for 3D icon styling
-const getBadgeIconClass = (code: string): string => {
+export const getBadgeIconClass = (code: string): string => {
     const classMap: Record<string, string> = {
         'first_step': 'badge-icon-first-step',
         'perfect_day': 'badge-icon-perfect-day',
@@ -28,7 +25,7 @@ const getBadgeIconClass = (code: string): string => {
 };
 
 // Get the number to display inside badge
-const getBadgeNumber = (code: string): string | null => {
+export const getBadgeNumber = (code: string): string | null => {
     const numberMap: Record<string, string> = {
         'first_step': '1',
         'week_champion': '7',
@@ -43,29 +40,39 @@ const getBadgeNumber = (code: string): string | null => {
     return numberMap[code] || null;
 };
 
-// Check if badge uses emoji icon
-const isEmojiIconBadge = (code: string): boolean => {
-    return ['community_sharer', 'friend_recruiter', 'perfect_day'].includes(code);
+// Map badge codes to FluentIcon names
+export const getBadgeFluentIcon = (code: string): FluentIconName | null => {
+    switch (code) {
+        case 'first_step': return 'Coin';
+        case 'perfect_day': return 'Star';
+        case 'week_champion': return 'Crown';
+        case 'community_sharer': return 'Handshake';
+        case 'friend_recruiter': return 'People';
+        default: return null;
+    }
 };
 
 // Badge Icon with 3D styling
 const BadgeIcon: React.FC<{ badge: Badge; isUnlocked: boolean }> = ({ badge, isUnlocked }) => {
     const iconClass = getBadgeIconClass(badge.code);
     const number = getBadgeNumber(badge.code);
-    const isEmoji = isEmojiIconBadge(badge.code);
+    const fluentIconName = getBadgeFluentIcon(badge.code);
 
     return (
         <div className={`badge-icon ${iconClass} ${!isUnlocked ? 'badge-locked' : 'badge-unlocked'}`}>
-            {number && !isEmoji && (
+            {fluentIconName ? (
+                <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                    <FluentIcon name={fluentIconName} size={48} />
+                </div>
+            ) : number ? (
                 <span className="badge-number">{number}</span>
-            )}
+            ) : null}
         </div>
     );
 };
 
-// Mock badges for preview when no API data
-const getMockBadges = (): Badge[] => [
-    { _id: '1', code: 'first_step', name: 'סיום ראשון', nameEn: 'First Complete', description: 'השלמת את היום הראשון שלך!', descriptionEn: 'Completed your first day!', icon: '1', category: 'milestone', isUnlocked: true, awardedAt: new Date().toISOString(), order: 1 },
+export const ALL_BADGES: Badge[] = [
+    { _id: '1', code: 'first_step', name: 'סיום ראשון', nameEn: 'First Complete', description: 'השלמת את היום הראשון שלך!', descriptionEn: 'Completed your first day!', icon: '1', category: 'milestone', isUnlocked: false, awardedAt: undefined, order: 1 },
     { _id: '2', code: 'perfect_day', name: 'יום מושלם', nameEn: 'Perfect Day', description: 'קיבלת ציון 100 ביום אחד', descriptionEn: '100% score in one day', icon: '⭐', category: 'quality', isUnlocked: false, order: 2 },
     { _id: '3', code: 'week_champion', name: 'אלוף שבועי', nameEn: 'Week Champion', description: 'רצף של 7 ימים', descriptionEn: '7 day streak', icon: '7', category: 'streak', isUnlocked: false, order: 3 },
     { _id: '4', code: 'streak_14', name: 'רצף 14', nameEn: 'Streak 14', description: 'רצף של 14 ימים', descriptionEn: '14 day streak', icon: '14', category: 'streak', isUnlocked: false, order: 4 },
@@ -79,11 +86,20 @@ const getMockBadges = (): Badge[] => [
     { _id: '12', code: 'friend_recruiter', name: 'מגייס חברים', nameEn: 'Friend Recruiter', description: 'הזמנת חבר', descriptionEn: 'Invited a friend', icon: '👥', category: 'social', isUnlocked: false, order: 12 },
 ];
 
-export const BadgeList: React.FC<BadgeListProps> = ({ badges: propBadges, isLoading, isHebrew }) => {
+interface BadgeListProps {
+    unlockedBadgeCodes: string[];
+    isLoading?: boolean;
+    isHebrew?: boolean;
+}
+
+export const BadgeList: React.FC<BadgeListProps> = ({ unlockedBadgeCodes, isLoading, isHebrew }) => {
     const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
 
-    // Use mock badges if none provided
-    const badges = propBadges.length > 0 ? propBadges : getMockBadges();
+    // Map the boolean state of all badges based on what the user has actually unlocked
+    const badges = ALL_BADGES.map((b) => ({
+        ...b,
+        isUnlocked: unlockedBadgeCodes.includes(b.code)
+    }));
 
     if (isLoading) {
         return (

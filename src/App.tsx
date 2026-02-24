@@ -12,6 +12,7 @@ import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { AppHeader } from './components/layout/AppHeader';
 import { BottomNav } from './components/layout/BottomNav';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { BadgeUnlockOverlay } from './components/common/BadgeUnlockOverlay';
 
 const AppContent: React.FC = () => {
   const { userProfile, isLoading, isAuthenticated, logout, refreshProfile, fetchProfileFromServer } = useApp();
@@ -83,6 +84,9 @@ const AppContent: React.FC = () => {
 
         {/* Bottom Navigation */}
         <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
+
+        {/* Global Badge Unlock Animation Overlay */}
+        <BadgeUnlockOverlay />
       </div>
     );
   }

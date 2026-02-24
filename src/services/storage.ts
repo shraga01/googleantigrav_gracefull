@@ -48,6 +48,7 @@ export const StorageService = {
                 longestStreak: 0,
                 totalDaysPracticed: 0,
                 lastPracticeDate: null,
+                practiceDates: [],
                 milestonesAchieved: [],
             };
     },
