@@ -65,13 +65,21 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
         <div className="mb-8 relative overflow-hidden px-2">
             {/* Header - Styled with Glassmorphism */}
             <div className="flex items-center justify-between mb-8 relative z-10 px-4">
-                <button onClick={handlePrevMonth} className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-white/15 backdrop-blur-md border border-white/20 text-white hover:bg-white/25 hover:scale-110 active:scale-90 shadow-lg">
+                <button
+                    onClick={handlePrevMonth}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all text-white hover:scale-110 active:scale-90 shadow-lg shrink-0"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)' }}
+                >
                     <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <h3 className="text-2xl font-bold text-white text-center tracking-wide drop-shadow-md" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h3 className="text-2xl font-bold text-white text-center tracking-wide drop-shadow-md mx-2 truncate" style={{ fontFamily: "'Playfair Display', serif" }}>
                     {monthLabel}
                 </h3>
-                <button onClick={handleNextMonth} className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-white/15 backdrop-blur-md border border-white/20 text-white hover:bg-white/25 hover:scale-110 active:scale-90 shadow-lg">
+                <button
+                    onClick={handleNextMonth}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all text-white hover:scale-110 active:scale-90 shadow-lg shrink-0"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)' }}
+                >
                     <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
@@ -123,12 +131,18 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
                             aria-label={entry ? `View entry for ${d.dateStr}` : `Empty day ${d.dateStr}`}
                         >
                             {/* The Day Circle Indicator */}
-                            <div className={`
-                                w-10 h-10 rounded-full flex flex-col items-center justify-center relative transition-colors duration-300
-                                ${entry ? 'bg-[#86efac] text-[#064e3b] shadow-[0_0_15px_rgba(134,239,172,0.5)]' : 'bg-transparent text-white/40'}
-                                ${isToday && !entry ? 'border-2 border-white/30 text-white' : ''}
-                                ${isToday && entry ? 'ring-2 ring-white ring-offset-2 ring-offset-transparent' : ''}
-                            `}>
+                            <div
+                                className={`
+                                    w-10 h-10 rounded-full flex flex-col items-center justify-center relative transition-colors duration-300
+                                    ${isToday && !entry ? 'border-2 border-white/30 text-white' : ''}
+                                    ${isToday && entry ? 'ring-2 ring-white ring-offset-2 ring-offset-transparent' : ''}
+                                `}
+                                style={
+                                    entry
+                                        ? { backgroundColor: '#86efac', color: '#064e3b', boxShadow: '0 0 15px rgba(134,239,172,0.5)' }
+                                        : { backgroundColor: 'transparent', color: 'rgba(255,255,255,0.4)' }
+                                }
+                            >
                                 <span className={`text-[15px] ${entry ? 'font-bold' : 'font-medium'}`}>
                                     {d.day}
                                 </span>
