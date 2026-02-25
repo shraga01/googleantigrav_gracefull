@@ -69,8 +69,6 @@ const AppContent: React.FC = () => {
     return (
       <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen relative pb-24">
         <AppHeader
-          currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
           onLogout={handleLogout}
         />
 

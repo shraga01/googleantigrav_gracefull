@@ -3,12 +3,10 @@ import { useApp } from '../../context/AppContext';
 import { FluentIcon } from '../common/FluentIcon';
 
 interface AppHeaderProps {
-    currentTab: 'daily' | 'history' | 'stats' | 'settings';
-    setCurrentTab: (tab: 'daily' | 'history' | 'stats' | 'settings') => void;
     onLogout: () => void;
 }
 
-export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab, onLogout }) => {
+export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
     const { userProfile, streak, setLanguage } = useApp();
     const [menuOpen, setMenuOpen] = useState(false);
     const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -319,50 +317,3 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
     );
 };
 
-// Icons are now rendered via FluentIcon using actual 3D PNG/GIF assets
-
-// Helper component for menu buttons
-interface MenuButtonProps {
-    icon: string;
-    label: string;
-    isActive: boolean;
-    onClick: () => void;
-    hasBorder?: boolean;
-    is3D?: boolean;
-    iconType?: string;
-}
-
-const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, isActive, onClick, hasBorder, is3D, iconType }) => (
-    <button
-        onClick={onClick}
-        style={{
-            width: '100%',
-            padding: '12px 16px',
-            background: isActive ? 'rgba(138, 43, 226, 0.1)' : 'transparent',
-            border: 'none',
-            borderBottom: hasBorder ? '1px solid rgba(0, 0, 0, 0.1)' : 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            fontSize: '14px',
-            color: isActive ? '#8A2BE2' : '#333',
-            fontWeight: isActive ? 600 : 400
-        }}
-    >
-        {is3D ? (
-            <div className={`nav-icon-3d small ${iconType}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {icon === 'Settings' && <FluentIcon name="Settings" size={16} />}
-                {icon === 'Logout' && <FluentIcon name="Logout" size={16} />}
-                {icon === 'Language' && <FluentIcon name="Globe" size={16} />}
-            </div>
-        ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {icon === 'Settings' && <FluentIcon name="Settings" size={20} />}
-                {icon === 'Logout' && <FluentIcon name="Logout" size={20} />}
-                {icon === 'Language' && <FluentIcon name="Globe" size={20} />}
-            </div>
-        )}
-        <span>{label}</span>
-    </button>
-);
