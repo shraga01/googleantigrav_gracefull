@@ -63,16 +63,16 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
 
     return (
         <div className="mb-8 relative overflow-hidden px-2">
-            {/* Header - Minimal and Clean */}
+            {/* Header - Styled with Glassmorphism */}
             <div className="flex items-center justify-between mb-8 relative z-10 px-4">
-                <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors active:scale-90">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                <button onClick={handlePrevMonth} className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-white/15 backdrop-blur-md border border-white/20 text-white hover:bg-white/25 hover:scale-110 active:scale-90 shadow-lg">
+                    <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <h3 className="text-2xl font-bold text-white text-center tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h3 className="text-2xl font-bold text-white text-center tracking-wide drop-shadow-md" style={{ fontFamily: "'Playfair Display', serif" }}>
                     {monthLabel}
                 </h3>
-                <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors active:scale-90">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <button onClick={handleNextMonth} className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-white/15 backdrop-blur-md border border-white/20 text-white hover:bg-white/25 hover:scale-110 active:scale-90 shadow-lg">
+                    <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
 
@@ -117,15 +117,17 @@ export const DiaryCalendar: React.FC<DiaryCalendarProps> = ({ entries, onSelectE
                             }}
                             className={`
                                 flex flex-col items-center justify-center relative transition-transform duration-200 min-h-[44px] min-w-[44px]
-                                ${entry ? 'cursor-pointer hover:scale-110' : 'cursor-default'}
+                                ${entry ? 'cursor-pointer hover:scale-110 active:scale-95' : 'cursor-default'}
                             `}
+                            role={entry ? "button" : "presentation"}
+                            aria-label={entry ? `View entry for ${d.dateStr}` : `Empty day ${d.dateStr}`}
                         >
                             {/* The Day Circle Indicator */}
                             <div className={`
-                                w-10 h-10 rounded-full flex flex-col items-center justify-center relative
-                                ${entry ? 'bg-[#FF69B4] text-white shadow-lg shadow-pink-500/40' : 'bg-transparent text-white/40'}
+                                w-10 h-10 rounded-full flex flex-col items-center justify-center relative transition-colors duration-300
+                                ${entry ? 'bg-[#86efac] text-[#064e3b] shadow-[0_0_15px_rgba(134,239,172,0.5)]' : 'bg-transparent text-white/40'}
                                 ${isToday && !entry ? 'border-2 border-white/30 text-white' : ''}
-                                ${isToday && entry ? 'ring-2 ring-white ring-offset-2 ring-offset-[#2e1065]' : ''}
+                                ${isToday && entry ? 'ring-2 ring-white ring-offset-2 ring-offset-transparent' : ''}
                             `}>
                                 <span className={`text-[15px] ${entry ? 'font-bold' : 'font-medium'}`}>
                                     {d.day}
