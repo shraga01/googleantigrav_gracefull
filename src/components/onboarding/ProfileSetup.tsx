@@ -163,8 +163,8 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                     onClick={() => handleNext(inputValue)}
                     style={{
                         flex: 2,
-                        background: 'linear-gradient(to right, #FFB6C1, #FF69B4)',
-                        color: 'black',
+                        background: 'linear-gradient(135deg, #FFA500, #E8860C)',
+                        color: 'white',
                         borderRadius: '9999px',
                         padding: '14px 24px',
                         fontWeight: 700,

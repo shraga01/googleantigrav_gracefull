@@ -262,20 +262,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                             </span>
                         </div>
 
-                        {/* Navigation Items - Settings Only */}
-                        {/* Navigation Items - Settings Only */}
-                        <MenuButton
-                            icon="Settings"
-                            is3D={false}
-                            iconType="nav-icon-settings"
-                            label={isHebrew ? 'הגדרות' : 'Settings'}
-                            isActive={currentTab === 'settings'}
-                            onClick={() => { setCurrentTab('settings'); setMenuOpen(false); }}
-                            hasBorder
-                        />
-
-
-
 
                         {/* Sign Out */}
                         <button

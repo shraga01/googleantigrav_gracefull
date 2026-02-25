@@ -52,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         onClick={() => window.location.reload()}
                         style={{
                             padding: '12px 24px',
-                            background: 'linear-gradient(to right, #FFB6C1, #FF69B4)',
+                            background: 'linear-gradient(135deg, #FFA500, #E8860C)',
                             color: 'black',
                             fontSize: '16px',
                             fontWeight: 600,

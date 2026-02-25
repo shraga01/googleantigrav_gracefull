@@ -311,7 +311,7 @@ export const DailyPractice: React.FC = () => {
                                 padding: '16px',
                                 background: (!hasText || isGrading)
                                     ? 'rgba(255, 182, 193, 0.25)'  // Soft, cohesive disabled state instead of gray
-                                    : 'linear-gradient(to right, #FFB6C1, #FF69B4)',
+                                    : 'linear-gradient(135deg, #FFA500, #E8860C)',
                                 color: (!hasText || isGrading) ? '#d280a5' : 'black',
                                 fontSize: '18px',
                                 fontWeight: 700,
@@ -339,7 +339,7 @@ export const DailyPractice: React.FC = () => {
                             style={{
                                 width: '100%',
                                 padding: '16px',
-                                background: 'linear-gradient(to right, #FFB6C1, #FF69B4)',
+                                background: 'linear-gradient(135deg, #FFA500, #E8860C)',
                                 color: 'black',
                                 fontSize: '18px',
                                 fontWeight: 700,
