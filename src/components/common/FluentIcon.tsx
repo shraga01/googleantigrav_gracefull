@@ -3,7 +3,8 @@ import React from 'react';
 export type FluentIconName =
     | 'Fire' | 'Star' | 'Sparkles' | 'LightBulb' | 'Check' | 'Loading'
     | 'Home' | 'Book' | 'Chart' | 'User' | 'Settings' | 'Logout' | 'Globe'
-    | 'Crown' | 'Handshake' | 'People' | 'Medal' | 'Coin' | 'Seedling';
+    | 'Crown' | 'Handshake' | 'People' | 'Medal' | 'Coin' | 'Seedling'
+    | 'Sun' | 'Shield' | 'Rocket' | 'Lock' | 'Rainbow' | 'Party';
 
 interface FluentIconProps {
     name: FluentIconName;
@@ -38,7 +39,15 @@ const ICONS_MAP: Record<FluentIconName, string> = {
     Handshake: 'Hand%20gestures/Handshake.png',
     People: 'People/Busts%20in%20Silhouette.png',
     Medal: 'Activities/Sports%20Medal.png',
-    Coin: 'Objects/Coin.png'
+    Coin: 'Objects/Coin.png',
+
+    // Onboarding
+    Sun: 'Travel%20and%20places/Sun.png',
+    Shield: 'Objects/Shield.png',
+    Rocket: 'Travel%20and%20places/Rocket.png',
+    Lock: 'Objects/Locked.png',
+    Rainbow: 'Travel%20and%20places/Rainbow.png',
+    Party: 'Activities/Party%20Popper.png'
 };
 
 const BASE_URL = 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/';

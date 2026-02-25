@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { signInWithGoogle, getUserGoogleId } from '../../services/auth';
 import { useApp } from '../../context/AppContext';
+import { FluentIcon } from '../common/FluentIcon';
 
 interface AuthChoiceProps {
     onGoogleSignIn: () => void;
@@ -45,16 +46,19 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 padding: '24px'
             }}
         >
-            {/* Icon */}
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔐</div>
+            {/* 3D Animated Icon */}
+            <div style={{ marginBottom: '20px' }}>
+                <FluentIcon name="Shield" size={72} />
+            </div>
 
             {/* Title */}
             <h1 style={{
                 fontSize: '28px',
                 fontWeight: 700,
-                color: 'black',
+                color: 'white',
                 marginBottom: '8px',
-                textAlign: 'center'
+                textAlign: 'center',
+                textShadow: '0 2px 8px rgba(0,0,0,0.3)'
             }}>
                 {isHebrew ? 'שמור על הפרטיות שלך' : 'Protect Your Privacy'}
             </h1>
@@ -62,7 +66,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
             {/* Subtitle */}
             <p style={{
                 fontSize: '15px',
-                color: 'rgba(0, 0, 0, 0.7)',
+                color: 'rgba(255, 255, 255, 0.8)',
                 textAlign: 'center',
                 maxWidth: '320px',
                 marginBottom: '32px'
@@ -125,7 +129,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                 color: 'rgba(0, 0, 0, 0.7)',
                 marginBottom: '24px'
             }}>
-                <span>🔒</span>
+                <FluentIcon name="Lock" size={18} />
                 <span>{isHebrew ? 'ההערכות שלך יוצפנו' : 'Your entries will be encrypted'}</span>
             </div>
 

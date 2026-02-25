@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import { FluentIcon } from '../common/FluentIcon';
 
 interface WelcomeScreenProps {
     onNext: () => void;
@@ -21,16 +22,19 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                 padding: '24px'
             }}
         >
-            {/* Icon */}
-            <div style={{ fontSize: '80px', marginBottom: '24px' }}>☀️</div>
+            {/* 3D Animated Icon */}
+            <div style={{ marginBottom: '24px' }}>
+                <FluentIcon name="Sun" size={80} />
+            </div>
 
             {/* Title */}
             <h1 style={{
                 fontSize: '32px',
                 fontWeight: 700,
-                color: 'black',
+                color: 'white',
                 marginBottom: '12px',
-                textAlign: 'center'
+                textAlign: 'center',
+                textShadow: '0 2px 8px rgba(0,0,0,0.3)'
             }}>
                 {isHebrew ? 'ברוכים הבאים' : 'Welcome'}
             </h1>
@@ -38,7 +42,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             {/* Subtitle */}
             <p style={{
                 fontSize: '16px',
-                color: 'rgba(0, 0, 0, 0.7)',
+                color: 'rgba(255, 255, 255, 0.8)',
                 textAlign: 'center',
                 maxWidth: '320px',
                 marginBottom: '24px',
@@ -83,16 +87,16 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                 gap: '12px',
                 marginBottom: '40px'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'black' }}>
-                    <span style={{ fontSize: '24px' }}>🌱</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'white' }}>
+                    <FluentIcon name="Seedling" size={28} />
                     <span>{isHebrew ? 'פשוט ומהיר - רק 3 דברים ביום' : 'Simple & fast - just 3 things a day'}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'black' }}>
-                    <span style={{ fontSize: '24px' }}>✨</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'white' }}>
+                    <FluentIcon name="Sparkles" size={28} />
                     <span>{isHebrew ? 'עקוב אחר ההתקדמות שלך' : 'Track your progress & streaks'}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'black' }}>
-                    <span style={{ fontSize: '24px' }}>🔒</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'white' }}>
+                    <FluentIcon name="Lock" size={28} />
                     <span>{isHebrew ? 'פרטי ומאובטח' : 'Private & encrypted'}</span>
                 </div>
             </div>

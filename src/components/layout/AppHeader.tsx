@@ -11,6 +11,7 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab, onLogout }) => {
     const { userProfile, streak, setLanguage } = useApp();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
     if (!userProfile) return null;
 
@@ -101,6 +102,93 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                         {isHebrew ? consistency.textHe : consistency.textEn}
                     </span>
                 </div>
+
+                {/* Language Selector Pill */}
+                <div style={{ position: 'relative' }}>
+                    <button
+                        onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            backdropFilter: 'blur(4px)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'white',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        <span style={{ fontSize: '14px' }}>{isHebrew ? '🇮🇱' : '🇬🇧'}</span>
+                        <span>{isHebrew ? 'עב' : 'EN'}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}>
+                            <path d="M7 10l5 5 5-5z" />
+                        </svg>
+                    </button>
+
+                    {/* Language Dropdown */}
+                    {langDropdownOpen && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '36px',
+                            right: isHebrew ? 'auto' : '0',
+                            left: isHebrew ? '0' : 'auto',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            backdropFilter: 'blur(10px)',
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+                            overflow: 'hidden',
+                            minWidth: '160px',
+                            zIndex: 100
+                        }}>
+                            <button
+                                onClick={() => { setLanguage('english'); setLangDropdownOpen(false); }}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 14px',
+                                    background: !isHebrew ? 'rgba(138,43,226,0.1)' : 'transparent',
+                                    border: 'none',
+                                    borderBottom: '1px solid rgba(0,0,0,0.08)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    fontSize: '14px',
+                                    color: '#333',
+                                    fontWeight: !isHebrew ? 600 : 400
+                                }}
+                            >
+                                <span style={{ fontSize: '18px' }}>🇬🇧</span>
+                                <span>English</span>
+                                {!isHebrew && <span style={{ marginLeft: 'auto', color: '#8A2BE2' }}>✓</span>}
+                            </button>
+                            <button
+                                onClick={() => { setLanguage('hebrew'); setLangDropdownOpen(false); }}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 14px',
+                                    background: isHebrew ? 'rgba(138,43,226,0.1)' : 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    fontSize: '14px',
+                                    color: '#333',
+                                    fontWeight: isHebrew ? 600 : 400
+                                }}
+                            >
+                                <span style={{ fontSize: '18px' }}>🇮🇱</span>
+                                <span>עברית</span>
+                                {isHebrew && <span style={{ marginLeft: 'auto', color: '#8A2BE2' }}>✓</span>}
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Hamburger Menu */}
@@ -186,18 +274,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, setCurrentTab,
                             hasBorder
                         />
 
-                        {/* Language Toggle */}
-                        <MenuButton
-                            icon="Language"
-                            is3D={true}
-                            iconType="nav-icon-language"
-                            label={isHebrew ? 'Switch to English' : 'החלף לעברית'}
-                            isActive={false}
-                            onClick={() => {
-                                setLanguage(isHebrew ? 'english' : 'hebrew');
-                                setMenuOpen(false);
-                            }}
-                        />
+
 
 
                         {/* Sign Out */}
