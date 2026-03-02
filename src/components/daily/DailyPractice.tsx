@@ -279,21 +279,14 @@ export const DailyPractice: React.FC = () => {
                     grades={grades}
                 />
 
-                {/* Question Section */}
-                <section className="text-center section-spacing mb-6">
-                    <h1 className="title-main mb-2">
-                        {isHebrew ? `רגע ${currentStep + 1}` : `Moment ${currentStep + 1}`}
-                    </h1>
-                </section>
-
                 {/* Input Card */}
                 <div className="animate-slideUp">
                     <GradedInput
                         index={currentStep}
                         value={entries[currentStep]}
                         onChange={handleEntryChange}
-                        placeholder={isHebrew ? 'פרט/י כאן...' : 'Elaborate here...'}
-                        exampleAnswer={suggestions[currentStep]}
+                        placeholder={isHebrew ? `רגע ${currentStep + 1} - פרט/י כאן...` : `Moment ${currentStep + 1} - Elaborate here...`}
+                        exampleAnswer={suggestions[currentStep] ? (isHebrew ? `רגע ${currentStep + 1} - ${suggestions[currentStep]}` : `Moment ${currentStep + 1} - ${suggestions[currentStep]}`) : undefined}
                         gradeResult={currentGrade}
                         isLoading={isGrading}
                     />

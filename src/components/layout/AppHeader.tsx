@@ -4,12 +4,14 @@ import { FluentIcon } from '../common/FluentIcon';
 
 interface AppHeaderProps {
     onLogout: () => void;
+    showTitle?: boolean;
 }
 
-export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
+export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, showTitle = true }) => {
     const { userProfile, streak, setLanguage } = useApp();
     const [menuOpen, setMenuOpen] = useState(false);
     const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+    const [expandedBadge, setExpandedBadge] = useState<'days' | 'consistency' | null>(null);
 
     if (!userProfile) return null;
 
@@ -65,44 +67,56 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
                 maxWidth: 'calc(100% - 44px)' // Leave room for avatar
             }}>
                 {/* Total Days counter */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    padding: '4px 6px',
-                    borderRadius: '12px',
-                    backdropFilter: 'blur(4px)'
-                }}>
+                <button
+                    onClick={() => setExpandedBadge(expandedBadge === 'days' ? null : 'days')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        padding: '4px 6px',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(4px)',
+                        border: 'none',
+                        cursor: 'pointer'
+                    }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <FluentIcon name="Star" size={14} />
+                        <FluentIcon name="Star" size={16} />
                     </div>
-                    <span style={{ fontSize: 'clamp(10px, 3vw, 12px)', fontWeight: 600, color: 'white', whiteSpace: 'nowrap' }}>
-                        {isHebrew ? `${streak.totalDaysPracticed || 0} ימים סה"כ` : `${streak.totalDaysPracticed || 0} Total Days`}
-                    </span>
-                </div>
+                    {expandedBadge === 'days' && (
+                        <span style={{ fontSize: 'clamp(10px, 3vw, 12px)', fontWeight: 600, color: 'white', whiteSpace: 'nowrap' }}>
+                            {isHebrew ? `${streak.totalDaysPracticed || 0} ימים סה"כ` : `${streak.totalDaysPracticed || 0} Total Days`}
+                        </span>
+                    )}
+                </button>
 
                 {/* Consistency Level */}
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: '4px',
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    padding: '4px 6px',
-                    borderRadius: '12px',
-                    backdropFilter: 'blur(4px)'
-                }}>
-                    <span style={{ display: 'flex', alignItems: 'center', height: '18px' }}>{consistency.icon}</span>
-                    <span style={{
-                        fontSize: 'clamp(10px, 3vw, 12px)',
-                        fontWeight: 600,
-                        color: 'white',
-                        whiteSpace: 'nowrap'
+                <button
+                    onClick={() => setExpandedBadge(expandedBadge === 'consistency' ? null : 'consistency')}
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        padding: '4px 6px',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(4px)',
+                        border: 'none',
+                        cursor: 'pointer'
                     }}>
-                        {isHebrew ? consistency.textHe : consistency.textEn}
-                    </span>
-                </div>
+                    <span style={{ display: 'flex', alignItems: 'center', height: '18px' }}>{consistency.icon}</span>
+                    {expandedBadge === 'consistency' && (
+                        <span style={{
+                            fontSize: 'clamp(10px, 3vw, 12px)',
+                            fontWeight: 600,
+                            color: 'white',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            {isHebrew ? consistency.textHe : consistency.textEn}
+                        </span>
+                    )}
+                </button>
 
                 {/* Language Selector Pill */}
                 <div style={{ position: 'relative' }}>
@@ -294,29 +308,31 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
                 )}
             </div>
 
-            {/* Centered Titles */}
-            <div style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingTop: '48px'
-            }}>
-                <h2 className="title-english" style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontSize: isHebrew ? '42px' : '36px',
-                    fontWeight: isHebrew ? 900 : 800,
-                    color: '#FFFFFF',
-                    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    letterSpacing: isHebrew ? '0' : '0.05em',
-                    marginTop: '4px',
-                    textAlign: 'center',
-                    lineHeight: 1.2
+            {/* Centered Titles - Only render when showTitle is true */}
+            {showTitle && (
+                <div style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: '48px'
                 }}>
-                    {isHebrew ? 'יום הודיה' : 'Daily Appreciation'}
-                </h2>
-            </div>
+                    <h2 className="title-english" style={{
+                        fontFamily: "'Playfair Display', serif",
+                        fontSize: '24px',
+                        fontWeight: isHebrew ? 800 : 700,
+                        color: '#FFFFFF',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        letterSpacing: isHebrew ? '0' : '0.02em',
+                        marginTop: '4px',
+                        textAlign: 'center',
+                        lineHeight: 1.2
+                    }}>
+                        {isHebrew ? 'יום הודיה' : 'Daily Appreciation'}
+                    </h2>
+                </div>
+            )}
         </header>
     );
 };

@@ -111,7 +111,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                 <textarea
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    placeholder={""}
+                    placeholder={exampleAnswer && !value && !gradeResult ? "" : (_placeholder || "")}
                     rows={3}
                     disabled={isLoading || !!gradeResult}
                     style={{
@@ -121,7 +121,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                         paddingRight: gradeResult ? '60px' : '16px',
                         border: 'none',
                         outline: 'none',
-                        fontSize: 'var(--font-size-lg)',
+                        fontSize: '14px',
                         fontFamily: 'inherit',
                         resize: 'none',
                         background: 'transparent',
@@ -139,7 +139,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
                         left: '16px',
                         right: '16px',
                         color: 'rgba(0,0,0,0.4)',
-                        fontSize: 'var(--font-size-lg)',
+                        fontSize: '14px',
                         lineHeight: 1.4,
                         pointerEvents: 'none',
                         display: 'flex',
