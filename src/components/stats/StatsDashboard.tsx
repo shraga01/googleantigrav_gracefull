@@ -9,10 +9,7 @@ export const StatsDashboard: React.FC = () => {
     const isHebrew = userProfile?.language === 'hebrew';
 
     return (
-        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-            <h2 style={{ marginBottom: '20px', color: 'var(--color-primary)' }}>
-                {isHebrew ? 'סטטיסטיקה' : 'Your Progress'}
-            </h2>
+        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', paddingTop: '10px' }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '30px' }}>
                 <div style={{

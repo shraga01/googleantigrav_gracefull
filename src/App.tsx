@@ -66,11 +66,21 @@ const AppContent: React.FC = () => {
   if (userProfile) {
     const isHebrew = userProfile.language === 'hebrew';
 
+    const getPageTitle = () => {
+      switch (currentTab) {
+        case 'daily': return isHebrew ? 'יום הודיה' : 'Daily Appreciation';
+        case 'history': return isHebrew ? 'יומן' : 'Journal';
+        case 'stats': return isHebrew ? 'סטטיסטיקה' : 'Your Progress';
+        case 'settings': return isHebrew ? 'הגדרות' : 'Settings';
+        default: return 'Daily Appreciation';
+      }
+    };
+
     return (
       <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen relative pb-24">
         <AppHeader
           onLogout={handleLogout}
-          showTitle={currentTab === 'daily'}
+          title={getPageTitle()}
         />
 
         {/* Main Content */}

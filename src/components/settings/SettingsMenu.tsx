@@ -30,10 +30,7 @@ export const SettingsMenu: React.FC = () => {
 
 
     return (
-        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-            <h2 style={{ marginBottom: '30px', color: 'var(--color-primary)' }}>
-                {isHebrew ? 'הגדרות' : 'Settings'}
-            </h2>
+        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', paddingTop: '10px' }}>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {/* Profile Section */}

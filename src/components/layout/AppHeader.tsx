@@ -4,10 +4,10 @@ import { FluentIcon } from '../common/FluentIcon';
 
 interface AppHeaderProps {
     onLogout: () => void;
-    showTitle?: boolean;
+    title: string;
 }
 
-export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, showTitle = true }) => {
+export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, title }) => {
     const { userProfile, streak, setLanguage } = useApp();
     const [menuOpen, setMenuOpen] = useState(false);
     const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -72,19 +72,20 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, showTitle = true
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '6px',
                         background: 'rgba(255, 255, 255, 0.15)',
-                        padding: '4px 6px',
-                        borderRadius: '12px',
+                        padding: '6px 12px',
+                        height: '40px',
+                        borderRadius: '20px',
                         backdropFilter: 'blur(4px)',
                         border: 'none',
                         cursor: 'pointer'
                     }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <FluentIcon name="Star" size={16} />
+                        <FluentIcon name="Star" size={24} />
                     </div>
                     {expandedBadge === 'days' && (
-                        <span style={{ fontSize: 'clamp(10px, 3vw, 12px)', fontWeight: 600, color: 'white', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: 'white', whiteSpace: 'nowrap' }}>
                             {isHebrew ? `${streak.totalDaysPracticed || 0} ימים סה"כ` : `${streak.totalDaysPracticed || 0} Total Days`}
                         </span>
                     )}
@@ -97,18 +98,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, showTitle = true
                         display: 'flex',
                         flexDirection: 'row',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '6px',
                         background: 'rgba(255, 255, 255, 0.15)',
-                        padding: '4px 6px',
-                        borderRadius: '12px',
+                        padding: '6px 12px',
+                        height: '40px',
+                        borderRadius: '20px',
                         backdropFilter: 'blur(4px)',
                         border: 'none',
                         cursor: 'pointer'
                     }}>
-                    <span style={{ display: 'flex', alignItems: 'center', height: '18px' }}>{consistency.icon}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', height: '24px', transform: 'scale(1.5)' }}>{consistency.icon}</span>
                     {expandedBadge === 'consistency' && (
                         <span style={{
-                            fontSize: 'clamp(10px, 3vw, 12px)',
+                            fontSize: '14px',
                             fontWeight: 600,
                             color: 'white',
                             whiteSpace: 'nowrap'
@@ -125,23 +127,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, showTitle = true
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
+                            gap: '6px',
                             background: 'rgba(255, 255, 255, 0.15)',
-                            padding: '4px 6px',
-                            borderRadius: '12px',
+                            padding: '6px 12px',
+                            height: '40px',
+                            borderRadius: '20px',
                             backdropFilter: 'blur(4px)',
                             border: 'none',
                             cursor: 'pointer',
                             color: 'white',
-                            fontSize: 'clamp(10px, 3vw, 12px)',
+                            fontSize: '14px',
                             fontWeight: 600,
                             transition: 'all 0.2s ease',
                             whiteSpace: 'nowrap'
                         }}
                     >
-                        <span style={{ fontSize: '12px' }}>{isHebrew ? '🇮🇱' : '🇬🇧'}</span>
-                        <span>{isHebrew ? 'עב' : 'EN'}</span>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}>
+                        <span style={{ fontSize: '18px' }}>{isHebrew ? '🇮🇱' : '🇬🇧'}</span>
+                        <span style={{ fontSize: '14px' }}>{isHebrew ? 'עב' : 'EN'}</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}>
                             <path d="M7 10l5 5 5-5z" />
                         </svg>
                     </button>
@@ -150,9 +153,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, showTitle = true
                     {langDropdownOpen && (
                         <div style={{
                             position: 'absolute',
-                            top: '36px',
-                            right: isHebrew ? 'auto' : '0',
-                            left: isHebrew ? '0' : 'auto',
+                            top: '44px',
+                            right: isHebrew ? '0' : 'auto',
+                            left: isHebrew ? 'auto' : '0',
                             background: 'rgba(255, 255, 255, 0.95)',
                             backdropFilter: 'blur(10px)',
                             borderRadius: '12px',
@@ -308,31 +311,29 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, showTitle = true
                 )}
             </div>
 
-            {/* Centered Titles - Only render when showTitle is true */}
-            {showTitle && (
-                <div style={{
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingTop: '48px'
+            {/* Centered Titles - Render global title passed from App.tsx */}
+            <div style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingTop: '64px'
+            }}>
+                <h2 className="title-english" style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontSize: '24px',
+                    fontWeight: isHebrew ? 800 : 700,
+                    color: '#FFFFFF',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    letterSpacing: isHebrew ? '0' : '0.02em',
+                    marginTop: '4px',
+                    textAlign: 'center',
+                    lineHeight: 1.2
                 }}>
-                    <h2 className="title-english" style={{
-                        fontFamily: "'Playfair Display', serif",
-                        fontSize: '24px',
-                        fontWeight: isHebrew ? 800 : 700,
-                        color: '#FFFFFF',
-                        textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                        letterSpacing: isHebrew ? '0' : '0.02em',
-                        marginTop: '4px',
-                        textAlign: 'center',
-                        lineHeight: 1.2
-                    }}>
-                        {isHebrew ? 'יום הודיה' : 'Daily Appreciation'}
-                    </h2>
-                </div>
-            )}
+                    {title}
+                </h2>
+            </div>
         </header>
     );
 };

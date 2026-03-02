@@ -62,16 +62,7 @@ export const HistoryView: React.FC = () => {
 
     return (
         <div className="animate-fadeIn max-w-2xl mx-auto pb-20">
-            <h2 style={{
-                fontSize: '24px',
-                fontWeight: 700,
-                color: 'var(--color-text-primary)',
-                marginBottom: '24px',
-                textAlign: 'center',
-                textShadow: 'none'
-            }}>
-                {isHebrew ? 'יומן הוקרת תודה' : 'Appreciation Journal'}
-            </h2>
+
 
             {/* Calendar Grid */}
             <DiaryCalendar
