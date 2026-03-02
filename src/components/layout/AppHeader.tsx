@@ -33,11 +33,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
         }
 
         if (countLast7Days >= 5) {
-            return { level: 3, textEn: 'Weekly Master', textHe: 'מאסטר שבועי', icon: <FluentIcon name="Fire" size={20} /> };
+            return { level: 3, textEn: 'Weekly Master', textHe: 'מאסטר שבועי', icon: <FluentIcon name="Fire" size={16} /> };
         } else if (countLast7Days >= 3) {
-            return { level: 2, textEn: 'Consistent', textHe: 'עקבי', icon: <FluentIcon name="Star" size={20} /> };
+            return { level: 2, textEn: 'Consistent', textHe: 'עקבי', icon: <FluentIcon name="Star" size={16} /> };
         } else {
-            return { level: 1, textEn: 'Building Habit', textHe: 'בונה הרגל', icon: <FluentIcon name="Sparkles" size={20} /> };
+            return { level: 1, textEn: 'Building Habit', textHe: 'בונה הרגל', icon: <FluentIcon name="Sparkles" size={16} /> };
         }
     };
 
@@ -60,22 +60,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
                 display: 'flex',
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: '8px'
+                flexWrap: 'wrap',
+                gap: '4px',
+                maxWidth: 'calc(100% - 44px)' // Leave room for avatar
             }}>
                 {/* Total Days counter */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     background: 'rgba(255, 255, 255, 0.15)',
-                    padding: '4px 10px',
+                    padding: '4px 6px',
                     borderRadius: '12px',
                     backdropFilter: 'blur(4px)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <FluentIcon name="Star" size={16} />
+                        <FluentIcon name="Star" size={14} />
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'white' }}>
+                    <span style={{ fontSize: 'clamp(10px, 3vw, 12px)', fontWeight: 600, color: 'white', whiteSpace: 'nowrap' }}>
                         {isHebrew ? `${streak.totalDaysPracticed || 0} ימים סה"כ` : `${streak.totalDaysPracticed || 0} Total Days`}
                     </span>
                 </div>
@@ -85,17 +87,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
                     display: 'flex',
                     flexDirection: 'row',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     background: 'rgba(255, 255, 255, 0.15)',
-                    padding: '4px 10px',
+                    padding: '4px 6px',
                     borderRadius: '12px',
                     backdropFilter: 'blur(4px)'
                 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', height: '20px' }}>{consistency.icon}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', height: '18px' }}>{consistency.icon}</span>
                     <span style={{
-                        fontSize: '12px',
+                        fontSize: 'clamp(10px, 3vw, 12px)',
                         fontWeight: 600,
-                        color: 'white'
+                        color: 'white',
+                        whiteSpace: 'nowrap'
                     }}>
                         {isHebrew ? consistency.textHe : consistency.textEn}
                     </span>
@@ -110,18 +113,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout }) => {
                             alignItems: 'center',
                             gap: '4px',
                             background: 'rgba(255, 255, 255, 0.15)',
-                            padding: '4px 10px',
+                            padding: '4px 6px',
                             borderRadius: '12px',
                             backdropFilter: 'blur(4px)',
                             border: 'none',
                             cursor: 'pointer',
                             color: 'white',
-                            fontSize: '12px',
+                            fontSize: 'clamp(10px, 3vw, 12px)',
                             fontWeight: 600,
-                            transition: 'all 0.2s ease'
+                            transition: 'all 0.2s ease',
+                            whiteSpace: 'nowrap'
                         }}
                     >
-                        <span style={{ fontSize: '14px' }}>{isHebrew ? '🇮🇱' : '🇬🇧'}</span>
+                        <span style={{ fontSize: '12px' }}>{isHebrew ? '🇮🇱' : '🇬🇧'}</span>
                         <span>{isHebrew ? 'עב' : 'EN'}</span>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}>
                             <path d="M7 10l5 5 5-5z" />
