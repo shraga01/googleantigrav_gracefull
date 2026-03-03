@@ -188,9 +188,29 @@ export const DailyPractice: React.FC = () => {
 
         const today = new Date().toLocaleDateString('en-CA');
         const streak = StorageService.getStreak();
+
+        // Calculate new streak properly based on date diff
+        let newCurrentStreak = 1;
+        const lastPracticeDate = streak.lastPracticeDate;
+
+        if (lastPracticeDate) {
+            const todayDate = new Date(today);
+            const lastDate = new Date(lastPracticeDate);
+            const daysDiff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (daysDiff === 1) {
+                newCurrentStreak = streak.currentStreak + 1;
+            } else if (daysDiff === 0) {
+                newCurrentStreak = streak.currentStreak; // Already practiced today
+            } else {
+                newCurrentStreak = 1; // Gap larger than 1 day
+            }
+        }
+
         const newStreak = {
             ...streak,
-            currentStreak: streak.currentStreak + 1,
+            currentStreak: newCurrentStreak,
+            longestStreak: Math.max(streak.longestStreak || 0, newCurrentStreak),
             totalDaysPracticed: streak.totalDaysPracticed + 1,
             lastPracticeDate: today
         };
