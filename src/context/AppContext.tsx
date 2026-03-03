@@ -213,6 +213,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     }
                 }
 
+                // Temporary Phase 3 patch: Repair frozen/wrong streakDays in local entries based on server truth
+                if (serverStreak.currentStreak < localEntries.length) {
+                    const today = new Date().toLocaleDateString('en-CA');
+                    const sortedLocalEntries = [...localEntries].sort((a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime()
+                    );
+
+                    if (sortedLocalEntries.length > 0 && sortedLocalEntries[0].date === today && sortedLocalEntries[0].streakDay !== serverStreak.currentStreak) {
+                        console.log(`Patching today's corrupted local streakDay (${sortedLocalEntries[0].streakDay}) to match server (${serverStreak.currentStreak})`);
+                        sortedLocalEntries[0].streakDay = serverStreak.currentStreak;
+
+                        // Clear array and resave to fix corrupted local state
+                        StorageService.clearAllData();
+                        StorageService.saveUserProfile(userProfile!); // Put profile back
+                        StorageService.updateStreak(fullStreak); // Put streak back
+                        sortedLocalEntries.reverse().forEach(e => StorageService.saveEntry(e)); // Put entries back corrected
+                    }
+                }
+
                 StorageService.updateStreak(fullStreak);
                 setStreak(fullStreak);
             }
