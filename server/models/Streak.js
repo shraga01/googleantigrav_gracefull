@@ -39,6 +39,8 @@ streakSchema.methods.updateStreak = function (newEntryDate) {
 
     // Only add if not already in the array
     if (!this.practiceDates.includes(newEntryDate)) {
+        const prevLastDate = this.lastPracticeDate;
+
         this.practiceDates.push(newEntryDate);
         this.totalDaysPracticed += 1;
         this.lastPracticeDate = newEntryDate;
@@ -49,7 +51,7 @@ streakSchema.methods.updateStreak = function (newEntryDate) {
         // Calculate legacy streaks just to maintain backwards compatibility 
         // with old frontend hooks until they are fully migrated
         const today = new Date(newEntryDate);
-        const lastDate = this.lastPracticeDate ? new Date(this.lastPracticeDate) : null;
+        const lastDate = prevLastDate ? new Date(prevLastDate) : null;
 
         if (!lastDate || this.practiceDates.length === 1) {
             this.currentStreak = 1;
