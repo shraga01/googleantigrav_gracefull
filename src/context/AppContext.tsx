@@ -167,6 +167,50 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     milestonesAchieved: [],
                     ...serverStreak
                 };
+
+                // Auto-sync phase 2: If local storage has more entries than the server,
+                // we reconstruct the server's history by pushing local dates.
+                // (Server only stores dates, not content)
+                const localEntries = StorageService.getEntries();
+                if (localEntries.length > fullStreak.totalDaysPracticed) {
+                    console.log(`Syncing missing entries to server... Local: ${localEntries.length}, Server: ${fullStreak.totalDaysPracticed}`);
+
+                    // Sort local entries chronologically ascending
+                    const sortedLocalEntries = [...localEntries].sort((a, b) =>
+                        new Date(a.date).getTime() - new Date(b.date).getTime()
+                    );
+
+                    // Upload all missing dates
+                    let badgesToAward: string[] = [];
+                    for (const entry of sortedLocalEntries) {
+                        try {
+                            const res = await ApiService.saveEntry(entry);
+                            if (res.success && res.newBadges && res.newBadges.length > 0) {
+                                badgesToAward = [...badgesToAward, ...res.newBadges];
+                            }
+                        } catch (err) {
+                            console.warn(`Failed to sync date ${entry.date}:`, err);
+                        }
+                    }
+
+                    if (badgesToAward.length > 0) {
+                        const uniqueBadges = Array.from(new Set(badgesToAward));
+                        setNewlyUnlockedBadges(uniqueBadges);
+                    }
+
+                    // Refetch the fully corrected streak from the server
+                    const correctedStreak = await ApiService.getStreak();
+                    if (correctedStreak) {
+                        const finalStreak: StreakData = {
+                            milestonesAchieved: [],
+                            ...correctedStreak
+                        };
+                        StorageService.updateStreak(finalStreak);
+                        setStreak(finalStreak);
+                        return; // Done syncing
+                    }
+                }
+
                 StorageService.updateStreak(fullStreak);
                 setStreak(fullStreak);
             }
