@@ -78,7 +78,6 @@ export const HistoryView: React.FC = () => {
                     onClose={() => setSelectedEntry(null)}
                     googleId={googleId}
                     isAuthenticated={isAuthenticated}
-                    isHebrew={isHebrew}
                 />
             )}
 

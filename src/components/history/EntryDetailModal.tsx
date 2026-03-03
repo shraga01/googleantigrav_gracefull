@@ -48,10 +48,21 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
         return <div style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.6)' }}>Decrypting...</div>;
     }
 
+    const lines = decrypted
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0)
+        .map(l => l.replace(/^[0-9]+[\.\-\)\s]+/, '')); // Strip any existing leading numbers from user input
+
     return (
-        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
-            {decrypted.split('\n').map((line, i) => (
-                <div key={i} style={{ padding: '4px 0' }}>{line}</div>
+        <div style={{ lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
+            {lines.map((line, i) => (
+                <div key={i} className="flex gap-2 items-start py-1.5 border-b border-gray-100 last:border-0 pl-1">
+                    <span className="font-bold text-primary min-w-[20px] select-none text-center">
+                        {i + 1}.
+                    </span>
+                    <span className="flex-1 text-gray-700">{line}</span>
+                </div>
             ))}
         </div>
     );
@@ -62,10 +73,9 @@ interface EntryDetailModalProps {
     onClose: () => void;
     googleId: string | null;
     isAuthenticated: boolean;
-    isHebrew: boolean;
 }
 
-export const EntryDetailModal: React.FC<EntryDetailModalProps> = ({ entry, onClose, googleId, isAuthenticated, isHebrew }) => {
+export const EntryDetailModal: React.FC<EntryDetailModalProps> = ({ entry, onClose, googleId, isAuthenticated }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
             onClick={onClose}>
@@ -99,11 +109,8 @@ export const EntryDetailModal: React.FC<EntryDetailModalProps> = ({ entry, onClo
                         </div>
                     </div>
 
-                    <h3 className="text-gray-800 font-bold text-lg mb-4 text-center leading-snug">
-                        {entry.openingSentence}
-                    </h3>
-
-                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 text-sm shadow-inner">
+                    {/* Content Area */}
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 text-sm shadow-inner min-h-[100px]">
                         {entry.userContent.type === 'text' ? (
                             <DecryptedContent
                                 content={entry.userContent.content as string}
@@ -119,21 +126,6 @@ export const EntryDetailModal: React.FC<EntryDetailModalProps> = ({ entry, onClo
                             </div>
                         )}
                     </div>
-
-                    {entry.suggestions && entry.suggestions.length > 0 && (
-                        <div className="mt-4 pt-3 border-t border-gray-200">
-                            <h4 className="text-[10px] uppercase tracking-wider text-gray-400 mb-2 text-center">
-                                {isHebrew ? 'הצעות' : 'Prompts'}
-                            </h4>
-                            <div className="flex flex-wrap justify-center gap-1">
-                                {entry.suggestions.map((s, i) => (
-                                    <span key={i} className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                                        {s}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
