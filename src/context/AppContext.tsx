@@ -103,6 +103,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setUserProfile(profile);
             setLanguageState(profile.language);
             updateDocumentDirection(profile.language);
+            // Also attempt to sync streak on load if we have a profile (which implies logged in)
+            fetchStreakFromServer();
         }
         setIsLoading(false);
     };
