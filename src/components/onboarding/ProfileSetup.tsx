@@ -78,8 +78,8 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
     }, [step]);
 
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-slate-800 antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
-            <div className="relative flex min-h-[100dvh] w-full flex-col overflow-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe">
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
+            <div className="relative flex min-h-[100dvh] w-full flex-col overflow-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     {/* Step indicator */}
                     <div style={{
@@ -97,7 +97,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                         marginBottom: '24px',
                         fontSize: '28px',
                         fontWeight: 700,
-                        color: 'black',
+                        color: 'white',
                         lineHeight: 1.3
                     }}>
                         {isHebrew ? currentQuestion.he : currentQuestion.en}
@@ -121,7 +121,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                                 padding: '12px 0',
                                 background: 'transparent',
                                 border: 'none',
-                                color: 'black',
+                                color: 'white',
                                 width: '100%'
                             }}
                         />
@@ -141,8 +141,8 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                         style={{
                             flex: 1,
                             background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(0, 0, 0, 0.3)',
-                            color: 'rgba(0, 0, 0, 0.8)',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            color: 'white',
                             borderRadius: '9999px',
                             padding: '14px 24px'
                         }}

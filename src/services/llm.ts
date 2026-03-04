@@ -12,7 +12,7 @@ const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL
 
 // Model Settings - Standard (fast responses)
 const MODEL_CONFIG = {
-    temperature: 0.8,
+    temperature: 0.1,
     topP: 0.9,
     topK: 40,
     maxOutputTokens: 400,
@@ -233,39 +233,41 @@ GENERATE in ${user.language === 'hebrew' ? 'HEBREW ONLY' : 'ENGLISH ONLY'}.
 Return ONLY the message.
 `,
 
-    // NEW: Grade user entries for specificity
+    // Compassionate Guide - Neuro-Scoring
     gradeEntry: (entry: string, user: UserProfile) => `
-${SYSTEM_CONTEXT}
+# ROLE
+You are the "Compassionate Guide", an evidence-based gratitude app. Your goal is to help users encode positive memories using Affective Neuroscience.
 
-TASK: Evaluate if this gratitude entry is SPECIFIC enough to be effective.
+# LOGIC GATES (CRITICAL)
+1. **CONTENT FILTER**: If the entry contains hate speech, politics, or medical advice, set status to "BLOCKED".
+2. **APPRECIATION CHECK**: If the entry is a complaint, neutral statement, or lacks any appreciation, set status to "RETRY" and ignore the scoring rubric.
 
-ENTRY TO EVALUATE: "${entry}"
+# NEURO-SCORING RUBRIC (0-5)
+Award 1 point for each:
+1. [SPECIFICITY]: Concrete event/act (not a general concept).
+2. [PERSON]: Explicit mention of a person or relationship.
+3. [CAUSALITY]: The "Why" or the specific benefit explained.
+4. [SENSORY]: Emotional or physical sensory details included.
+5. [AUTHENTICITY]: Acknowledgment of a challenge or a novel/surprising moment.
 
-SCORING CRITERIA:
-1. Is there a CONCRETE ACT described? (not just a noun like "family")
-2. Is there a PERSON mentioned? (even if it's themselves)
-3. Is there a BENEFIT explained? (how it made life easier/better)
+# RESPONSE PROTOCOL
+- If Score < 4: Use "IMPROVE" status. Provide 1 sentence of praise and 1 targeted coaching question to help them reach a 5/5.
+- If Score >= 4: Use "VALIDATED" status. Provide a warm, reinforcing reflection.
 
-SCORE:
-- 3/3 = Excellent - truly specific and effective
-- 2/3 = Good - somewhat specific, could be more detailed
-- 1/3 = Needs work - too generic, won't trigger neural benefits
-- 0/3 = Too vague - just a word or generic concept
+LANGUAGE: ${user.language === 'hebrew' ? 'Hebrew (עברית) ONLY' : 'English ONLY'}
 
-EXAMPLES:
-- "My health" = 0/3 (just a word)
-- "I'm grateful for my sister" = 1/3 (has person but no act)
-- "My sister called me" = 2/3 (has person and act, no benefit)
-- "My sister called to cheer me up when I was stressed about work" = 3/3
-
-LANGUAGE: ${user.language === 'hebrew' ? 'Hebrew' : 'English'}
-
-RESPOND with JSON:
+# OUTPUT FORMAT (STRICT JSON)
 {
-  "score": <0-3>,
-  "feedback": "<brief encouraging feedback to help them be more specific>",
-  "improvedVersion": "<if score < 3, suggest a more specific version>"
+  "status": "VALIDATED" | "IMPROVE" | "RETRY" | "BLOCKED",
+  "score": number,
+  "met_criteria": ["SPECIFICITY", "PERSON", "CAUSALITY", "SENSORY", "AUTHENTICITY"],
+  "missing_criteria": ["..."],
+  "feedback": "string",
+  "coaching_question": "string | null"
 }
+
+# INPUT
+User Entry: "${entry}"
 `
 };
 
@@ -352,7 +354,10 @@ async function callGeminiAPI(prompt: string, useThinking: boolean = false): Prom
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: config,
+                generationConfig: {
+                    ...config,
+                    responseMimeType: 'application/json'
+                },
                 safetySettings: SAFETY_SETTINGS
             })
         });
@@ -432,15 +437,18 @@ export const LLMService = {
     },
 
     /**
-     * Grade a user's entry for specificity (0-3 score)
-     * Returns feedback to help them be more specific
+     * Grade a user's entry using Neuro-Scoring Rubric (0-5)
+     * Returns met/missing criteria and coaching feedback
      */
     gradeEntry: async (entry: string, user: UserProfile): Promise<{
         score: number;
+        status: string;
         feedback: string;
-        improvedVersion?: string;
+        met_criteria: string[];
+        missing_criteria: string[];
+        coaching_question: string | null;
     }> => {
-        const apiResult = await callGeminiAPI(PROMPTS.gradeEntry(entry, user), true); // Use thinking for better analysis
+        const apiResult = await callGeminiAPI(PROMPTS.gradeEntry(entry, user), true);
 
         if (apiResult) {
             try {
@@ -455,27 +463,44 @@ export const LLMService = {
 
         // Fallback: simple word count heuristic
         const words = entry.trim().split(/\s+/).length;
+        const isHebrew = user.language === 'hebrew';
+
         if (words < 3) {
             return {
                 score: 0,
-                feedback: user.language === 'hebrew'
-                    ? 'נסה להיות ספציפי יותר - מה קרה? מי היה מעורב?'
-                    : 'Try to be more specific - what happened? Who was involved?',
-                improvedVersion: undefined
+                status: 'RETRY',
+                feedback: isHebrew
+                    ? 'זו לא נראית כרשומת הוקרה. נסה לזהות דבר קטן אחד שהלך טוב היום.'
+                    : 'This doesn\'t appear to be a gratitude entry. Try identifying one small thing that went well today.',
+                met_criteria: [],
+                missing_criteria: ['SPECIFICITY', 'PERSON', 'CAUSALITY', 'SENSORY', 'AUTHENTICITY'],
+                coaching_question: isHebrew
+                    ? 'מה הדבר הכי קטן שמישהו עשה בשבילך היום?'
+                    : 'What is the smallest thing someone did for you today?'
             };
-        } else if (words < 8) {
+        } else if (words < 10) {
             return {
-                score: 1,
-                feedback: user.language === 'hebrew'
-                    ? 'טוב! אבל איך זה הקל על החיים שלך?'
-                    : 'Good! But how did it make your life easier?',
-                improvedVersion: undefined
+                score: 2,
+                status: 'IMPROVE',
+                feedback: isHebrew
+                    ? 'התחלה טובה! אבל חסרים פרטים חשובים שיהפכו את ההוקרה ליעילה יותר.'
+                    : 'Good start! But key details are missing that would make this appreciation more effective.',
+                met_criteria: ['SPECIFICITY'],
+                missing_criteria: ['PERSON', 'CAUSALITY', 'SENSORY', 'AUTHENTICITY'],
+                coaching_question: isHebrew
+                    ? 'מי היה מעורב ברגע הזה, ואיך זה גרם לך להרגיש?'
+                    : 'Who was involved in this moment, and how did it make you feel?'
             };
         }
         return {
-            score: 3,
-            feedback: user.language === 'hebrew' ? 'מצויין! ספציפי ומשמעותי.' : 'Excellent! Specific and meaningful.',
-            improvedVersion: undefined
+            score: 5,
+            status: 'VALIDATED',
+            feedback: isHebrew
+                ? 'ספציפי, אישי ומשמעותי – ההוקרה הזו מקודדת זיכרונות חיוביים במוח.'
+                : 'Specific, personal, and meaningful – this appreciation encodes positive memories in the brain.',
+            met_criteria: ['SPECIFICITY', 'PERSON', 'CAUSALITY', 'SENSORY', 'AUTHENTICITY'],
+            missing_criteria: [],
+            coaching_question: null
         };
     },
 

@@ -56,13 +56,19 @@ html {
 /* ==================== */
 
 body {
-  background-color: #fce4ec;
+  background-color: #4a148c;
+  /* Deep purple base */
   background-image:
-    radial-gradient(at 0% 0%, #ff80ab 0px, transparent 50%),
-    radial-gradient(at 100% 0%, #b39ddb 0px, transparent 50%),
-    radial-gradient(at 100% 100%, #80deea 0px, transparent 50%),
-    radial-gradient(at 0% 100%, #ffe082 0px, transparent 50%),
-    radial-gradient(at 50% 50%, #f48fb1 0px, transparent 50%);
+    radial-gradient(at 0% 0%, #c2185b 0px, transparent 50%),
+    /* Deep pink */
+    radial-gradient(at 100% 0%, #512da8 0px, transparent 50%),
+    /* Royal purple */
+    radial-gradient(at 100% 100%, #006064 0px, transparent 50%),
+    /* Deep teal */
+    radial-gradient(at 0% 100%, #f57f17 0px, transparent 50%),
+    /* Deep golden orange */
+    radial-gradient(at 50% 50%, #d81b60 0px, transparent 50%);
+  /* Vibrant magenta center */
   background-size: 100% 100%;
   background-attachment: fixed;
   font-family: 'Plus Jakarta Sans', 'Rubik', sans-serif;
@@ -738,13 +744,14 @@ body {
 /* ==================== */
 
 .mesh-gradient {
-  background-color: #fce4ec;
+  background-color: #4a148c;
+  /* Deep purple base */
   background-image:
-    radial-gradient(at 0% 0%, #ff80ab 0px, transparent 50%),
-    radial-gradient(at 100% 0%, #b39ddb 0px, transparent 50%),
-    radial-gradient(at 100% 100%, #80deea 0px, transparent 50%),
-    radial-gradient(at 0% 100%, #ffe082 0px, transparent 50%),
-    radial-gradient(at 50% 50%, #f48fb1 0px, transparent 50%);
+    radial-gradient(at 0% 0%, #c2185b 0px, transparent 50%),
+    radial-gradient(at 100% 0%, #512da8 0px, transparent 50%),
+    radial-gradient(at 100% 100%, #006064 0px, transparent 50%),
+    radial-gradient(at 0% 100%, #f57f17 0px, transparent 50%),
+    radial-gradient(at 50% 50%, #d81b60 0px, transparent 50%);
   background-size: 100% 100%;
 }
 

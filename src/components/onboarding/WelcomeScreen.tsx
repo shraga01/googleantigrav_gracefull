@@ -11,8 +11,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
     const isHebrew = language === 'hebrew';
 
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-slate-800 antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
-            <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe">
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
+            <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
                 {/* 3D Animated Icon */}
                 <div style={{ marginBottom: '24px' }}>
                     <FluentIcon name="Sun" size={80} />
@@ -58,7 +58,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                 }}>
                     <p style={{
                         fontSize: '13px',
-                        color: 'rgba(0, 0, 0, 0.8)',
+                        color: 'rgba(255, 255, 255, 0.9)',
                         lineHeight: '1.7',
                         margin: 0,
                         textAlign: isHebrew ? 'right' : 'left'

@@ -35,8 +35,8 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
     };
 
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-slate-800 antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
-            <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe">
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
+            <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
                 {/* 3D Animated Icon */}
                 <div style={{ marginBottom: '20px' }}>
                     <FluentIcon name="Shield" size={72} />
@@ -103,14 +103,13 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                     alignItems: 'center',
                     gap: '8px',
                     fontSize: '14px',
-                    color: 'rgba(0, 0, 0, 0.7)',
+                    color: 'rgba(255, 255, 255, 0.8)',
                     marginBottom: '24px'
                 }}>
                     <FluentIcon name="Lock" size={18} />
                     <span>{isHebrew ? 'ההערכות שלך יוצפנו' : 'Your entries will be encrypted'}</span>
                 </div>
 
-                {/* Divider */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -119,23 +118,24 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
                     maxWidth: '320px',
                     marginBottom: '24px'
                 }}>
-                    <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
-                    <span style={{ color: 'rgba(0, 0, 0, 0.5)', fontSize: '14px' }}>{isHebrew ? 'או' : 'or'}</span>
-                    <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}></div>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '14px' }}>{isHebrew ? 'או' : 'or'}</span>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}></div>
                 </div>
 
                 {/* Continue Anonymous */}
                 <button
                     onClick={onContinueAnonymously}
                     style={{
-                        background: 'transparent',
-                        border: '1px solid rgba(0, 0, 0, 0.3)',
-                        color: 'rgba(0, 0, 0, 0.8)',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        color: 'white',
                         fontSize: '16px',
                         fontWeight: 500,
                         cursor: 'pointer',
                         padding: '12px 24px',
-                        borderRadius: '9999px'
+                        borderRadius: '9999px',
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
                     }}
                 >
                     {isHebrew ? 'המשך כאורח' : 'Continue as Guest'}
@@ -143,7 +143,7 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
 
                 <p style={{
                     fontSize: '13px',
-                    color: 'rgba(0, 0, 0, 0.5)',
+                    color: 'rgba(255, 255, 255, 0.5)',
                     marginTop: '12px',
                     textAlign: 'center',
                     maxWidth: '280px'

@@ -17,8 +17,11 @@ import { HomeScreen } from './HomeScreen';
 
 interface GradeResult {
     score: number;
+    status: string;
     feedback: string;
-    improvedVersion?: string;
+    met_criteria: string[];
+    missing_criteria: string[];
+    coaching_question: string | null;
 }
 
 export const DailyPractice: React.FC = () => {
@@ -136,14 +139,17 @@ export const DailyPractice: React.FC = () => {
         setIsGrading(true);
         try {
             const result = await LLMService.gradeEntry(currentText, userProfile);
-            // Convert 0-3 score to 0-100%
-            const percentScore = Math.round((result.score / 3) * 100);
+            // Convert 0-5 score to 0-100%
+            const percentScore = Math.round((result.score / 5) * 100);
 
             const newGrades = [...grades];
             newGrades[currentStep] = {
                 score: percentScore,
+                status: result.status,
                 feedback: result.feedback,
-                improvedVersion: result.improvedVersion
+                met_criteria: result.met_criteria || [],
+                missing_criteria: result.missing_criteria || [],
+                coaching_question: result.coaching_question || null
             };
             setGrades(newGrades);
         } catch (error) {
