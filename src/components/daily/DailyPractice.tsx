@@ -13,7 +13,7 @@ import { ScientificFactBanner } from '../common/ScientificFactBanner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
 import { v4 as uuidv4 } from 'uuid';
 import '../../styles/badges.css';
-import { FluentIcon } from '../common/FluentIcon';
+import { HomeScreen } from './HomeScreen';
 
 interface GradeResult {
     score: number;
@@ -36,6 +36,7 @@ export const DailyPractice: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [grades, setGrades] = useState<(GradeResult | null)[]>([null, null, null]);
     const [isGrading, setIsGrading] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
 
     const isHebrew = userProfile?.language === 'hebrew';
 
@@ -256,23 +257,32 @@ export const DailyPractice: React.FC = () => {
 
     if (isCompleted) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] text-center animate-fadeIn px-4">
-                <div className="streak-pill mt-4 mb-4" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
-                    <FluentIcon name="Star" size={28} />
-                    <span className="streak-number text-2xl font-bold font-sans">{StorageService.getStreak().currentStreak}</span>
-                    <span className="streak-label text-xl font-bold font-sans">{isHebrew ? 'ימים' : 'days'}</span>
+            <div className="flex flex-col items-center justify-center w-full h-full text-center animate-fadeIn px-4 z-10 relative">
+
+                <div className="glass-card p-6 sm:p-10 rounded-[2rem] flex flex-col items-center shadow-2xl">
+                    <div className="mb-4 flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-400/20 border border-orange-400/30">
+                        <span className="material-symbols-outlined text-orange-400 text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                        <span className="text-white text-2xl font-black">{StorageService.getStreak().currentStreak}</span>
+                        <span className="text-white/90 text-xl font-bold">{isHebrew ? 'ימים' : 'days'}</span>
+                    </div>
+
+                    <h2 className="text-white text-2xl sm:text-3xl font-black text-center mb-4 text-glow" style={{ lineHeight: '1.4' }}>
+                        {affirmation || (isHebrew ? 'כל הכבוד!' : 'Well done!')}
+                    </h2>
+                    <p className="text-white/80 font-medium text-lg">
+                        {isHebrew ? 'נתראה מחר' : 'See you tomorrow'}
+                    </p>
                 </div>
-
-                {/* Extra vertical spacing added here */}
-                <div style={{ height: '32px' }}></div>
-
-                <h2 className="title-main text-center mb-4 sm:mb-6 px-4" style={{ lineHeight: '1.4' }}>
-                    {affirmation || (isHebrew ? 'כל הכבוד!' : 'Well done!')}
-                </h2>
-                <p className="subtitle mt-2">
-                    {isHebrew ? 'נתראה מחר' : 'See you tomorrow'}
-                </p>
             </div>
+        );
+    }
+
+    if (!hasStarted) {
+        return (
+            <>
+                <div className="fixed inset-0 w-full h-full mesh-gradient pointer-events-none" style={{ zIndex: -1 }}></div>
+                <HomeScreen onStartPractice={() => setHasStarted(true)} />
+            </>
         );
     }
 
@@ -281,23 +291,39 @@ export const DailyPractice: React.FC = () => {
     const hasText = entries[currentStep].trim().length > 0;
 
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="animate-fadeIn max-w-xl mx-auto">
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="animate-fadeIn w-full max-w-xl mx-auto px-4 relative z-10 flex flex-col items-center h-full pt-4">
+
             {/* Random Profile Question (30% chance) */}
             {showRandomQuestion && (
-                <RandomProfileQuestion
-                    onComplete={() => setShowRandomQuestion(false)}
-                    onSkip={() => setShowRandomQuestion(false)}
-                />
+                <div className="mb-6">
+                    <RandomProfileQuestion
+                        onComplete={() => setShowRandomQuestion(false)}
+                        onSkip={() => setShowRandomQuestion(false)}
+                    />
+                </div>
             )}
 
+            <div className="w-full">
+                {/* The Appreciation Formula Header */}
+                <div className="mb-6 text-center animate-slideDown">
+                    <p className="text-white/90 text-[11px] sm:text-xs font-bold tracking-widest uppercase mb-3 text-glow">
+                        {isHebrew ? 'נוסחת ההודיה' : 'The Appreciation Formula'}
+                    </p>
+                    <div className="text-white font-semibold tracking-wide glass-card px-4 sm:px-6 py-2.5 sm:py-3 rounded-full inline-block shadow-lg text-xs sm:text-sm leading-snug">
+                        {isHebrew
+                            ? <React.Fragment>מעשה <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> אדם <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> מיטיבות</React.Fragment>
+                            : <React.Fragment>Concrete act <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> Person <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> How it helped</React.Fragment>
+                        }
+                    </div>
+                </div>
 
-
-            <div className="pt-2 sm:pt-4 pb-24">
-                {/* Progress Bar */}
-                <ProgressBar
-                    currentStep={currentStep}
-                    grades={grades}
-                />
+                {/* Progress Bar styled closer to theme */}
+                <div className="mb-4 opacity-80 backdrop-blur-sm rounded-full bg-white/10 p-2">
+                    <ProgressBar
+                        currentStep={currentStep}
+                        grades={grades}
+                    />
+                </div>
 
                 {/* Input Card */}
                 <div className="animate-slideUp">
@@ -312,64 +338,31 @@ export const DailyPractice: React.FC = () => {
                     />
                 </div>
 
-                {/* Action Button - Equal spacing matching input margin */}
-                <div style={{ marginTop: '24px' }}>
+                {/* Action Button */}
+                <div className="mt-8 w-full max-w-md mx-auto">
                     {!isStepComplete ? (
                         <button
                             onClick={handleCheck}
                             disabled={!hasText || isGrading}
-                            className={!hasText || isGrading ? '' : 'animate-pulseOnHover'}
-                            style={{
-                                width: '100%',
-                                padding: '16px',
-                                background: (!hasText || isGrading)
-                                    ? 'rgba(255, 182, 193, 0.25)'  // Soft, cohesive disabled state instead of gray
-                                    : 'linear-gradient(135deg, #FFA500, #E8860C)',
-                                color: (!hasText || isGrading) ? '#d280a5' : 'black',
-                                fontSize: '18px',
-                                fontWeight: 700,
-                                border: (!hasText || isGrading) ? '2px dashed rgba(255, 182, 193, 0.4)' : 'none',
-                                borderRadius: '9999px',
-                                cursor: (!hasText || isGrading) ? 'not-allowed' : 'pointer',
-                                boxShadow: (!hasText || isGrading)
-                                    ? 'none'
-                                    : '0 4px 15px rgba(255, 105, 180, 0.4)',
-                                transition: 'all 0.3s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '12px'
-                            }}
+                            className={`w-full h-16 rounded-full glass-card text-white text-xl font-black tracking-tight transition-all duration-300 flex items-center justify-center gap-2 ${!hasText || isGrading
+                                ? 'opacity-50 cursor-not-allowed border-white/20 shadow-none'
+                                : 'glass-button-glow hover:scale-[1.02] border-white/40 shadow-2xl'
+                                }`}
                         >
-                            <span>{isGrading ? (isHebrew ? 'בודק...' : 'Checking...') : (isHebrew ? 'בדיקה' : 'Check')}</span>
-                            <div className={`badge-icon ${isGrading ? 'badge-icon-loading' : 'badge-icon-check'} badge-unlocked`} style={{ transform: 'scale(0.4)', margin: '-20px', filter: (!hasText && !isGrading) ? 'grayscale(0.8) opacity(0.5)' : 'none' }}>
-                                <FluentIcon name={isGrading ? "Loading" : "Check"} size={40} />
-                            </div>
+                            <span className={`material-symbols-outlined text-2xl ${isGrading ? 'animate-spin' : ''}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                                {isGrading ? 'autorenew' : 'check_circle'}
+                            </span>
+                            {isGrading ? (isHebrew ? 'בודק...' : 'Checking...') : (isHebrew ? 'בדיקה' : 'Check')}
                         </button>
                     ) : (
                         <button
                             onClick={handleContinue}
-                            style={{
-                                width: '100%',
-                                padding: '16px',
-                                background: 'linear-gradient(135deg, #FFA500, #E8860C)',
-                                color: 'black',
-                                fontSize: '18px',
-                                fontWeight: 700,
-                                border: 'none',
-                                borderRadius: '9999px',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 15px rgba(255, 105, 180, 0.4)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '12px'
-                            }}
+                            className="w-full h-16 rounded-full glass-card text-white text-xl font-black tracking-tight glass-button-glow hover:scale-[1.02] transition-all duration-300 shadow-2xl flex items-center justify-center gap-2 border-white/40"
                         >
-                            <span>{currentStep < 2 ? (isHebrew ? 'המשך' : 'Continue') : (isHebrew ? 'סיים ושמור' : 'Finish & Save')}</span>
-                            <div className="badge-icon badge-icon-continue badge-unlocked" style={{ transform: 'scale(0.4)', margin: '-20px' }}>
-                                <FluentIcon name="Sparkles" size={40} />
-                            </div>
+                            <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                {currentStep < 2 ? 'arrow_forward' : 'done_all'}
+                            </span>
+                            {currentStep < 2 ? (isHebrew ? 'המשך' : 'Continue') : (isHebrew ? 'סיים ושמור' : 'Finish & Save')}
                         </button>
                     )}
                 </div>

@@ -8,272 +8,46 @@ interface AppHeaderProps {
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, title }) => {
-    const { userProfile, streak, setLanguage } = useApp();
+    const { userProfile, setLanguage } = useApp();
     const [menuOpen, setMenuOpen] = useState(false);
-    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
-    const [expandedBadge, setExpandedBadge] = useState<'days' | 'consistency' | null>(null);
 
     if (!userProfile) return null;
 
     const isHebrew = userProfile.language === 'hebrew';
 
-    // Calculate Weekly Consistency Level
-    const calculateConsistency = () => {
-        if (!streak.practiceDates || streak.practiceDates.length === 0) {
-            return { level: 0, textEn: 'Building Habit...', textHe: 'בונה הרגל...', icon: <FluentIcon name="Seedling" size={20} /> };
-        }
-
-        const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-        let countLast7Days = 0;
-        for (const dateStr of streak.practiceDates) {
-            const date = new Date(dateStr);
-            if (date >= sevenDaysAgo && date <= now) {
-                countLast7Days++;
-            }
-        }
-
-        if (countLast7Days >= 5) {
-            return { level: 3, textEn: 'Weekly Master', textHe: 'מאסטר שבועי', icon: <FluentIcon name="Fire" size={16} /> };
-        } else if (countLast7Days >= 3) {
-            return { level: 2, textEn: 'Consistent', textHe: 'עקבי', icon: <FluentIcon name="Star" size={16} /> };
-        } else {
-            return { level: 1, textEn: 'Building Habit', textHe: 'בונה הרגל', icon: <FluentIcon name="Sparkles" size={16} /> };
-        }
-    };
-
-    const consistency = calculateConsistency();
-
     return (
-        <header style={{
-            position: 'relative',
-            width: '100%',
-            padding: '16px 16px 12px 16px',
-            zIndex: 10
-        }}>
-            {/* Left Side: Stats (Consistency & Total Days) */}
-            <div style={{
-                position: 'absolute',
-                top: '16px',
-                left: isHebrew ? 'auto' : '16px',
-                right: isHebrew ? '16px' : 'auto',
-                zIndex: 20,
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '4px',
-                maxWidth: 'calc(100% - 44px)' // Leave room for avatar
-            }}>
-                {/* Total Days counter */}
-                <button
-                    onClick={() => setExpandedBadge(expandedBadge === 'days' ? null : 'days')}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: 'rgba(255, 255, 255, 0.15)',
-                        padding: '6px 12px',
-                        height: '40px',
-                        borderRadius: '20px',
-                        backdropFilter: 'blur(4px)',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <FluentIcon name="Star" size={24} />
-                    </div>
-                    {expandedBadge === 'days' && (
-                        <span style={{ fontSize: '14px', fontWeight: 600, color: 'white', whiteSpace: 'nowrap' }}>
-                            {isHebrew ? `${streak.totalDaysPracticed || 0} ימים סה"כ` : `${streak.totalDaysPracticed || 0} Total Days`}
-                        </span>
-                    )}
-                </button>
-
-                {/* Consistency Level */}
-                <button
-                    onClick={() => setExpandedBadge(expandedBadge === 'consistency' ? null : 'consistency')}
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: 'rgba(255, 255, 255, 0.15)',
-                        padding: '6px 12px',
-                        height: '40px',
-                        borderRadius: '20px',
-                        backdropFilter: 'blur(4px)',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}>
-                    <span style={{ display: 'flex', alignItems: 'center', height: '24px', transform: 'scale(1.5)' }}>{consistency.icon}</span>
-                    {expandedBadge === 'consistency' && (
-                        <span style={{
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: 'white',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            {isHebrew ? consistency.textHe : consistency.textEn}
-                        </span>
-                    )}
-                </button>
-
-                {/* Language Selector Pill */}
-                <div style={{ position: 'relative' }}>
-                    <button
-                        onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            background: 'rgba(255, 255, 255, 0.15)',
-                            padding: '6px 12px',
-                            height: '40px',
-                            borderRadius: '20px',
-                            backdropFilter: 'blur(4px)',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'white',
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            transition: 'all 0.2s ease',
-                            whiteSpace: 'nowrap'
-                        }}
-                    >
-                        <span style={{ fontSize: '18px' }}>{isHebrew ? '🇮🇱' : '🇬🇧'}</span>
-                        <span style={{ fontSize: '14px' }}>{isHebrew ? 'עב' : 'EN'}</span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}>
-                            <path d="M7 10l5 5 5-5z" />
-                        </svg>
-                    </button>
-
-                    {/* Language Dropdown */}
-                    {langDropdownOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '44px',
-                            right: isHebrew ? '0' : 'auto',
-                            left: isHebrew ? 'auto' : '0',
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-                            overflow: 'hidden',
-                            minWidth: '160px',
-                            zIndex: 100
-                        }}>
-                            <button
-                                onClick={() => { setLanguage('english'); setLangDropdownOpen(false); }}
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 14px',
-                                    background: !isHebrew ? 'rgba(138,43,226,0.1)' : 'transparent',
-                                    border: 'none',
-                                    borderBottom: '1px solid rgba(0,0,0,0.08)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    fontSize: '14px',
-                                    color: '#333',
-                                    fontWeight: !isHebrew ? 600 : 400
-                                }}
-                            >
-                                <span style={{ fontSize: '18px' }}>🇬🇧</span>
-                                <span>English</span>
-                                {!isHebrew && <span style={{ marginLeft: 'auto', color: '#8A2BE2' }}>✓</span>}
-                            </button>
-                            <button
-                                onClick={() => { setLanguage('hebrew'); setLangDropdownOpen(false); }}
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 14px',
-                                    background: isHebrew ? 'rgba(138,43,226,0.1)' : 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    fontSize: '14px',
-                                    color: '#333',
-                                    fontWeight: isHebrew ? 600 : 400
-                                }}
-                            >
-                                <span style={{ fontSize: '18px' }}>🇮🇱</span>
-                                <span>עברית</span>
-                                {isHebrew && <span style={{ marginLeft: 'auto', color: '#8A2BE2' }}>✓</span>}
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Hamburger Menu */}
-            <div style={{
-                position: 'absolute',
-                top: '16px',
-                right: isHebrew ? 'auto' : '16px',
-                left: isHebrew ? '16px' : 'auto',
-                zIndex: 30
-            }}>
-                {/* Profile Avatar Button */}
+        <header className="flex items-center p-6 justify-between z-40 w-full shrink-0 relative">
+            <button className="w-10 h-10 flex items-center justify-center rounded-full glass-card text-white hover:bg-white/20 transition-colors shadow-lg">
+                <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white text-glow text-center">
+                {title}
+            </h1>
+            <div className="relative">
                 <button
                     onClick={() => setMenuOpen(!menuOpen)}
-                    style={{
-                        width: '40px',
-                        height: '40px',
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'transform 0.2s',
-                        transform: menuOpen ? 'scale(0.95)' : 'scale(1)',
-                        color: 'white'
-                    }}
+                    className="w-10 h-10 flex items-center justify-center rounded-full glass-card text-white hover:bg-white/20 transition-colors shadow-lg"
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FluentIcon name="User" size={28} />
-                    </div>
+                    <span className="material-symbols-outlined">info</span>
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* Dropdown Menu from previous implementation */}
                 {menuOpen && (
                     <div style={{
                         position: 'absolute',
-                        top: '58px',
+                        top: '50px',
                         right: isHebrew ? 'auto' : '0',
                         left: isHebrew ? '0' : 'auto',
                         background: 'rgba(255, 255, 255, 0.95)',
                         backdropFilter: 'blur(10px)',
                         borderRadius: '12px',
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                        minWidth: '180px',
-                        overflow: 'hidden'
+                        minWidth: '220px',
+                        overflow: 'hidden',
+                        zIndex: 50
                     }}>
-                        {/* User Info */}
-                        <div style={{
-                            padding: '12px 16px',
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px'
-                        }}>
-                            <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #8A2BE2, #FF69B4)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontSize: '14px',
-                                fontWeight: 700
-                            }}>
+                        <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #8A2BE2, #FF69B4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px', fontWeight: 700 }}>
                                 {userProfile.name?.charAt(0).toUpperCase() || '👤'}
                             </div>
                             <span style={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>
@@ -281,58 +55,26 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, title }) => {
                             </span>
                         </div>
 
+                        <div style={{ padding: '8px 0', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+                            <button onClick={() => { setLanguage('english'); setMenuOpen(false); }} style={{ width: '100%', padding: '10px 16px', border: 'none', background: !isHebrew ? 'rgba(43,108,238,0.1)' : 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: '#333', fontWeight: !isHebrew ? 600 : 400 }}>🇬🇧 English</span>
+                                {!isHebrew && <span style={{ color: '#2b6cee' }}>✓</span>}
+                            </button>
+                            <button onClick={() => { setLanguage('hebrew'); setMenuOpen(false); }} style={{ width: '100%', padding: '10px 16px', border: 'none', background: isHebrew ? 'rgba(43,108,238,0.1)' : 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: '#333', fontWeight: isHebrew ? 600 : 400 }}>🇮🇱 עברית</span>
+                                {isHebrew && <span style={{ color: '#2b6cee' }}>✓</span>}
+                            </button>
+                        </div>
 
-                        {/* Sign Out */}
                         <button
-                            onClick={() => {
-                                onLogout();
-                                setMenuOpen(false);
-                            }}
-                            style={{
-                                width: '100%',
-                                padding: '12px 16px',
-                                background: 'transparent',
-                                border: 'none',
-                                borderTop: '1px solid rgba(0, 0, 0, 0.1)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                fontSize: '14px',
-                                color: '#e53e3e'
-                            }}
+                            onClick={() => { onLogout(); setMenuOpen(false); }}
+                            style={{ width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: '#e53e3e' }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <FluentIcon name="Logout" size={20} style={{ filter: 'grayscale(1) brightness(0.8) sepia(1) hue-rotate(-50deg) saturate(3)' }} />
-                            </div>
+                            <FluentIcon name="Logout" size={20} style={{ filter: 'grayscale(1) brightness(0.8) sepia(1) hue-rotate(-50deg) saturate(3)' }} />
                             <span>{isHebrew ? 'התנתק' : 'Sign Out'}</span>
                         </button>
                     </div>
                 )}
-            </div>
-
-            {/* Centered Titles - Render global title passed from App.tsx */}
-            <div style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingTop: '64px'
-            }}>
-                <h2 className="title-english" style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontSize: '24px',
-                    fontWeight: isHebrew ? 800 : 700,
-                    color: '#FFFFFF',
-                    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    letterSpacing: isHebrew ? '0' : '0.02em',
-                    marginTop: '4px',
-                    textAlign: 'center',
-                    lineHeight: 1.2
-                }}>
-                    {title}
-                </h2>
             </div>
         </header>
     );

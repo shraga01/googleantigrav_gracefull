@@ -77,25 +77,27 @@ const AppContent: React.FC = () => {
     };
 
     return (
-      <div dir={isHebrew ? 'rtl' : 'ltr'} className="min-h-screen relative pb-24">
-        <AppHeader
-          onLogout={handleLogout}
-          title={getPageTitle()}
-        />
+      <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-slate-800 antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
+        <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10">
+          <AppHeader
+            onLogout={handleLogout}
+            title={getPageTitle()}
+          />
 
-        {/* Main Content */}
-        <main className="container-main page-content">
-          {currentTab === 'daily' && <DailyPractice />}
-          {currentTab === 'history' && <HistoryView />}
-          {currentTab === 'stats' && <StatsDashboard />}
-          {currentTab === 'settings' && <SettingsMenu />}
-        </main>
+          {/* Main Content */}
+          <main className="flex-1 w-full relative overflow-y-auto no-scrollbar flex flex-col">
+            {currentTab === 'daily' && <DailyPractice />}
+            {currentTab === 'history' && <HistoryView />}
+            {currentTab === 'stats' && <StatsDashboard />}
+            {currentTab === 'settings' && <SettingsMenu />}
+          </main>
 
-        {/* Bottom Navigation */}
-        <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
+          {/* Bottom Navigation */}
+          <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-        {/* Global Badge Unlock Animation Overlay */}
-        <BadgeUnlockOverlay />
+          {/* Global Badge Unlock Animation Overlay */}
+          <BadgeUnlockOverlay />
+        </div>
       </div>
     );
   }

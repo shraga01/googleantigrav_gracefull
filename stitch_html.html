@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Daily Appreciation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#2b6cee",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+            },
+            fontFamily: {
+              "display": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .mesh-gradient {
+            background-color: #fce4ec;
+            background-image: 
+                radial-gradient(at 0% 0%, #ff80ab 0px, transparent 50%),
+                radial-gradient(at 100% 0%, #b39ddb 0px, transparent 50%),
+                radial-gradient(at 100% 100%, #80deea 0px, transparent 50%),
+                radial-gradient(at 0% 100%, #ffe082 0px, transparent 50%),
+                radial-gradient(at 50% 50%, #f48fb1 0px, transparent 50%);
+            background-size: 100% 100%;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        .glass-button-glow {
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-white font-display text-slate-800 antialiased overflow-hidden">
+<div class="relative flex h-screen w-full flex-col mesh-gradient overflow-hidden">
+<!-- Header -->
+<header class="flex items-center p-6 justify-between z-10">
+<button class="size-10 flex items-center justify-center rounded-full glass-card text-white hover:bg-white/50 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-2xl font-extrabold tracking-tight text-white text-glow">Daily Appreciation</h1>
+<button class="size-10 flex items-center justify-center rounded-full glass-card text-white hover:bg-white/50 transition-colors">
+<span class="material-symbols-outlined">info</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col items-center justify-center px-6 relative">
+<!-- Background Decorative Elements -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="text-center mb-12 relative z-10">
+<p class="text-white/90 text-sm font-bold tracking-widest uppercase mb-3 text-glow">Practice Gratitude</p>
+<p class="text-white font-semibold tracking-wide glass-card px-6 py-3 rounded-full inline-block shadow-lg">
+                    Concrete act + Person + How it helped
+                </p>
+</div>
+<!-- Central Glow Button -->
+<div class="relative group cursor-pointer z-10">
+<div class="absolute inset-0 bg-primary/40 rounded-full blur-2xl group-hover:bg-primary/60 transition-all duration-500 scale-110"></div>
+<button class="relative w-72 h-72 rounded-full flex flex-col items-center justify-center glass-card border-white/40 glass-button-glow hover:scale-[1.03] transition-all duration-500 shadow-2xl">
+<span class="material-symbols-outlined text-6xl mb-4 text-white" style="font-variation-settings: 'FILL' 1">favorite</span>
+<span class="text-white text-2xl font-black tracking-tight px-10 text-center leading-tight text-glow">Daily Appreciation</span>
+<div class="mt-4 flex gap-1">
+<div class="w-1 h-1 rounded-full bg-white/40"></div>
+<div class="w-1 h-1 rounded-full bg-white/40"></div>
+<div class="w-1 h-1 rounded-full bg-white/40"></div>
+</div>
+</button>
+</div>
+<div class="mt-16 text-center z-10">
+<p class="text-white font-medium text-lg max-w-[300px] leading-relaxed text-glow">
+                    Take a quiet moment to reflect on the good things from today.
+                </p>
+</div>
+</main>
+<!-- Navigation -->
+<nav class="pb-8 pt-4 px-6 z-10">
+<div class="glass-card rounded-full p-2 flex items-center justify-between gap-1 border-white/10 shadow-2xl">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 py-3 rounded-full bg-white text-pink-500 shadow-lg transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1">calendar_today</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Today</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 py-3 rounded-full text-white/70 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]">book_2</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Journal</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 py-3 rounded-full text-white/70 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]">insights</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Stats</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 py-3 rounded-full text-white/70 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-[24px]">settings</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Settings</span>
+</a>
+</div>
+</nav>
+</div>
+</body></html>
