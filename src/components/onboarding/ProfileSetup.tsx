@@ -79,7 +79,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
 
     return (
         <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient h-[100dvh] w-full relative">
-            <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
+            <div className="relative flex h-[100dvh] w-full flex-col overflow-y-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     {/* Step indicator */}
                     <div style={{

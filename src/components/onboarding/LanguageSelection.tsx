@@ -40,7 +40,7 @@ export const LanguageSelection: React.FC<LanguageSelectionProps> = ({ onNext }) 
 
     return (
         <div className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient h-[100dvh] w-full relative">
-            <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center overflow-hidden max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
+            <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center overflow-y-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
                 {/* 3D Animated Globe Icon */}
                 <div style={{ marginBottom: '24px' }}>
                     <FluentIcon name="Globe" size={80} />
