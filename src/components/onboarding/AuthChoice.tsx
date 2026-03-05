@@ -35,8 +35,8 @@ export const AuthChoice: React.FC<AuthChoiceProps> = ({
     };
 
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
-            <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-auto max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient h-[100dvh] w-full relative">
+            <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center overflow-hidden max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
                 {/* 3D Animated Icon */}
                 <div style={{ marginBottom: '20px' }}>
                     <FluentIcon name="Shield" size={72} />

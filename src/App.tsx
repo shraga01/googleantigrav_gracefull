@@ -77,7 +77,7 @@ const AppContent: React.FC = () => {
     };
 
     return (
-      <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-slate-800 antialiased overflow-hidden mesh-gradient min-h-screen w-full relative">
+      <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-slate-800 antialiased overflow-hidden mesh-gradient h-[100dvh] w-full relative">
         <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10">
           <AppHeader
             onLogout={handleLogout}
@@ -124,7 +124,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen animate-fadeIn">
+    <div className="h-[100dvh] overflow-hidden animate-fadeIn">
       {onboardingStep === 'language' && <LanguageSelection onNext={handleLanguageSelected} />}
       {onboardingStep === 'auth' && (
         <AuthChoice
