@@ -20,7 +20,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartPractice }) => {
                 </p>
                 <p className="text-white font-semibold tracking-wide glass-card px-6 py-3 rounded-full inline-block shadow-lg">
                     {isHebrew
-                        ? 'מעשה קונקרטי + אדם + איך זה עזר'
+                        ? 'מעשה ספציפי + אדם + איך זה עזר לך'
                         : 'Concrete act + Person + How it helped'}
                 </p>
             </div>

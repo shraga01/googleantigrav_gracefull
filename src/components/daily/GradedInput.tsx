@@ -53,9 +53,9 @@ export const GradedInput: React.FC<GradedInputProps> = ({
     // Criteria label translation
     const getCriteriaLabel = (criteria: string): string => {
         const labels: Record<string, { en: string; he: string }> = {
-            'SPECIFICITY': { en: 'Specificity', he: 'ספציפיות' },
+            'SPECIFICITY': { en: 'Specificity', he: 'מעשה ספציפי' },
             'PERSON': { en: 'Person', he: 'אדם' },
-            'CAUSALITY': { en: 'Causality', he: 'סיבתיות' },
+            'CAUSALITY': { en: 'Causality', he: 'איך זה עזר לך' },
             'SENSORY': { en: 'Sensory', he: 'חושי' },
             'AUTHENTICITY': { en: 'Authenticity', he: 'אותנטיות' },
         };

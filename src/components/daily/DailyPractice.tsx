@@ -317,7 +317,7 @@ export const DailyPractice: React.FC = () => {
                     </p>
                     <div className="text-white font-semibold tracking-wide glass-card px-4 sm:px-6 py-2.5 sm:py-3 rounded-full inline-block shadow-lg text-xs sm:text-sm leading-snug">
                         {isHebrew
-                            ? <React.Fragment>מעשה <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> אדם <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> מיטיבות</React.Fragment>
+                            ? <React.Fragment>מעשה ספציפי <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> אדם <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> איך זה עזר לך</React.Fragment>
                             : <React.Fragment>Concrete act <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> Person <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> How it helped</React.Fragment>
                         }
                     </div>
