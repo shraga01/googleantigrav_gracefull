@@ -1,67 +1,59 @@
 import React, { useEffect, useState } from 'react';
 import { StorageService } from '../../services/storage';
-import { decryptEntry } from '../../services/encryption';
+// import { decryptEntry } from '../../services/encryption'; // logic moved to Modal
 import type { DailyEntry } from '../../types';
 import { useApp } from '../../context/AppContext';
-
-// Component to handle decryption of a single entry
-const DecryptedContent: React.FC<{ content: string; googleId: string | null; isAuthenticated: boolean }> = ({ content, googleId, isAuthenticated }) => {
-    const [decrypted, setDecrypted] = useState<string>('');
-    const [isDecrypting, setIsDecrypting] = useState(true);
-    const [error, setError] = useState(false);
-
-    useEffect(() => {
-        const decrypt = async () => {
-            if (isAuthenticated && googleId) {
-                try {
-                    const decryptedText = await decryptEntry(content, googleId);
-                    setDecrypted(decryptedText);
-                } catch (err) {
-                    console.error('Decryption failed:', err);
-                    setError(true);
-                    setDecrypted('🔒 Unable to decrypt this entry');
-                }
-            } else {
-                setDecrypted(content);
-            }
-            setIsDecrypting(false);
-        };
-
-        decrypt();
-    }, [content, googleId, isAuthenticated]);
-
-    if (isDecrypting) {
-        return <div className="italic text-gray-400">Decrypting...</div>;
-    }
-
-    if (error) {
-        return <div className="text-gray-400">{decrypted}</div>;
-    }
-
-    return (
-        <div className="whitespace-pre-wrap leading-relaxed text-gray-800">
-            {decrypted.split('\n').map((line, i) => (
-                <div key={i} className="py-1">{line}</div>
-            ))}
-        </div>
-    );
-};
+import { ApiService } from '../../services/api';
+import { DiaryCalendar } from './DiaryCalendar';
+import { EntryDetailModal } from './EntryDetailModal';
 
 export const HistoryView: React.FC = () => {
+    console.log('HistoryView Loaded: v-detail-modal-refactor');
     const { userProfile, googleId, isAuthenticated } = useApp();
     const [entries, setEntries] = useState<DailyEntry[]>([]);
+    const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
 
     const isHebrew = userProfile?.language === 'hebrew';
 
     useEffect(() => {
-        setEntries(StorageService.getEntries());
-    }, []);
+        const loadEntries = async () => {
+            // 1. Load from local storage first (instant)
+            setEntries(StorageService.getEntries());
+
+            // 2. If authenticated, sync from server (background)
+            if (isAuthenticated) {
+                try {
+                    const serverEntries = await ApiService.getEntries();
+                    if (serverEntries.length > 0) {
+                        console.log('🔄 Syncing entries from server:', serverEntries.length);
+                        // Save each entry to local storage (updates existing ones)
+                        serverEntries.forEach((entry: DailyEntry) => StorageService.saveEntry(entry));
+
+                        // Reload from storage to update UI
+                        setEntries(StorageService.getEntries());
+                    }
+                } catch (error) {
+                    console.error('Failed to sync history:', error);
+                }
+            }
+        };
+
+        loadEntries();
+    }, [isAuthenticated]);
 
     if (entries.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-                <div className="text-6xl mb-4">📖</div>
-                <p className="text-lg text-gray-500">
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '60vh',
+                textAlign: 'center',
+                padding: '24px'
+            }}>
+                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📖</div>
+                <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>
                     {isHebrew ? 'עדיין אין היסטוריה. התחל לתרגל!' : 'No history yet. Start practicing!'}
                 </p>
             </div>
@@ -71,16 +63,13 @@ export const HistoryView: React.FC = () => {
     return (
         <div className="animate-fadeIn max-w-2xl mx-auto pb-20">
 
-            <div className="space-y-4">
-                {entries.map((entry) => (
-                    <div key={entry.entryId} className="card card-sage">
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-sm text-gray-500">{entry.date}</span>
-                            <span className="streak-pill text-sm px-2 py-0.5 rounded-full">
-                                🔥 {entry.streakDay}
-                            </span>
-                        </div>
+
+            {/* Calendar Grid */}
+            <DiaryCalendar
+                entries={entries}
+                onSelectEntry={setSelectedEntry}
+                isHebrew={isHebrew}
+            />
 
             {/* Selected Entry Detail Modal / View - Compact Version */}
             {selectedEntry && (
@@ -92,26 +81,12 @@ export const HistoryView: React.FC = () => {
                 />
             )}
 
-                        {/* Content */}
-                        <div className="bg-white/50 rounded-xl p-4 border-l-4 border-olive-btn">
-                            {entry.userContent.type === 'text' ? (
-                                <DecryptedContent
-                                    content={entry.userContent.content as string}
-                                    googleId={googleId}
-                                    isAuthenticated={isAuthenticated}
-                                />
-                            ) : (
-                                <div>
-                                    <audio controls src={entry.userContent.content as string} className="w-full" />
-                                    <div className="text-xs text-gray-500 mt-2">
-                                        Duration: {Math.round(entry.userContent.duration || 0)}s
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {/* Hint if nothing selected */}
+            {!selectedEntry && (
+                <p className="text-center text-gray-400 text-sm mt-4 animate-pulse">
+                    {isHebrew ? 'לחץ על יום כדי לצפות בזיכרון' : 'Tap a completed day to reflect'}
+                </p>
+            )}
         </div>
     );
 };

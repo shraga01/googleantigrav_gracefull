@@ -15,9 +15,40 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { BadgeUnlockOverlay } from './components/common/BadgeUnlockOverlay';
 
 const AppContent: React.FC = () => {
-  const { userProfile, isLoading, logout } = useApp();
+  const { userProfile, isLoading, isAuthenticated, logout, refreshProfile, fetchProfileFromServer } = useApp();
+
+  // Track which step of the onboarding flow ONLY when actually onboarding
   const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
+
+  // Track if we've already checked for server profile after auth
+  const [hasCheckedServerProfile, setHasCheckedServerProfile] = useState(false);
+
+  // When user becomes authenticated, check if they have a profile on the server
+  React.useEffect(() => {
+    const checkServerProfile = async () => {
+      if (isAuthenticated && !userProfile && !hasCheckedServerProfile && !isLoading) {
+        console.log('User authenticated but no local profile, checking server...');
+        setHasCheckedServerProfile(true);
+        const serverProfile = await fetchProfileFromServer();
+        if (serverProfile) {
+          console.log('Found profile on server, skipping onboarding');
+        } else {
+          console.log('No profile on server, user needs to complete profile setup');
+          setOnboardingStep('profile');
+        }
+      }
+    };
+    checkServerProfile();
+  }, [isAuthenticated, userProfile, hasCheckedServerProfile, isLoading, fetchProfileFromServer]);
+
+  // Reset state when user logs out
+  React.useEffect(() => {
+    if (!isAuthenticated && !isLoading) {
+      setOnboardingStep('language');
+      setHasCheckedServerProfile(false);
+    }
+  }, [isAuthenticated, isLoading]);
 
   const handleLogout = async () => {
     try {
@@ -34,7 +65,6 @@ const AppContent: React.FC = () => {
   // If we have a profile, show the main app
   if (userProfile) {
     const isHebrew = userProfile.language === 'hebrew';
-    const streak = StorageService.getStreak();
 
     const getPageTitle = () => {
       switch (currentTab) {
@@ -72,11 +102,13 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Onboarding Flow
+  // Onboarding Flow handlers
   const handleLanguageSelected = () => setOnboardingStep('auth');
   const handleAuthCompleted = () => setOnboardingStep('welcome');
   const handleWelcomeCompleted = () => setOnboardingStep('profile');
-  const handleProfileCompleted = () => { };
+  const handleProfileCompleted = () => {
+    refreshProfile();
+  };
 
   const handleGoogleSignIn = async () => {
     handleAuthCompleted();
@@ -109,9 +141,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 };
 

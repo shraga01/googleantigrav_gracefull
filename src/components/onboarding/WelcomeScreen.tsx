@@ -17,6 +17,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                 <div style={{ marginBottom: '24px' }}>
                     <FluentIcon name="Sun" size={80} />
                 </div>
+
                 {/* Title */}
                 <h1 style={{
                     fontSize: '32px',
