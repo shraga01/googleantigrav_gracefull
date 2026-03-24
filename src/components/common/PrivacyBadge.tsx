@@ -39,7 +39,7 @@ export const PrivacyBadge: React.FC<PrivacyBadgeProps> = ({ showTooltip = true }
                         marginBottom: 'var(--spacing-sm)',
                         padding: 'var(--spacing-md)',
                         backgroundColor: 'var(--color-text-main)',
-                        color: 'black',
+                        color: 'white',
                         borderRadius: 'var(--radius-md)',
                         fontSize: 'var(--font-size-sm)',
                         whiteSpace: 'nowrap',

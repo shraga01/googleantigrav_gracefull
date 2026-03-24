@@ -33,7 +33,7 @@ export interface DailyEntry {
     completedAt: number;
     streakDay: number;
     milestoneReached?: string;
-    qualityScore?: number; // 0 to 100
+    qualityScore?: number;
 }
 
 export interface StreakData {
