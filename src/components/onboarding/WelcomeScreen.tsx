@@ -98,6 +98,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
                 >
                     {isHebrew ? 'המשך' : 'Continue'}
                 </button>
+            </div>
         </div>
     );
 };
