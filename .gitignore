@@ -41,3 +41,6 @@ server/node_modules
 # Functions
 functions/lib
 functions/node_modules
+
+# Firebase cache
+.firebase/
