@@ -4,11 +4,13 @@
  * Secure initialization of Firebase Client SDK:
  * - Auth: User authentication (Google, Anonymous)
  * - Firestore: Empirical, zero-leak database with security rules
+ * - Functions: Authenticated server-side AI execution authority
  */
 
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFunctions, type Functions } from 'firebase/functions';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -39,16 +41,18 @@ function validateConfig(): void {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
+let functions: Functions;
 
 try {
     validateConfig();
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    console.log('✅ Firebase and Firestore initialized successfully');
+    functions = getFunctions(app);
+    console.log('✅ Firebase, Firestore & Functions initialized successfully');
 } catch (error) {
     console.error('❌ Firebase initialization failed:', error);
     throw error;
 }
 
-export { app, auth, db };
+export { app, auth, db, functions };

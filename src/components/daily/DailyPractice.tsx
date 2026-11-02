@@ -7,24 +7,37 @@ import type {
     ThreeGoodThingsItem,
     GratitudeProtocolType,
     Locale,
+    EmpiricalHistoricalContext,
 } from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { ScientificFactBanner } from '../common/ScientificFactBanner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
 import { ThreeGoodThingsForm } from './ThreeGoodThingsForm';
-import { GratitudeLetterModal } from './GratitudeLetterModal';
-import { MentalSubtractionModal } from './MentalSubtractionModal';
-import { GQ6AssessmentModal } from '../clinical/GQ6AssessmentModal';
-import { VirtualGratitudeVisitModal } from '../clinical/VirtualGratitudeVisitModal';
-import { HubermanRecallModal } from '../clinical/HubermanRecallModal';
 import { DosingScheduleBadge } from '../clinical/DosingScheduleBadge';
 import { PastelCard } from '../common/PastelCard';
 import { getDictionary } from '../../locales';
 import { v4 as uuidv4 } from 'uuid';
 
+// Lazy-loaded clinical modals for code-splitting and bundle optimization
+const GratitudeLetterModal = React.lazy(() =>
+    import('./GratitudeLetterModal').then((m) => ({ default: m.GratitudeLetterModal }))
+);
+const MentalSubtractionModal = React.lazy(() =>
+    import('./MentalSubtractionModal').then((m) => ({ default: m.MentalSubtractionModal }))
+);
+const GQ6AssessmentModal = React.lazy(() =>
+    import('../clinical/GQ6AssessmentModal').then((m) => ({ default: m.GQ6AssessmentModal }))
+);
+const VirtualGratitudeVisitModal = React.lazy(() =>
+    import('../clinical/VirtualGratitudeVisitModal').then((m) => ({ default: m.VirtualGratitudeVisitModal }))
+);
+const HubermanRecallModal = React.lazy(() =>
+    import('../clinical/HubermanRecallModal').then((m) => ({ default: m.HubermanRecallModal }))
+);
+
 export const DailyPractice: React.FC = () => {
     // -------------------------------------------------------------------------
-    // 1. All useState Declarations (Strictly physical top)
+    // 1. All useState Declarations (Strictly physical top - TDZ Prevention)
     // -------------------------------------------------------------------------
     const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
     const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +45,9 @@ export const DailyPractice: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const [activeProtocol, setActiveProtocol] = useState<GratitudeProtocolType>('three_good_things');
     const [currentStep, setCurrentStep] = useState(0);
+
+    // Empirical historical context loaded directly from Firestore
+    const [empiricalContext, setEmpiricalContext] = useState<EmpiricalHistoricalContext | null>(null);
 
     // Three Good Things structured items (with mandatory causal/agency attribution & 1-7 affect rating)
     const [items, setItems] = useState<ThreeGoodThingsItem[]>([
@@ -73,8 +89,15 @@ export const DailyPractice: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Check Firestore first if authenticated
+            // Load empirical Firestore historical context
             if (isAuthenticated && googleId) {
+                try {
+                    const ctx = await FirestoreService.getEmpiricalHistoricalContext(googleId);
+                    setEmpiricalContext(ctx);
+                } catch (ctxError) {
+                    console.warn('Failed to fetch empirical context from Firestore:', ctxError);
+                }
+
                 const firestoreEntry = await FirestoreService.getEntryByDate(googleId, today);
                 if (firestoreEntry) {
                     setDailyStateFromEntry(firestoreEntry);
@@ -225,6 +248,10 @@ export const DailyPractice: React.FC = () => {
         return <LoadingSpinner />;
     }
 
+    if (!userProfile) {
+        return null;
+    }
+
     if (isCompleted) {
         return (
             <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="max-w-xl mx-auto px-4 py-8 animate-fadeIn text-center">
@@ -238,13 +265,12 @@ export const DailyPractice: React.FC = () => {
                     <div className="py-6 space-y-4">
                         <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-lg">
                             <span>🔥</span>
-                            <span>{StorageService.getStreak().currentStreak}</span>
                             <span>{t.common.daysStreak}</span>
                         </div>
-                        <p className="text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
+                        <p className="text-sm text-neutral-600 max-w-sm mx-auto">
                             {locale === 'he'
-                                ? 'מחקרים מוכיחים כי תרגול "שלושה דברים טובים" הכולל סוכנות אישית מוריד את תסמיני השחיקה ב-22% ומשפר את איכות השינה כבר בשבועות הראשונים.'
-                                : 'Studies show that Three Good Things with agency attribution decreases burnout symptoms by 22% and improves sleep depth within the first weeks.'}
+                                ? 'התרגול היומי הושלם בהצלחה. המוח שלך חיזק את מסלולי ההערכה והסוכנות האישית.'
+                                : 'Daily practice complete. Your medial prefrontal cortex has reinforced neural pathways of appreciation and agency.'}
                         </p>
                     </div>
                 </PastelCard>
@@ -252,91 +278,74 @@ export const DailyPractice: React.FC = () => {
         );
     }
 
-    if (!userProfile) {
-        return null;
-    }
-
     return (
-        <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="w-full max-w-2xl mx-auto px-4 py-6 space-y-6 animate-fadeIn">
-            {/* Dosing Schedule Status Badge */}
-            <DosingScheduleBadge
-                dosingSchedule={userProfile.dosingSchedule}
-                locale={locale}
-            />
+        <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="max-w-2xl mx-auto px-4 py-6 space-y-6 animate-fadeIn pb-24">
+            {/* Header & Neuroscience Dosing Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-black/5">
+                <div>
+                    <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
+                        {t.common.appName}
+                    </h1>
+                    <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                        {t.common.tagline}
+                    </p>
+                </div>
+                <DosingScheduleBadge dosingSchedule={userProfile.dosingSchedule} locale={locale} />
+            </div>
 
-            {/* Evidence-Based Protocol Selector Tabs */}
-            <div className="flex items-center justify-start gap-2 pb-2 overflow-x-auto no-scrollbar">
+            {/* Protocol Switcher Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                 <button
                     type="button"
                     onClick={() => setActiveProtocol('three_good_things')}
-                    className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
                         activeProtocol === 'three_good_things'
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-xs'
-                            : 'bg-white/80 text-neutral-600 hover:bg-neutral-100'
+                            ? 'bg-neutral-900 text-white shadow-sm'
+                            : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
                     }`}
                 >
-                    ✨ {t.threeGoodThings.title}
+                    {t.nav.daily} (3GT)
                 </button>
+
                 <button
                     type="button"
                     onClick={() => setShowGQ6Modal(true)}
-                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-amber-50 hover:text-amber-900 transition-all border border-transparent hover:border-amber-200 whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-all shrink-0"
                 >
-                    📊 GQ-6
+                    📊 {t.gq6.title}
                 </button>
+
                 <button
                     type="button"
                     onClick={() => setShowLetterModal(true)}
-                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-purple-50 hover:text-purple-800 transition-all border border-transparent hover:border-purple-200 whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 transition-all shrink-0"
                 >
                     ✉️ {t.letters.title}
                 </button>
+
                 <button
                     type="button"
                     onClick={() => setShowVirtualVisitModal(true)}
-                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-purple-50 hover:text-purple-800 transition-all border border-transparent hover:border-purple-200 whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 transition-all shrink-0"
                 >
-                    🪑 Empty Chair
+                    🪑 {t.emptyChair.title}
                 </button>
+
                 <button
                     type="button"
                     onClick={() => setShowHubermanModal(true)}
-                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-sky-50 hover:text-sky-800 transition-all border border-transparent hover:border-sky-200 whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 transition-all shrink-0"
                 >
-                    💓 Huberman
+                    🧠 {t.huberman.title}
                 </button>
+
                 <button
                     type="button"
                     onClick={() => setShowSubtractionModal(true)}
-                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-sky-50 hover:text-sky-800 transition-all border border-transparent hover:border-sky-200 whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 transition-all shrink-0"
                 >
-                    🌌 Subtraction
+                    ⏳ {t.mentalSubtraction.title}
                 </button>
-            </div>
-
-            {/* Stepper Navigation */}
-            <div className="flex items-center justify-between px-2">
-                <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                    {t.threeGoodThings.stepBadge.replace('{step}', String(currentStep + 1))}
-                </span>
-                <div className="flex gap-2">
-                    {[0, 1, 2].map((idx) => (
-                        <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setCurrentStep(idx)}
-                            className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${
-                                currentStep === idx
-                                    ? 'bg-neutral-800 text-white shadow-md scale-105'
-                                    : items[idx].act.trim().length > 0
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                    : 'bg-neutral-200 text-neutral-500'
-                            }`}
-                        >
-                            {idx + 1}
-                        </button>
-                    ))}
-                </div>
             </div>
 
             {/* Main Structured 3GT Form with Mandatory Causal Reflection & Affect Rating */}
@@ -344,6 +353,7 @@ export const DailyPractice: React.FC = () => {
                 stepIndex={currentStep}
                 userProfile={userProfile}
                 item={items[currentStep]}
+                empiricalContext={empiricalContext}
                 onChange={(updated) => handleItemChange(currentStep, updated)}
                 onCompleted={() => handleItemCompleted(currentStep)}
             />
@@ -390,48 +400,50 @@ export const DailyPractice: React.FC = () => {
                 </div>
             )}
 
-            {/* Clinical Protocols Modals */}
-            {showGQ6Modal && (
-                <GQ6AssessmentModal
-                    userProfile={userProfile}
-                    onClose={() => setShowGQ6Modal(false)}
-                    onCompleted={() => setShowGQ6Modal(false)}
-                />
-            )}
+            {/* Clinical Protocols Modals (Code-Split via Suspense) */}
+            <React.Suspense fallback={<LoadingSpinner />}>
+                {showGQ6Modal && (
+                    <GQ6AssessmentModal
+                        userProfile={userProfile}
+                        onClose={() => setShowGQ6Modal(false)}
+                        onCompleted={() => setShowGQ6Modal(false)}
+                    />
+                )}
 
-            {showLetterModal && (
-                <GratitudeLetterModal
-                    userProfile={userProfile}
-                    onClose={() => setShowLetterModal(false)}
-                    onSaved={() => setShowLetterModal(false)}
-                    isHebrew={locale === 'he'}
-                />
-            )}
+                {showLetterModal && (
+                    <GratitudeLetterModal
+                        userProfile={userProfile}
+                        onClose={() => setShowLetterModal(false)}
+                        onSaved={() => setShowLetterModal(false)}
+                        isHebrew={locale === 'he'}
+                    />
+                )}
 
-            {showVirtualVisitModal && (
-                <VirtualGratitudeVisitModal
-                    userProfile={userProfile}
-                    onClose={() => setShowVirtualVisitModal(false)}
-                    onCompleted={() => setShowVirtualVisitModal(false)}
-                />
-            )}
+                {showVirtualVisitModal && (
+                    <VirtualGratitudeVisitModal
+                        userProfile={userProfile}
+                        onClose={() => setShowVirtualVisitModal(false)}
+                        onCompleted={() => setShowVirtualVisitModal(false)}
+                    />
+                )}
 
-            {showHubermanModal && (
-                <HubermanRecallModal
-                    userProfile={userProfile}
-                    onClose={() => setShowHubermanModal(false)}
-                    onCompleted={() => setShowHubermanModal(false)}
-                />
-            )}
+                {showHubermanModal && (
+                    <HubermanRecallModal
+                        userProfile={userProfile}
+                        onClose={() => setShowHubermanModal(false)}
+                        onCompleted={() => setShowHubermanModal(false)}
+                    />
+                )}
 
-            {showSubtractionModal && (
-                <MentalSubtractionModal
-                    userProfile={userProfile}
-                    onClose={() => setShowSubtractionModal(false)}
-                    onCompleted={(reflection) => setSubtractionReflection(reflection)}
-                    isHebrew={locale === 'he'}
-                />
-            )}
+                {showSubtractionModal && (
+                    <MentalSubtractionModal
+                        userProfile={userProfile}
+                        onClose={() => setShowSubtractionModal(false)}
+                        onCompleted={(reflection) => setSubtractionReflection(reflection)}
+                        isHebrew={locale === 'he'}
+                    />
+                )}
+            </React.Suspense>
         </div>
     );
 };

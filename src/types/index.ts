@@ -168,3 +168,15 @@ export interface ApiStreakResponse {
 export interface ApiEntryResponse extends DailyEntry {
     serverTimestamp?: number;
 }
+
+export interface EmpiricalHistoricalContext {
+    profile: UserProfile | null;
+    streak: StreakData | null;
+    recentEntries: DailyEntry[];
+    latestGQ6: GQ6Assessment | null;
+    totalGQ6Count: number;
+    latestVisit: VirtualGratitudeVisit | null;
+    latestStory: HubermanStory | null;
+    dosingPhase: 'onboarding_daily_21' | 'maintenance_variety';
+}
+

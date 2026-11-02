@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import type { ThreeGoodThingsItem, UserProfile, Locale } from '../../types';
+import type { ThreeGoodThingsItem, UserProfile, Locale, EmpiricalHistoricalContext } from '../../types';
 import { PastelCard, type PastelVariant } from '../common/PastelCard';
 import { AiService, type EvaluationResult } from '../../services/aiService';
+import { FirestoreService } from '../../services/firestoreService';
 import { getDictionary } from '../../locales';
 
 interface ThreeGoodThingsFormProps {
     stepIndex: number; // 0, 1, 2
     userProfile: UserProfile;
     item: ThreeGoodThingsItem;
+    empiricalContext?: EmpiricalHistoricalContext | null;
     onChange: (updated: ThreeGoodThingsItem) => void;
     onCompleted?: (result?: EvaluationResult) => void;
 }
@@ -18,6 +20,7 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
     stepIndex,
     userProfile,
     item,
+    empiricalContext,
     onChange,
     onCompleted,
 }) => {
@@ -46,7 +49,16 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
 
         setIsEvaluating(true);
         try {
-            const result = await AiService.evaluateItem(item, userProfile);
+            let context = empiricalContext;
+            if (!context && userProfile.userId) {
+                try {
+                    context = await FirestoreService.getEmpiricalHistoricalContext(userProfile.userId);
+                } catch (err) {
+                    console.warn('Could not fetch empirical context from Firestore:', err);
+                }
+            }
+
+            const result = await AiService.evaluateItem(item, userProfile, context || undefined);
             setLastEvaluation(result);
             if (onCompleted) {
                 onCompleted(result);

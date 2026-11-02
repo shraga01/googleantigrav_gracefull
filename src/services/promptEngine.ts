@@ -6,6 +6,9 @@
  * - Lenses: Somatic/Body, Relational, Competence, Sensory
  * - Angles: Novelty, Depth, Mental Subtraction
  * - Constraints: No generic nouns, Require agency attribution, Active locale natural phrasing
+ * 
+ * Enforces the Empirical Law by weaving real Firestore historical context
+ * (Dosing phase, Streak, GQ-6 score, and prior causal attributions) into generation prompts.
  */
 
 import type {
@@ -15,6 +18,7 @@ import type {
     PromptLens,
     PromptAngle,
     PromptConfig,
+    EmpiricalHistoricalContext,
 } from '../types';
 
 export const TARGET_DESCRIPTIONS: Record<PromptTarget, { he: string; en: string }> = {
@@ -61,15 +65,28 @@ export const LENS_DESCRIPTIONS: Record<PromptLens, { he: string; en: string }> =
 
 export const PromptEngine = {
     /**
-     * Builds a structured prompt configuration tailored to user context
+     * Builds a structured prompt configuration tailored to empirical user context
      */
-    getDailyConfig: (stepIndex: number, user?: UserProfile): PromptConfig => {
+    getDailyConfig: (
+        stepIndex: number,
+        user?: UserProfile,
+        context?: EmpiricalHistoricalContext
+    ): PromptConfig => {
+        const isMaintenance = context?.dosingPhase === 'maintenance_variety' || user?.dosingSchedule?.phase === 'maintenance_variety';
+        
         const defaultTargets: PromptTarget[] = ['close_other', 'self', 'environment'];
         const targets: PromptTarget[] = user?.challenges
             ? ['adversity_relief', ...defaultTargets]
             : defaultTargets;
-        const lenses: PromptLens[] = ['relational', 'competence', 'somatic'];
-        const angles: PromptAngle[] = ['depth', 'novelty', 'subtraction'];
+
+        // In maintenance phase, rotate lenses and angles to prevent hedonic adaptation
+        const lenses: PromptLens[] = isMaintenance
+            ? ['somatic', 'relational', 'competence', 'sensory']
+            : ['relational', 'competence', 'somatic'];
+
+        const angles: PromptAngle[] = isMaintenance
+            ? ['novelty', 'subtraction', 'depth']
+            : ['depth', 'novelty', 'subtraction'];
 
         return {
             target: targets[stepIndex % targets.length],
@@ -81,12 +98,26 @@ export const PromptEngine = {
 
     /**
      * Builds the system context enforcing evidence-based gratitude guidelines
+     * and injecting verified Firestore empirical context.
      */
-    buildSystemContext: (user: UserProfile): string => {
+    buildSystemContext: (user: UserProfile, context?: EmpiricalHistoricalContext): string => {
         const isHeb = user.language === 'hebrew' || user.locale === 'he';
+
+        const empiricalSection = context
+            ? `
+EMPIRICAL CLINICAL RECORD (VERIFIED FIRESTORE DATA):
+- Dosing Phase: ${context.dosingPhase}
+- Active Practice Streak: ${context.streak?.currentStreak ?? 0} days (Total: ${context.streak?.totalDaysPracticed ?? 0} days)
+- Longitudinal GQ-6 Score: ${context.latestGQ6 ? `${context.latestGQ6.totalScore}/42 (${context.latestGQ6.timepoint})` : 'Pending initial baseline'}
+- Recent Verified Agency Themes: ${context.recentEntries?.flatMap(e => e.items?.map(i => i.causalReflection) || []).filter(Boolean).slice(0, 3).join('; ') || 'None recorded yet'}
+- Virtual Gratitude Visit Completed: ${context.latestVisit ? 'Yes (Embodied in empty chair)' : 'No'}
+- Huberman Narrative Stored: ${context.latestStory ? 'Yes' : 'No'}
+`
+            : '';
+
         return `
 You are the Clinical Guide for an evidence-based gratitude application rooted in neurobiology (mPFC activation, vagal tone regulation, and dopamine-serotonin pathways).
-
+${empiricalSection}
 CORE PRINCIPLES (Seligman 3GT & Huberman Protocols):
 1. SPECIFICITY: Generic nouns (e.g., "family", "health", "sunshine") provide zero neurological rewiring. Concrete actions are required.
 2. CAUSAL REFLECTION / AGENCY ATTRIBUTION (ייחוס סיבתי וסוכנות אישית): The user must explicitly identify why the good event occurred and what role they played or what condition made it possible. Without personal agency or causal clarity, gratitude does not build resilience.
@@ -96,12 +127,16 @@ CORE PRINCIPLES (Seligman 3GT & Huberman Protocols):
     },
 
     /**
-     * Prompt for evaluating and grading gratitude items with agency attribution
+     * Prompt for evaluating and grading gratitude items with agency attribution and empirical context
      */
-    buildEvaluationPrompt: (item: ThreeGoodThingsItem, user: UserProfile): string => {
+    buildEvaluationPrompt: (
+        item: ThreeGoodThingsItem,
+        user: UserProfile,
+        context?: EmpiricalHistoricalContext
+    ): string => {
         const isHeb = user.language === 'hebrew' || user.locale === 'he';
         return `
-${PromptEngine.buildSystemContext(user)}
+${PromptEngine.buildSystemContext(user, context)}
 
 TASK: Evaluate this gratitude practice item.
 
@@ -130,10 +165,16 @@ RESPOND STRICTLY IN JSON FORMAT:
     /**
      * Prompt for the Gratitude Letter & Empty Chair protocol
      */
-    buildLetterPrompt: (recipient: string, relationship: string, impact: string, user: UserProfile): string => {
+    buildLetterPrompt: (
+        recipient: string,
+        relationship: string,
+        impact: string,
+        user: UserProfile,
+        context?: EmpiricalHistoricalContext
+    ): string => {
         const isHeb = user.language === 'hebrew' || user.locale === 'he';
         return `
-${PromptEngine.buildSystemContext(user)}
+${PromptEngine.buildSystemContext(user, context)}
 
 TASK: Assist the user in structuring a Gratitude Visit Letter (~300 words) according to Martin Seligman's protocol.
 RECIPIENT: ${recipient} (${relationship})
@@ -154,10 +195,14 @@ Output ONLY the draft text of the letter.
     /**
      * Prompt for Mental Subtraction (George Bailey effect)
      */
-    buildMentalSubtractionPrompt: (blessing: string, user: UserProfile): string => {
+    buildMentalSubtractionPrompt: (
+        blessing: string,
+        user: UserProfile,
+        context?: EmpiricalHistoricalContext
+    ): string => {
         const isHeb = user.language === 'hebrew' || user.locale === 'he';
         return `
-${PromptEngine.buildSystemContext(user)}
+${PromptEngine.buildSystemContext(user, context)}
 
 TASK: Guide the user through a Mental Subtraction exercise (counterfactual reflection).
 BLESSING IDENTIFIED: "${blessing}"

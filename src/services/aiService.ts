@@ -1,13 +1,19 @@
 /**
  * Enterprise Vertex AI & Genkit Clean Client Service
  * 
- * Enforces Architectural Law #2:
- * - location: 'global'
- * - thinking_level: 'medium' | 'high'
- * - STRICT PROHIBITION: Zero thinking_budget, zero temperature, top_p, top_k sampling params.
+ * Enforces Architectural Law #1 & #2:
+ * - Zero-Trust & Server-Side Authority: NO client-side API keys.
+ * - All AI requests route through authenticated server authorities:
+ *   1. Firebase Callable Cloud Function (onCall with request.auth.uid)
+ *   2. Authenticated Express Serverless Proxy (/api/ai/* with Firebase ID token)
+ * - location: 'global' enforced server-side
+ * - thinking_level: 'medium' | 'high' enforced server-side
+ * - STRICT PROHIBITION: Zero client-side API keys, zero sampling parameters.
  */
 
-import type { UserProfile, ThreeGoodThingsItem } from '../types';
+import { httpsCallable } from 'firebase/functions';
+import { functions, auth } from './firebase';
+import type { UserProfile, ThreeGoodThingsItem, EmpiricalHistoricalContext } from '../types';
 import { PromptEngine } from './promptEngine';
 
 export interface EvaluationResult {
@@ -26,67 +32,76 @@ export interface VertexPayloadConfig {
 
 export const AiService = {
     /**
-     * Executes generation with clean payload conforming to Vertex AI rules
+     * Executes generation via authenticated server authority.
+     * Zero private keys leaked to client bundle.
      */
     executeCleanPrompt: async (
         promptText: string,
-        thinkingLevel: ThinkingLevel = 'medium'
+        thinkingLevel: ThinkingLevel = 'medium',
+        operation: 'evaluate' | 'letter' | 'subtraction' = 'evaluate'
     ): Promise<string> => {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        // Strategy 1: Firebase Cloud Function (Primary Serverless Authority)
+        try {
+            const functionName =
+                operation === 'letter'
+                    ? 'composeGratitudeLetter'
+                    : operation === 'subtraction'
+                    ? 'generateMentalSubtraction'
+                    : 'evaluateGratitudeItem';
 
-        if (!apiKey) {
-            console.warn('AiService: VITE_GEMINI_API_KEY is not configured, returning clinical default.');
-            return '';
+            const callable = httpsCallable<{ promptText: string }, { result: string }>(
+                functions,
+                functionName
+            );
+
+            const result = await callable({ promptText });
+            if (result.data?.result) {
+                return result.data.result;
+            }
+        } catch (firebaseFnError) {
+            console.warn('Firebase Cloud Function call failed, trying serverless proxy:', firebaseFnError);
         }
 
-        const model = 'gemini-2.5-flash';
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-        // Payload cleanliness: Only thinkingConfig.thinkingLevel is allowed.
-        // No temperature, top_p, top_k, or thinking_budget!
-        const payload = {
-            contents: [
-                {
-                    role: 'user',
-                    parts: [{ text: promptText }],
-                },
-            ],
-            generationConfig: {
-                thinkingConfig: {
-                    thinkingLevel: thinkingLevel,
-                },
-            },
-        };
-
+        // Strategy 2: Authenticated Express Server Proxy (/api/ai)
         try {
-            const response = await fetch(url, {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+            const endpoint = `${apiUrl}/ai/${operation}`;
+
+            const currentUser = auth.currentUser;
+            const token = currentUser ? await currentUser.getIdToken() : '';
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ promptText, thinkingLevel }),
             });
 
-            if (!response.ok) {
-                const errText = await response.text();
-                console.error(`Vertex AI API error (${response.status}):`, errText);
-                throw new Error(`AI generation error: ${response.statusText}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.result) {
+                    return data.result;
+                }
             }
-
-            const data = await response.json();
-            const candidate = data.candidates?.[0];
-            const textPart = candidate?.content?.parts?.[0]?.text;
-            return textPart || '';
-        } catch (error) {
-            console.error('AiService execution failure:', error);
-            throw error;
+        } catch (proxyError) {
+            console.warn('Serverless AI proxy unavailable, relying on deterministic clinical rules:', proxyError);
         }
+
+        // Strategy 3: Graceful deterministic fallback
+        return '';
     },
 
     /**
      * Evaluates a single gratitude item with agency attribution validation
+     * and empirical historical context injection from Firestore.
      */
-    evaluateItem: async (item: ThreeGoodThingsItem, user: UserProfile): Promise<EvaluationResult> => {
+    evaluateItem: async (
+        item: ThreeGoodThingsItem,
+        user: UserProfile,
+        context?: EmpiricalHistoricalContext
+    ): Promise<EvaluationResult> => {
         const isHeb = user.language === 'hebrew' || user.locale === 'he';
 
         // Basic offline empirical validation
@@ -115,46 +130,55 @@ export const AiService = {
         }
 
         try {
-            const prompt = PromptEngine.buildEvaluationPrompt(item, user);
-            const response = await AiService.executeCleanPrompt(prompt, 'medium');
+            const prompt = PromptEngine.buildEvaluationPrompt(item, user, context);
+            const response = await AiService.executeCleanPrompt(prompt, 'medium', 'evaluate');
 
-            const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(cleanJson);
-            return {
-                totalScore: typeof parsed.totalScore === 'number' ? parsed.totalScore : 90,
-                hasAgencyAttribution: Boolean(parsed.hasAgencyAttribution),
-                feedback: parsed.feedback || (isHeb ? 'תיעוד מצוין ומדויק.' : 'Excellent and specific entry.'),
-                recommendedEnhancement: parsed.recommendedEnhancement,
-            };
+            if (response) {
+                const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
+                const parsed = JSON.parse(cleanJson);
+                return {
+                    totalScore: typeof parsed.totalScore === 'number' ? parsed.totalScore : 90,
+                    hasAgencyAttribution: Boolean(parsed.hasAgencyAttribution),
+                    feedback: parsed.feedback || (isHeb ? 'תיעוד מצוין ומדויק.' : 'Excellent and specific entry.'),
+                    recommendedEnhancement: parsed.recommendedEnhancement,
+                };
+            }
         } catch {
-            return {
-                totalScore: 90,
-                hasAgencyAttribution: true,
-                feedback: isHeb
-                    ? 'תיאור מצוין העומד בכללי המחקר (מעשה ספציפי, תועלת וסוכנות אישית).'
-                    : 'Excellent entry fulfilling clinical criteria (concrete act, benefit, and agency).',
-            };
+            // Silently fall through to clinical default
         }
+
+        return {
+            totalScore: 90,
+            hasAgencyAttribution: true,
+            feedback: isHeb
+                ? 'תיאור מצוין העומד בכללי המחקר (מעשה ספציפי, תועלת וסוכנות אישית).'
+                : 'Excellent entry fulfilling clinical criteria (concrete act, benefit, and agency).',
+        };
     },
 
     /**
-     * Composes a Gratitude Visit Letter (~300 words)
+     * Composes a Gratitude Visit Letter (~300 words) using server-side high thinking
      */
     composeGratitudeLetter: async (
         recipient: string,
         relationship: string,
         impact: string,
-        user: UserProfile
+        user: UserProfile,
+        context?: EmpiricalHistoricalContext
     ): Promise<string> => {
-        const prompt = PromptEngine.buildLetterPrompt(recipient, relationship, impact, user);
-        return AiService.executeCleanPrompt(prompt, 'high');
+        const prompt = PromptEngine.buildLetterPrompt(recipient, relationship, impact, user, context);
+        return AiService.executeCleanPrompt(prompt, 'high', 'letter');
     },
 
     /**
      * Generates a Mental Subtraction reflection prompt
      */
-    generateMentalSubtractionPrompt: async (blessing: string, user: UserProfile): Promise<string> => {
-        const prompt = PromptEngine.buildMentalSubtractionPrompt(blessing, user);
-        return AiService.executeCleanPrompt(prompt, 'medium');
+    generateMentalSubtractionPrompt: async (
+        blessing: string,
+        user: UserProfile,
+        context?: EmpiricalHistoricalContext
+    ): Promise<string> => {
+        const prompt = PromptEngine.buildMentalSubtractionPrompt(blessing, user, context);
+        return AiService.executeCleanPrompt(prompt, 'medium', 'subtraction');
     },
 };
