@@ -1,11 +1,10 @@
 /**
- * Enterprise Vertex AI & Genkit Clean Client Service
+ * Enterprise Vertex AI Authority Client Service (Zero-Key ADC Architecture)
  * 
  * Enforces Architectural Law #1 & #2:
  * - Zero-Trust & Server-Side Authority: NO client-side API keys.
- * - All AI requests route through authenticated server authorities:
- *   1. Firebase Callable Cloud Function (onCall with request.auth.uid)
- *   2. Authenticated Express Serverless Proxy (/api/ai/* with Firebase ID token)
+ * - Authenticates via Google Cloud Application Default Credentials (ADC)
+ *   routed through Cloud Function v2 `orchestrateGratitudeAi`.
  * - location: 'global' enforced server-side
  * - thinking_level: 'medium' | 'high' enforced server-side
  * - STRICT PROHIBITION: Zero client-side API keys, zero sampling parameters.
@@ -13,7 +12,7 @@
 
 import { httpsCallable } from 'firebase/functions';
 import { functions, auth } from './firebase';
-import type { UserProfile, ThreeGoodThingsItem, EmpiricalHistoricalContext } from '../types';
+import type { UserProfile, ThreeGoodThingsItem, EmpiricalHistoricalContext, Locale } from '../types';
 import { PromptEngine } from './promptEngine';
 
 export interface EvaluationResult {
@@ -32,39 +31,48 @@ export interface VertexPayloadConfig {
 
 export const AiService = {
     /**
-     * Executes generation via authenticated server authority.
-     * Zero private keys leaked to client bundle.
+     * Executes generation via authenticated Cloud Function `orchestrateGratitudeAi`.
+     * Backed by Vertex AI ADC with Zero-Key architecture.
      */
-    executeCleanPrompt: async (
+    orchestrateGratitudeAi: async (
+        taskType: 'evaluate_3gt' | 'compose_letter' | 'mental_subtraction' | 'modular_prompt' | 'raw_prompt',
         promptText: string,
         thinkingLevel: ThinkingLevel = 'medium',
-        operation: 'evaluate' | 'letter' | 'subtraction' = 'evaluate'
+        context?: EmpiricalHistoricalContext,
+        locale: Locale = 'he'
     ): Promise<string> => {
-        // Strategy 1: Firebase Cloud Function (Primary Serverless Authority)
+        // Strategy 1: Firebase Cloud Function v2 orchestrateGratitudeAi (Primary ADC Authority)
         try {
-            const functionName =
-                operation === 'letter'
-                    ? 'composeGratitudeLetter'
-                    : operation === 'subtraction'
-                    ? 'generateMentalSubtraction'
-                    : 'evaluateGratitudeItem';
+            const callable = httpsCallable<
+                {
+                    taskType: string;
+                    promptText: string;
+                    thinkingLevel: ThinkingLevel;
+                    empiricalContext?: EmpiricalHistoricalContext;
+                    locale: Locale;
+                },
+                { result: string }
+            >(functions, 'orchestrateGratitudeAi');
 
-            const callable = httpsCallable<{ promptText: string }, { result: string }>(
-                functions,
-                functionName
-            );
+            const result = await callable({
+                taskType,
+                promptText,
+                thinkingLevel,
+                empiricalContext: context,
+                locale,
+            });
 
-            const result = await callable({ promptText });
             if (result.data?.result) {
                 return result.data.result;
             }
         } catch (firebaseFnError) {
-            console.warn('Firebase Cloud Function call failed, trying serverless proxy:', firebaseFnError);
+            console.warn('Firebase orchestrateGratitudeAi failed, trying secondary proxy:', firebaseFnError);
         }
 
         // Strategy 2: Authenticated Express Server Proxy (/api/ai)
         try {
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+            const operation = taskType === 'compose_letter' ? 'letter' : taskType === 'mental_subtraction' ? 'subtraction' : 'evaluate';
             const endpoint = `${apiUrl}/ai/${operation}`;
 
             const currentUser = auth.currentUser;
@@ -76,7 +84,7 @@ export const AiService = {
                     'Content-Type': 'application/json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ promptText, thinkingLevel }),
+                body: JSON.stringify({ promptText, thinkingLevel, context, locale }),
             });
 
             if (response.ok) {
@@ -86,7 +94,7 @@ export const AiService = {
                 }
             }
         } catch (proxyError) {
-            console.warn('Serverless AI proxy unavailable, relying on deterministic clinical rules:', proxyError);
+            console.warn('Secondary AI proxy unavailable, relying on deterministic clinical rules:', proxyError);
         }
 
         // Strategy 3: Graceful deterministic fallback
@@ -103,6 +111,7 @@ export const AiService = {
         context?: EmpiricalHistoricalContext
     ): Promise<EvaluationResult> => {
         const isHeb = user.language === 'hebrew' || user.locale === 'he';
+        const locale: Locale = isHeb ? 'he' : 'en';
 
         // Basic offline empirical validation
         const hasAgency = Boolean(item.causalReflection && item.causalReflection.trim().length > 5);
@@ -131,7 +140,13 @@ export const AiService = {
 
         try {
             const prompt = PromptEngine.buildEvaluationPrompt(item, user, context);
-            const response = await AiService.executeCleanPrompt(prompt, 'medium', 'evaluate');
+            const response = await AiService.orchestrateGratitudeAi(
+                'evaluate_3gt',
+                prompt,
+                'medium',
+                context,
+                locale
+            );
 
             if (response) {
                 const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -166,8 +181,10 @@ export const AiService = {
         user: UserProfile,
         context?: EmpiricalHistoricalContext
     ): Promise<string> => {
+        const isHeb = user.language === 'hebrew' || user.locale === 'he';
+        const locale: Locale = isHeb ? 'he' : 'en';
         const prompt = PromptEngine.buildLetterPrompt(recipient, relationship, impact, user, context);
-        return AiService.executeCleanPrompt(prompt, 'high', 'letter');
+        return AiService.orchestrateGratitudeAi('compose_letter', prompt, 'high', context, locale);
     },
 
     /**
@@ -178,7 +195,9 @@ export const AiService = {
         user: UserProfile,
         context?: EmpiricalHistoricalContext
     ): Promise<string> => {
+        const isHeb = user.language === 'hebrew' || user.locale === 'he';
+        const locale: Locale = isHeb ? 'he' : 'en';
         const prompt = PromptEngine.buildMentalSubtractionPrompt(blessing, user, context);
-        return AiService.executeCleanPrompt(prompt, 'medium', 'subtraction');
+        return AiService.orchestrateGratitudeAi('mental_subtraction', prompt, 'medium', context, locale);
     },
 };

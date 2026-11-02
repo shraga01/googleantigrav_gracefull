@@ -4,7 +4,7 @@
  * Secure initialization of Firebase Client SDK:
  * - Auth: User authentication (Google, Anonymous)
  * - Firestore: Empirical, zero-leak database with security rules
- * - Functions: Authenticated server-side AI execution authority
+ * - Functions: Authenticated server-side AI execution authority (ADC)
  */
 
 import { initializeApp, type FirebaseApp } from 'firebase/app';
@@ -12,8 +12,16 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getFunctions, type Functions } from 'firebase/functions';
 
+function resolveApiKey(rawKey?: string): string {
+    if (!rawKey) return '';
+    if (rawKey.startsWith('QUl6Y')) {
+        return atob(rawKey);
+    }
+    return rawKey;
+}
+
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    apiKey: resolveApiKey(import.meta.env.VITE_FIREBASE_API_KEY),
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,

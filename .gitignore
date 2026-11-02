@@ -37,3 +37,7 @@ server/.env.production
 
 # Server
 server/node_modules
+
+# Functions
+functions/lib
+functions/node_modules

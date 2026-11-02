@@ -1,167 +1,160 @@
 /**
- * Server-Side AI Authority & Cloud Functions for Daily Appreciation App
+ * Server-Side Vertex AI Authority & Cloud Functions (v2)
+ * Platform: daily-appreciation-app (daily-appreciation-app-275bf)
  * 
  * Enforces Architectural Laws:
- * 1. Zero-Trust & Server-Side Authority: Authentication required (request.auth.uid).
- * 2. Vertex AI / GenAI Clean Payload Laws:
- *    - location: 'global' (Never us-central1)
- *    - thinking_level: 'medium' (evaluation) | 'high' (clinical letter synthesis)
- *    - Zero sampling parameters (no temperature, top_p, top_k, thinking_budget).
+ * 1. Zero-Key Architecture (ADC):
+ *    - Authenticates automatically via Google Cloud Application Default Credentials (ADC)
+ *    - Service Account: firebase-adminsdk-fbsvc@daily-appreciation-app-275bf.iam.gserviceaccount.com
+ *    - Zero API keys in client bundles or server files.
+ * 2. Vertex AI Payload Purity:
+ *    - vertexai: true, project: 'daily-appreciation-app-275bf', location: 'global' (Never us-central1)
+ *    - thinking_level: 'medium' (3GT evaluations/prompts) | 'high' (deep clinical letters/empty chair)
+ *    - STRICT PROHIBITION: Zero thinking_budget, zero temperature, top_p, top_k.
+ * 3. Zero-Trust & Server-Side Authority:
+ *    - Strict authentication: request.auth?.uid required.
  */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+import { GoogleGenAI, ThinkingLevel as GenAiThinkingLevel } from '@google/genai';
 
 if (!admin.apps.length) {
     admin.initializeApp();
 }
 
-type ThinkingLevel = 'medium' | 'high';
+const PROJECT_ID = 'daily-appreciation-app-275bf';
+const LOCATION = 'global';
+const MODEL_NAME = 'gemini-2.5-flash';
 
-interface GenerateContentPayload {
-    contents: Array<{
-        role: string;
-        parts: Array<{ text: string }>;
-    }>;
-    generationConfig?: {
-        thinkingConfig?: {
-            thinkingLevel: ThinkingLevel;
-        };
+// Initialize Vertex AI with ADC (Zero-Key architecture)
+const ai = new GoogleGenAI({
+    vertexai: true,
+    project: PROJECT_ID,
+    location: LOCATION,
+});
+
+export type ClientThinkingLevel = 'medium' | 'high';
+
+export interface OrchestrateGratitudeAiData {
+    taskType: 'evaluate_3gt' | 'compose_letter' | 'mental_subtraction' | 'modular_prompt' | 'raw_prompt';
+    promptText: string;
+    thinkingLevel?: ClientThinkingLevel;
+    empiricalContext?: {
+        dosingPhase?: string;
+        streak?: { currentStreak: number; totalDaysPracticed: number };
+        latestGQ6?: { totalScore: number; timepoint: string } | null;
+        totalGQ6Count?: number;
+        recentEntries?: Array<{ items?: Array<{ causalReflection?: string }> }>;
+        latestVisit?: unknown;
+        latestStory?: unknown;
     };
+    locale?: 'he' | 'en';
 }
 
 /**
- * Executes a clean Vertex AI / Gemini API call server-side.
- * Never leaks the API key to the client.
+ * Executes a clean Vertex AI call with ADC authority and pure payload.
  */
-async function callServerGemini(
+async function executeVertexAiGeneration(
     promptText: string,
-    thinkingLevel: ThinkingLevel = 'medium'
+    thinkingLevel: ClientThinkingLevel
 ): Promise<string> {
-    const apiKey = process.env.GEMINI_API_KEY;
+    try {
+        const mappedLevel =
+            thinkingLevel === 'high' ? GenAiThinkingLevel.HIGH : GenAiThinkingLevel.MEDIUM;
 
-    if (!apiKey) {
-        throw new HttpsError(
-            'failed-precondition',
-            'Server AI Configuration Error: GEMINI_API_KEY is missing on the server environment.'
-        );
-    }
-
-    const model = 'gemini-2.5-flash';
-    // Vertex AI / Google Gen AI global endpoint
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-    // Clean payload enforcement:
-    // Only thinkingConfig.thinkingLevel is permitted.
-    // Strictly NO temperature, top_p, top_k, or thinking_budget.
-    const payload: GenerateContentPayload = {
-        contents: [
-            {
-                role: 'user',
-                parts: [{ text: promptText }],
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: promptText,
+            config: {
+                thinkingConfig: {
+                    thinkingLevel: mappedLevel,
+                },
             },
-        ],
-        generationConfig: {
-            thinkingConfig: {
-                thinkingLevel: thinkingLevel,
-            },
-        },
-    };
+        });
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    });
+        const textOutput = response.text;
+        if (!textOutput) {
+            throw new HttpsError('data-loss', 'No text content returned from Vertex AI engine.');
+        }
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Backend AI generation error (${response.status}):`, errorText);
-        throw new HttpsError('internal', `Backend AI Service Failure: ${response.statusText}`);
+        return textOutput;
+    } catch (error: unknown) {
+        console.error('Vertex AI Execution Error:', error);
+        const message = error instanceof Error ? error.message : 'Unknown Vertex AI error';
+        throw new HttpsError('internal', `Vertex AI execution failure: ${message}`);
     }
-
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    const outputText = candidate?.content?.parts?.[0]?.text;
-
-    if (!outputText) {
-        throw new HttpsError('data-loss', 'No generation content received from AI engine.');
-    }
-
-    return outputText;
 }
 
 /**
- * Callable: Evaluate Three Good Things Item with Empirical Context
+ * Primary Authenticated Cloud Function: orchestrateGratitudeAi
  */
-export const evaluateGratitudeItem = onCall(
+export const orchestrateGratitudeAi = onCall(
     { cors: true },
     async (request) => {
-        // Strict authentication check
+        // Enforce Zero-Trust authentication
         if (!request.auth || !request.auth.uid) {
             throw new HttpsError(
                 'unauthenticated',
-                'Authentication Required: User must be signed in to evaluate gratitude entries.'
+                'Authentication Required: User must be signed in to invoke Vertex AI services.'
             );
         }
 
-        const { promptText } = request.data as { promptText?: string };
+        const data = request.data as OrchestrateGratitudeAiData;
 
-        if (!promptText || typeof promptText !== 'string') {
-            throw new HttpsError('invalid-argument', 'Missing or invalid "promptText" parameter.');
+        if (!data || !data.promptText || typeof data.promptText !== 'string') {
+            throw new HttpsError(
+                'invalid-argument',
+                'Missing or invalid "promptText" parameter in request payload.'
+            );
         }
 
-        const result = await callServerGemini(promptText, 'medium');
+        // Determine thinking level based on clinical protocol
+        const thinkingLevel: ClientThinkingLevel =
+            data.thinkingLevel ||
+            (data.taskType === 'compose_letter' ? 'high' : 'medium');
+
+        const result = await executeVertexAiGeneration(data.promptText, thinkingLevel);
+        return { result, taskType: data.taskType, thinkingLevel };
+    }
+);
+
+// Backwards-compatible aliases
+export const evaluateGratitudeItem = onCall(
+    { cors: true },
+    async (request) => {
+        if (!request.auth || !request.auth.uid) {
+            throw new HttpsError('unauthenticated', 'Authentication Required.');
+        }
+        const { promptText } = request.data as { promptText?: string };
+        if (!promptText) throw new HttpsError('invalid-argument', 'Missing promptText.');
+        const result = await executeVertexAiGeneration(promptText, 'medium');
         return { result };
     }
 );
 
-/**
- * Callable: Compose Clinical Gratitude Visit Letter (High Thinking Level)
- */
 export const composeGratitudeLetter = onCall(
     { cors: true },
     async (request) => {
         if (!request.auth || !request.auth.uid) {
-            throw new HttpsError(
-                'unauthenticated',
-                'Authentication Required: User must be signed in to compose gratitude letters.'
-            );
+            throw new HttpsError('unauthenticated', 'Authentication Required.');
         }
-
         const { promptText } = request.data as { promptText?: string };
-
-        if (!promptText || typeof promptText !== 'string') {
-            throw new HttpsError('invalid-argument', 'Missing or invalid "promptText" parameter.');
-        }
-
-        const result = await callServerGemini(promptText, 'high');
+        if (!promptText) throw new HttpsError('invalid-argument', 'Missing promptText.');
+        const result = await executeVertexAiGeneration(promptText, 'high');
         return { result };
     }
 );
 
-/**
- * Callable: Generate Mental Subtraction Reflection Prompt
- */
 export const generateMentalSubtraction = onCall(
     { cors: true },
     async (request) => {
         if (!request.auth || !request.auth.uid) {
-            throw new HttpsError(
-                'unauthenticated',
-                'Authentication Required: User must be signed in to generate subtraction prompts.'
-            );
+            throw new HttpsError('unauthenticated', 'Authentication Required.');
         }
-
         const { promptText } = request.data as { promptText?: string };
-
-        if (!promptText || typeof promptText !== 'string') {
-            throw new HttpsError('invalid-argument', 'Missing or invalid "promptText" parameter.');
-        }
-
-        const result = await callServerGemini(promptText, 'medium');
+        if (!promptText) throw new HttpsError('invalid-argument', 'Missing promptText.');
+        const result = await executeVertexAiGeneration(promptText, 'medium');
         return { result };
     }
 );

@@ -3,6 +3,7 @@ import type { ThreeGoodThingsItem, UserProfile, Locale, EmpiricalHistoricalConte
 import { PastelCard, type PastelVariant } from '../common/PastelCard';
 import { AiService, type EvaluationResult } from '../../services/aiService';
 import { FirestoreService } from '../../services/firestoreService';
+import { PromptEngine, TARGET_DESCRIPTIONS, LENS_DESCRIPTIONS } from '../../services/promptEngine';
 import { getDictionary } from '../../locales';
 
 interface ThreeGoodThingsFormProps {
@@ -31,6 +32,15 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
     const [lastEvaluation, setLastEvaluation] = useState<EvaluationResult | null>(null);
 
     const variant = STEP_VARIANTS[stepIndex % STEP_VARIANTS.length];
+
+    // Compute modular prompt engine guidance based on verified empirical context
+    const promptConfig = PromptEngine.getDailyConfig(
+        stepIndex,
+        userProfile,
+        empiricalContext || undefined
+    );
+    const targetHint = TARGET_DESCRIPTIONS[promptConfig.target]?.[locale];
+    const lensHint = LENS_DESCRIPTIONS[promptConfig.lens]?.[locale];
 
     const handleFieldChange = (field: keyof ThreeGoodThingsItem, val: string | number) => {
         onChange({
@@ -85,6 +95,18 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
             className="w-full mb-6"
         >
             <div className="space-y-4 pt-2">
+                {/* Empirical Neuroscience Focus Prompt */}
+                {targetHint && lensHint && (
+                    <div className="p-3 bg-white/70 rounded-xl border border-black/5 text-xs text-neutral-600 space-y-1">
+                        <div className="font-bold text-neutral-800">
+                            💡 {locale === 'he' ? 'זווית התבוננות מומלצת להיום:' : 'Recommended focus lens for today:'}
+                        </div>
+                        <p className="leading-relaxed">
+                            {targetHint} <span className="opacity-40">|</span> {lensHint}
+                        </p>
+                    </div>
+                )}
+
                 {/* Field 1: Concrete Act */}
                 <div>
                     <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
