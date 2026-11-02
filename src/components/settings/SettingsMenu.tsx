@@ -4,7 +4,7 @@ import { StorageService } from '../../services/storage';
 import { Button } from '../common/Button';
 
 export const SettingsMenu: React.FC = () => {
-    const { userProfile } = useApp();
+    const { userProfile, setLanguage } = useApp();
     const isHebrew = userProfile?.language === 'hebrew';
 
     const handleExport = () => {
@@ -27,7 +27,13 @@ export const SettingsMenu: React.FC = () => {
         }
     };
 
-
+    const toggleLanguage = () => {
+        const newLang = isHebrew ? 'english' : 'hebrew';
+        if (confirm(isHebrew ? 'החלפת שפה תדרוש טעינה מחדש. להמשיך?' : 'Switching language requires a reload. Continue?')) {
+            setLanguage(newLang);
+            // Force reload to apply direction changes cleanly if needed, though context handles it
+        }
+    };
 
     return (
         <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', paddingTop: '10px' }}>
@@ -44,7 +50,13 @@ export const SettingsMenu: React.FC = () => {
                     </div>
                 </section>
 
-
+                {/* Language Section */}
+                <section>
+                    <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>{isHebrew ? 'שפה' : 'Language'}</h3>
+                    <Button variant="outline" onClick={toggleLanguage} fullWidth>
+                        {isHebrew ? 'Switch to English' : 'עבור לעברית'}
+                    </Button>
+                </section>
 
                 {/* Data Section */}
                 <section>

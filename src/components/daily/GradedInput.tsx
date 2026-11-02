@@ -4,8 +4,11 @@ import '../../styles/navigation.css';
 
 interface GradeResult {
     score: number;
+    status: string;
     feedback: string;
-    improvedVersion?: string;
+    met_criteria: string[];
+    missing_criteria: string[];
+    coaching_question: string | null;
 }
 
 interface GradedInputProps {
@@ -23,135 +26,99 @@ export const GradedInput: React.FC<GradedInputProps> = ({
     onChange,
     placeholder: _placeholder,
     exampleAnswer,
-    index: _index,
+    index,
     gradeResult,
     isLoading
 }) => {
     const { userProfile } = useApp();
     const isHebrew = userProfile?.language === 'hebrew';
 
-    // Get color based on score (0-100)
-    const getColor = (score: number): string => {
-        if (score < 34) return '#ef4444'; // Red
-        if (score < 67) return '#f97316'; // Orange
-        return '#22c55e'; // Green
+    // Get color based on status
+    const getColor = (status: string): string => {
+        if (status === 'RETRY' || status === 'BLOCKED') return '#ef4444'; // Red
+        if (status === 'IMPROVE') return '#f97316'; // Orange
+        return '#22c55e'; // Green (VALIDATED)
     };
 
-    const scoreColor = gradeResult ? getColor(gradeResult.score) : 'transparent';
-    const scoreWidth = gradeResult ? `${gradeResult.score}%` : '0%';
+    const scoreColor = gradeResult ? getColor(gradeResult.status) : 'transparent';
+
+    // Status label
+    const getStatusLabel = (status: string): string => {
+        if (status === 'BLOCKED') return isHebrew ? '🚫 חסום' : '🚫 BLOCKED';
+        if (status === 'RETRY') return isHebrew ? '🔄 נסה שוב' : '🔄 RETRY';
+        if (status === 'IMPROVE') return isHebrew ? '⚠️ לשפר' : '⚠️ IMPROVE';
+        return isHebrew ? '✅ אושר' : '✅ VALIDATED';
+    };
+
+    // Criteria label translation
+    const getCriteriaLabel = (criteria: string): string => {
+        const labels: Record<string, { en: string; he: string }> = {
+            'SPECIFICITY': { en: 'Specificity', he: 'מעשה ספציפי' },
+            'PERSON': { en: 'Person', he: 'אדם' },
+            'CAUSALITY': { en: 'Causality', he: 'איך זה עזר לך' },
+            'SENSORY': { en: 'Sensory', he: 'חושי' },
+            'AUTHENTICITY': { en: 'Authenticity', he: 'אותנטיות' },
+        };
+        return labels[criteria] ? (isHebrew ? labels[criteria].he : labels[criteria].en) : criteria;
+    };
 
     return (
-        <div style={{ marginBottom: '20px' }}>
-            {/* Fixed Formula Text */}
-            <div style={{
-                marginBottom: '8px',
-                fontSize: '14px',
-                color: 'var(--color-text-secondary)',
-                fontWeight: 500,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-            }}>
-                <span>💡</span>
-                <span>
-                    {isHebrew
-                        ? 'נוסחה: מעשה ספציפי + אדם + איך זה עזר לך'
-                        : 'Formula: Concrete act + Person + How it helped you'}
-                </span>
-            </div>
-
-
-
-            {/* Input container with progress bar */}
-            <div style={{
-                position: 'relative',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-card-bg)',
-                transition: 'border-color 0.3s ease',
-                borderColor: gradeResult ? scoreColor : 'var(--color-border)',
-                minHeight: '140px'
-            }}>
-                {/* Progress bar background */}
-                <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    height: '100%',
-                    width: scoreWidth,
-                    backgroundColor: scoreColor,
-                    opacity: 0.1,
-                    transition: 'width 0.3s ease, background-color 0.3s ease',
-                    pointerEvents: 'none',
-                    zIndex: 0,
-                    borderRadius: 'var(--radius-md)'
-                }} />
-
-                {/* Score badge */}
+        <div data-index={index} style={{ marginBottom: '20px' }}>
+            {/* Input container with glassmorphism */}
+            <div
+                className="w-full max-w-md mx-auto glass-card rounded-xl p-6 shadow-2xl min-h-[250px] flex flex-col relative transition-colors duration-300"
+                style={{
+                    borderColor: gradeResult ? scoreColor : 'rgba(255, 255, 255, 0.5)'
+                }}
+            >
+                {/* Status badge */}
                 {gradeResult && (
-                    <div className={gradeResult.score === 100 ? 'animate-successBounce' : 'animate-scaleIn'} style={{
+                    <div className={gradeResult.status === 'VALIDATED' ? 'animate-successBounce' : 'animate-scaleIn'} style={{
                         position: 'absolute',
-                        top: '8px',
-                        right: isHebrew ? 'auto' : '8px',
-                        left: isHebrew ? '8px' : 'auto',
-                        fontSize: '12px',
-                        fontWeight: 600,
+                        top: '12px',
+                        right: isHebrew ? 'auto' : '12px',
+                        left: isHebrew ? '12px' : 'auto',
+                        fontSize: '13px',
+                        fontWeight: 700,
                         color: scoreColor,
-                        backgroundColor: 'white',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        padding: '4px 10px',
+                        borderRadius: '16px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                         zIndex: 2
                     }}>
-                        {gradeResult.score}%
+                        {getStatusLabel(gradeResult.status)} {gradeResult.score}/5
                     </div>
                 )}
 
                 {/* Textarea */}
                 <textarea
+                    className="flex-1 w-full bg-transparent border-none focus:ring-0 text-white placeholder:text-white/60 text-lg resize-none leading-relaxed outline-none"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={exampleAnswer && !value && !gradeResult ? "" : (_placeholder || "")}
-                    rows={3}
                     disabled={isLoading || !!gradeResult}
                     style={{
-                        width: '100%',
-                        padding: '16px',
-                        paddingBottom: exampleAnswer && !value && !gradeResult ? '40px' : '16px',
-                        paddingRight: gradeResult ? '60px' : '16px',
-                        border: 'none',
-                        outline: 'none',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        resize: 'none',
-                        background: 'transparent',
-                        position: 'relative',
-                        zIndex: 1,
-                        minHeight: '100px'
+                        paddingBottom: exampleAnswer && !value && !gradeResult ? '40px' : '0'
                     }}
                 />
 
-                {/* Example answer inside box - light gray text */}
+                {/* Example answer inside box - light text */}
                 {exampleAnswer && !value && !gradeResult && (
                     <div style={{
                         position: 'absolute',
-                        top: '16px',
-                        left: '16px',
-                        right: '16px',
-                        color: 'rgba(0,0,0,0.4)',
-                        fontSize: '14px',
-                        lineHeight: 1.4,
+                        top: '24px',
+                        left: '24px',
+                        right: '24px',
+                        color: 'rgba(255,255,255,0.6)',
+                        fontSize: '16px',
+                        lineHeight: 1.5,
                         pointerEvents: 'none',
                         display: 'flex',
                         alignItems: 'flex-start',
                         gap: '8px',
                         zIndex: 0
                     }}>
-                        <div className="nav-icon-3d small nav-icon-bolt" style={{ width: '20px', height: '20px', flexShrink: 0, opacity: 0.7 }}>
-                            <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '12px', height: '12px', color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))' }}>
-                                <path d="M7 2v11h3v9l7-12h-4l4-8z" />
-                            </svg>
-                        </div>
                         <span style={{ fontStyle: 'italic' }}>"{exampleAnswer}"</span>
                     </div>
                 )}
@@ -160,61 +127,76 @@ export const GradedInput: React.FC<GradedInputProps> = ({
             {/* Feedback area */}
             {isLoading && (
                 <div style={{
-                    marginTop: '8px',
-                    fontSize: '14px',
-                    color: 'var(--color-text-muted)',
+                    marginTop: '12px',
+                    fontSize: '15px',
+                    color: 'rgba(255,255,255,0.8)',
                     fontStyle: 'italic',
                     textAlign: 'center',
                     padding: '12px',
-                    animation: 'pulse 1.5s infinite'
+                    animation: 'pulse 1.5s infinite',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.2)'
                 }}>
                     {isHebrew ? '✨ בודק וחושב...' : '✨ Analyzing thoughtful response...'}
                 </div>
             )}
 
             {gradeResult && !isLoading && (
-                <div className="animate-scaleIn" style={{
-                    marginTop: '12px',
-                    fontSize: '14px',
-                    padding: '16px',
-                    backgroundColor: `${scoreColor}10`, // 10% opacity hex
-                    borderRadius: 'var(--radius-md)',
-                    borderLeft: `3px solid ${scoreColor}`
+                <div className="animate-scaleIn glass-card mt-4 p-4 rounded-xl" style={{
+                    borderLeft: `4px solid ${scoreColor}`
                 }}>
-                    <p style={{ margin: 0, color: 'var(--color-text-main)', lineHeight: 1.5 }}>
+                    <p style={{ margin: 0, color: 'white', lineHeight: 1.5, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
                         {gradeResult.feedback}
                     </p>
 
-                    {gradeResult.improvedVersion && gradeResult.score < 100 && (
+                    {/* Coaching question */}
+                    {gradeResult.coaching_question && (
+                        <p style={{
+                            margin: '10px 0 0 0',
+                            fontSize: '14px',
+                            fontStyle: 'italic',
+                            color: '#fbbf24',
+                            textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                        }}>
+                            💡 {gradeResult.coaching_question}
+                        </p>
+                    )}
+
+                    {/* Met criteria (green tags) + Missing criteria (red/orange tags) */}
+                    {(gradeResult.met_criteria?.length > 0 || gradeResult.missing_criteria?.length > 0) && (
                         <div style={{
                             marginTop: '12px',
                             paddingTop: '12px',
-                            borderTop: '1px solid rgba(0,0,0,0.05)'
+                            borderTop: '1px solid rgba(255,255,255,0.2)',
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '6px'
                         }}>
-                            <div style={{
-                                margin: 0,
-                                fontSize: '12px',
-                                color: 'var(--color-text-muted)',
-                                fontWeight: 500,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <div className="nav-icon-3d small nav-icon-bolt" style={{ width: '20px', height: '20px', flexShrink: 0 }}>
-                                    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '12px', height: '12px', color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))' }}>
-                                        <path d="M7 2v11h3v9l7-12h-4l4-8z" />
-                                    </svg>
-                                </div>
-                                <span>{isHebrew ? 'כדאי לנסות:' : 'Try this:'}</span>
-                            </div>
-                            <p style={{
-                                margin: '4px 0 0 0',
-                                fontSize: '14px',
-                                fontStyle: 'italic',
-                                color: 'var(--color-text-primary)'
-                            }}>
-                                "{gradeResult.improvedVersion}"
-                            </p>
+                            {gradeResult.met_criteria?.map((item, i) => (
+                                <span key={`met-${i}`} style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    color: '#22c55e',
+                                    backgroundColor: 'rgba(34,197,94,0.15)',
+                                    padding: '2px 8px',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(34,197,94,0.4)'
+                                }}>
+                                    ✓ {getCriteriaLabel(item)}
+                                </span>
+                            ))}
+                            {gradeResult.missing_criteria?.map((item, i) => (
+                                <span key={`miss-${i}`} style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    color: scoreColor,
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                    padding: '2px 8px',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${scoreColor}40`
+                                }}>
+                                    ✗ {getCriteriaLabel(item)}
+                                </span>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -222,5 +204,3 @@ export const GradedInput: React.FC<GradedInputProps> = ({
         </div>
     );
 };
-
-

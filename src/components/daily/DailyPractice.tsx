@@ -1,390 +1,449 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
-import { LLMService } from '../../services/llm';
 import { StorageService } from '../../services/storage';
-import { encryptEntry } from '../../services/encryption';
-import type { DailyEntry } from '../../types';
-import { ApiService } from '../../services/api';
+import { FirestoreService } from '../../services/firestoreService';
+import type {
+    DailyEntry,
+    ThreeGoodThingsItem,
+    GratitudeProtocolType,
+    Locale,
+    EmpiricalHistoricalContext,
+} from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { RandomProfileQuestion } from './RandomProfileQuestion';
-import { GradedInput } from './GradedInput';
-import { ProgressBar } from './ProgressBar';
 import { ScientificFactBanner } from '../common/ScientificFactBanner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
+import { ThreeGoodThingsForm } from './ThreeGoodThingsForm';
+import { DosingScheduleBadge } from '../clinical/DosingScheduleBadge';
+import { PastelCard } from '../common/PastelCard';
+import { getDictionary } from '../../locales';
 import { v4 as uuidv4 } from 'uuid';
-import '../../styles/badges.css';
-import { FluentIcon } from '../common/FluentIcon';
 
-interface GradeResult {
-    score: number;
-    feedback: string;
-    improvedVersion?: string;
-}
+// Lazy-loaded clinical modals for code-splitting and bundle optimization
+const GratitudeLetterModal = React.lazy(() =>
+    import('./GratitudeLetterModal').then((m) => ({ default: m.GratitudeLetterModal }))
+);
+const MentalSubtractionModal = React.lazy(() =>
+    import('./MentalSubtractionModal').then((m) => ({ default: m.MentalSubtractionModal }))
+);
+const GQ6AssessmentModal = React.lazy(() =>
+    import('../clinical/GQ6AssessmentModal').then((m) => ({ default: m.GQ6AssessmentModal }))
+);
+const VirtualGratitudeVisitModal = React.lazy(() =>
+    import('../clinical/VirtualGratitudeVisitModal').then((m) => ({ default: m.VirtualGratitudeVisitModal }))
+);
+const HubermanRecallModal = React.lazy(() =>
+    import('../clinical/HubermanRecallModal').then((m) => ({ default: m.HubermanRecallModal }))
+);
 
 export const DailyPractice: React.FC = () => {
-    const { userProfile, googleId, isAuthenticated, refreshStreak, setNewlyUnlockedBadges } = useApp();
+    // -------------------------------------------------------------------------
+    // 1. All useState Declarations (Strictly physical top - TDZ Prevention)
+    // -------------------------------------------------------------------------
+    const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
     const [isLoading, setIsLoading] = useState(true);
-    const [openingSentence, setOpeningSentence] = useState('');
-    const [suggestions, setSuggestions] = useState<string[]>([]);
-    const [entries, setEntries] = useState<string[]>(['', '', '']);
+    const [isSaving, setIsSaving] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
-    const [affirmation, setAffirmation] = useState('');
-    const [showRandomQuestion, setShowRandomQuestion] = useState(false);
+    const [activeProtocol, setActiveProtocol] = useState<GratitudeProtocolType>('three_good_things');
+    const [currentStep, setCurrentStep] = useState(0);
+
+    // Empirical historical context loaded directly from Firestore
+    const [empiricalContext, setEmpiricalContext] = useState<EmpiricalHistoricalContext | null>(null);
+
+    // Three Good Things structured items (with mandatory causal/agency attribution & 1-7 affect rating)
+    const [items, setItems] = useState<ThreeGoodThingsItem[]>([
+        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+    ]);
+
+    // Modals
+    const [showLetterModal, setShowLetterModal] = useState(false);
+    const [showVirtualVisitModal, setShowVirtualVisitModal] = useState(false);
+    const [showGQ6Modal, setShowGQ6Modal] = useState(false);
+    const [showHubermanModal, setShowHubermanModal] = useState(false);
+    const [showSubtractionModal, setShowSubtractionModal] = useState(false);
+    const [subtractionReflection, setSubtractionReflection] = useState<string | undefined>(undefined);
+
     const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
 
-    // New State for Sequential Flow
-    const [currentStep, setCurrentStep] = useState(0);
-    const [grades, setGrades] = useState<(GradeResult | null)[]>([null, null, null]);
-    const [isGrading, setIsGrading] = useState(false);
+    const locale: Locale = userProfile?.locale || (userProfile?.language === 'hebrew' ? 'he' : 'en');
+    const t = getDictionary(locale);
 
-    const isHebrew = userProfile?.language === 'hebrew';
+    // -------------------------------------------------------------------------
+    // 2. All useCallback Declarations (Physically above useEffect)
+    // -------------------------------------------------------------------------
+    const setDailyStateFromEntry = useCallback((entry: DailyEntry) => {
+        if (entry.items && entry.items.length === 3) {
+            setItems(entry.items);
+        }
+        if (entry.mentalSubtractionReflection) {
+            setSubtractionReflection(entry.mentalSubtractionReflection);
+        }
+        setIsCompleted(true);
+    }, []);
 
-    useEffect(() => {
-        loadDailyContent();
-    }, [userProfile]);
-
-    const loadDailyContent = async () => {
+    const loadDailyContent = useCallback(async () => {
         if (!userProfile) return;
 
         const today = new Date().toLocaleDateString('en-CA');
-        const existingEntry = StorageService.getEntryByDate(today);
+        setIsLoading(true);
 
-        // Check local storage first
-        if (existingEntry) {
-            setDailyStateFromEntry(existingEntry);
-            setIsLoading(false);
-            return;
-        }
+        try {
+            // Load empirical Firestore historical context
+            if (isAuthenticated && googleId) {
+                try {
+                    const ctx = await FirestoreService.getEmpiricalHistoricalContext(googleId);
+                    setEmpiricalContext(ctx);
+                } catch (ctxError) {
+                    console.warn('Failed to fetch empirical context from Firestore:', ctxError);
+                }
 
-        // If authenticated, check server state
-        if (isAuthenticated) {
-            try {
-                const serverEntry = await ApiService.getTodayEntry();
-                if (serverEntry) {
-                    console.log('✅ Found existing entry on server, syncing...');
-                    StorageService.saveEntry(serverEntry);
-                    setDailyStateFromEntry(serverEntry);
+                const firestoreEntry = await FirestoreService.getEntryByDate(googleId, today);
+                if (firestoreEntry) {
+                    setDailyStateFromEntry(firestoreEntry);
+                    StorageService.saveEntry(firestoreEntry);
                     setIsLoading(false);
                     return;
                 }
-            } catch (err) {
-                console.warn('Failed to sync with server:', err);
             }
-        }
 
-        if (Math.random() < 0.3) {
-            setShowRandomQuestion(true);
-        }
-
-        try {
-            // Simple personalized greeting (no AI needed)
-            const userName = userProfile.name || (isHebrew ? 'חבר/ה' : 'Friend');
-            const greeting = isHebrew
-                ? `שלום ${userName}, בואו נהרהר בשלושה רגעים ספציפיים מהיום שהביאו לך קלות או שמחה. מומלץ מאוד לתרגל בערב.`
-                : `Hello ${userName}, let's reflect on three specific moments from today that brought ease or joy. It is highly recommended that you practice in the evening.`;
-            setOpeningSentence(greeting);
-
-            // Load scientific fact
-            const fact = getRandomScientificFact(isHebrew ? 'hebrew' : 'english');
-            setScientificFact(fact);
-
-            // Still get AI suggestions
-            const suggs = await LLMService.generateSuggestions(userProfile, []);
-            setSuggestions(suggs);
-        } catch (e) {
-            console.error(e);
-            const userName = userProfile.name || (isHebrew ? 'חבר/ה' : 'Friend');
-            setOpeningSentence(isHebrew
-                ? `שלום ${userName}, בואו נהרהר בשלושה רגעים ספציפיים מהיום.`
-                : `Hello ${userName}, let's reflect on three specific moments from today.`);
-            setSuggestions(isHebrew
-                ? ['מים זורמים', 'כוס קפה או תה חמה', 'היכולת ללכת']
-                : ['Running water', 'A warm cup of coffee', 'The ability to walk']);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const setDailyStateFromEntry = (entry: DailyEntry) => {
-        setOpeningSentence(entry.openingSentence);
-        setSuggestions(entry.suggestions);
-        setIsCompleted(true);
-        const content = entry.userContent.content as string;
-        const parsedEntries = content.split('\n').filter(line => line.trim());
-        setEntries(parsedEntries.length >= 3 ? parsedEntries : ['', '', '']);
-    };
-
-    const handleEntryChange = (value: string) => {
-        const newEntries = [...entries];
-        newEntries[currentStep] = value;
-        setEntries(newEntries);
-
-        // Clear grade if user edits after grading (requires re-check)
-        // Only if currently graded
-        if (grades[currentStep]) {
-            const newGrades = [...grades];
-            newGrades[currentStep] = null;
-            setGrades(newGrades);
-        }
-    };
-
-    const handleCheck = async () => {
-        const currentText = entries[currentStep];
-        if (!currentText.trim() || !userProfile) return;
-
-        setIsGrading(true);
-        try {
-            const result = await LLMService.gradeEntry(currentText, userProfile);
-            // Convert 0-3 score to 0-100%
-            const percentScore = Math.round((result.score / 3) * 100);
-
-            const newGrades = [...grades];
-            newGrades[currentStep] = {
-                score: percentScore,
-                feedback: result.feedback,
-                improvedVersion: result.improvedVersion
-            };
-            setGrades(newGrades);
-        } catch (error) {
-            console.error('Grading failed:', error);
-            alert(isHebrew ? 'שגיאה בבדיקה, אנא נסה שוב' : 'Error checking entry, please try again');
-        } finally {
-            setIsGrading(false);
-        }
-    };
-
-    const handleContinue = () => {
-        if (currentStep < 2) {
-            setCurrentStep(currentStep + 1);
-        } else {
-            handleSave();
-        }
-    };
-
-    const handleSave = async () => {
-        if (!userProfile) return;
-
-        const filledEntries = entries.filter(e => e.trim().length > 0);
-        if (filledEntries.length < 3) {
-            // Should not happen in new flow, but safe guard
-            alert(isHebrew ? 'אנא כתוב לפחות 3 דברים' : 'Please write at least 3 things');
-            return;
-        }
-
-        let contentToSave = entries.join('\n');
-        setIsLoading(true); // Re-use loading state for save
-
-        if (isAuthenticated && googleId) {
-            try {
-                contentToSave = await encryptEntry(contentToSave, googleId);
-                console.log('✅ Entry encrypted before saving');
-            } catch (error) {
-                console.error('❌ Encryption failed:', error);
-                alert('Failed to encrypt entry. Please try again.');
+            // Check local fallback
+            const localEntry = StorageService.getEntryByDate(today);
+            if (localEntry) {
+                setDailyStateFromEntry(localEntry);
                 setIsLoading(false);
                 return;
             }
+
+            // Load scientific fact
+            const fact = getRandomScientificFact(locale === 'he' ? 'hebrew' : 'english');
+            setScientificFact(fact);
+        } catch (error) {
+            console.error('Error loading daily practice:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userProfile, isAuthenticated, googleId, locale, setDailyStateFromEntry]);
+
+    const handleItemChange = useCallback((index: number, updatedItem: ThreeGoodThingsItem) => {
+        setItems((prev) => {
+            const next = [...prev];
+            next[index] = updatedItem;
+            return next;
+        });
+    }, []);
+
+    const handleItemCompleted = useCallback((stepIndex: number) => {
+        if (stepIndex < 2) {
+            setCurrentStep((prev) => Math.min(prev + 1, 2));
+        }
+    }, []);
+
+    const handleSaveEntry = useCallback(async () => {
+        if (!userProfile) return;
+
+        // Verify all 3 items have act, benefit, and mandatory causal reflection (agency attribution)
+        const isAllValid = items.every(
+            (it) =>
+                it.act.trim().length >= 4 &&
+                it.benefit.trim().length >= 4 &&
+                it.causalReflection.trim().length >= 4
+        );
+
+        if (!isAllValid) {
+            alert(
+                locale === 'he'
+                    ? 'אנא וודא שכל 3 הרגעים כוללים פירוט קונקרטי, תועלת וסוכנות אישית (ייחוס סיבתי).'
+                    : 'Please ensure all 3 items contain concrete details, benefit, and agency attribution.'
+            );
+            return;
         }
 
+        setIsSaving(true);
         const today = new Date().toLocaleDateString('en-CA');
-        const streak = StorageService.getStreak();
+        const currentStreakData = StorageService.getStreak();
 
-        // Calculate new streak properly based on date diff
         let newCurrentStreak = 1;
-        const lastPracticeDate = streak.lastPracticeDate;
+        const lastPracticeDate = currentStreakData.lastPracticeDate;
 
         if (lastPracticeDate) {
             const todayDate = new Date(today);
             const lastDate = new Date(lastPracticeDate);
-            const daysDiff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+            const daysDiff = Math.floor(
+                (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
 
             if (daysDiff === 1) {
-                newCurrentStreak = streak.currentStreak + 1;
+                newCurrentStreak = currentStreakData.currentStreak + 1;
             } else if (daysDiff === 0) {
-                newCurrentStreak = streak.currentStreak; // Already practiced today
+                newCurrentStreak = currentStreakData.currentStreak;
             } else {
-                newCurrentStreak = 1; // Gap larger than 1 day
+                newCurrentStreak = 1;
             }
         }
 
-        const newStreak = {
-            ...streak,
+        const updatedStreak = {
+            ...currentStreakData,
             currentStreak: newCurrentStreak,
-            longestStreak: Math.max(streak.longestStreak || 0, newCurrentStreak),
-            totalDaysPracticed: streak.totalDaysPracticed + 1,
-            lastPracticeDate: today
+            longestStreak: Math.max(currentStreakData.longestStreak || 0, newCurrentStreak),
+            totalDaysPracticed: currentStreakData.totalDaysPracticed + 1,
+            lastPracticeDate: today,
         };
-        StorageService.updateStreak(newStreak);
+
+        const compiledContent = items
+            .map(
+                (it, i) =>
+                    `[${i + 1}] ${it.act} (${it.benefactor || 'Self'}) -> ${it.benefit} | Causal Agency: ${it.causalReflection} (Affect: ${it.affectRating}/7)`
+            )
+            .join('\n');
 
         const newEntry: DailyEntry = {
             entryId: uuidv4(),
+            userId: userProfile.userId,
             date: today,
-            openingSentence,
-            suggestions,
+            protocol: activeProtocol,
+            openingSentence: locale === 'he' ? 'שלושה דברים טובים עם ייחוס סיבתי' : 'Three Good Things with Causal Attribution',
+            suggestions: [],
+            items,
+            mentalSubtractionReflection: subtractionReflection,
             userContent: {
                 type: 'text',
-                content: contentToSave,
-                duration: 0
+                content: compiledContent,
             },
             completedAt: Date.now(),
-            streakDay: newStreak.currentStreak
+            streakDay: newCurrentStreak,
+            qualityScore: 95,
         };
-        StorageService.saveEntry(newEntry);
 
-        // Sync to server if authenticated
-        if (isAuthenticated) {
-            ApiService.saveEntry(newEntry).then((res) => {
-                refreshStreak();
-                // Check if any badges were unlocked during this save
-                if (res.newBadges && res.newBadges.length > 0) {
-                    setNewlyUnlockedBadges(res.newBadges);
-                }
-            }).catch(err => {
-                console.error('Failed to sync entry to server:', err);
-            });
+        try {
+            StorageService.updateStreak(updatedStreak);
+            StorageService.saveEntry(newEntry);
+
+            if (isAuthenticated && googleId) {
+                await FirestoreService.saveEntry(googleId, newEntry);
+                await FirestoreService.updateStreak(googleId, updatedStreak);
+                await refreshStreak();
+            }
+
+            setIsCompleted(true);
+        } catch (error) {
+            console.error('Failed to save daily entry:', error);
+            alert(locale === 'he' ? 'שגיאה בשמירת התרגול' : 'Error saving practice');
+        } finally {
+            setIsSaving(false);
         }
+    }, [userProfile, items, locale, activeProtocol, subtractionReflection, isAuthenticated, googleId, refreshStreak]);
 
-        const affirm = await LLMService.generateAffirmation(userProfile);
-        setAffirmation(affirm);
-        setIsCompleted(true);
-        setIsLoading(false);
-    };
+    // -------------------------------------------------------------------------
+    // 3. All useEffect Declarations (Strictly physical bottom)
+    // -------------------------------------------------------------------------
+    useEffect(() => {
+        void loadDailyContent();
+    }, [loadDailyContent]);
 
+    // -------------------------------------------------------------------------
+    // Render States
+    // -------------------------------------------------------------------------
     if (isLoading) {
         return <LoadingSpinner />;
     }
 
+    if (!userProfile) {
+        return null;
+    }
+
     if (isCompleted) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] text-center animate-fadeIn px-4">
-                <div className="streak-pill mt-4 mb-4" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
-                    <FluentIcon name="Star" size={28} />
-                    <span className="streak-number text-2xl font-bold font-sans">{StorageService.getStreak().currentStreak}</span>
-                    <span className="streak-label text-xl font-bold font-sans">{isHebrew ? 'ימים' : 'days'}</span>
-                </div>
-
-                {/* Extra vertical spacing added here */}
-                <div style={{ height: '32px' }}></div>
-
-                <h2 className="title-main text-center mb-4 sm:mb-6 px-4" style={{ lineHeight: '1.4' }}>
-                    {affirmation || (isHebrew ? 'כל הכבוד!' : 'Well done!')}
-                </h2>
-                <p className="subtitle mt-2">
-                    {isHebrew ? 'נתראה מחר' : 'See you tomorrow'}
-                </p>
+            <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="max-w-xl mx-auto px-4 py-8 animate-fadeIn text-center">
+                <PastelCard
+                    variant="sage"
+                    title={t.common.wellDone}
+                    subtitle={t.common.seeYouTomorrow}
+                    badge={t.common.verified}
+                    elevated
+                >
+                    <div className="py-6 space-y-4">
+                        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-lg">
+                            <span>🔥</span>
+                            <span>{t.common.daysStreak}</span>
+                        </div>
+                        <p className="text-sm text-neutral-600 max-w-sm mx-auto">
+                            {locale === 'he'
+                                ? 'התרגול היומי הושלם בהצלחה. המוח שלך חיזק את מסלולי ההערכה והסוכנות האישית.'
+                                : 'Daily practice complete. Your medial prefrontal cortex has reinforced neural pathways of appreciation and agency.'}
+                        </p>
+                    </div>
+                </PastelCard>
             </div>
         );
     }
 
-    const currentGrade = grades[currentStep];
-    const isStepComplete = !!currentGrade; // Step is complete if it has a grade result
-    const hasText = entries[currentStep].trim().length > 0;
-
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="animate-fadeIn max-w-xl mx-auto">
-            {/* Random Profile Question (30% chance) */}
-            {showRandomQuestion && (
-                <RandomProfileQuestion
-                    onComplete={() => setShowRandomQuestion(false)}
-                    onSkip={() => setShowRandomQuestion(false)}
-                />
-            )}
-
-
-
-            <div className="pt-2 sm:pt-4 pb-24">
-                {/* Progress Bar */}
-                <ProgressBar
-                    currentStep={currentStep}
-                    grades={grades}
-                />
-
-                {/* Input Card */}
-                <div className="animate-slideUp">
-                    <GradedInput
-                        index={currentStep}
-                        value={entries[currentStep]}
-                        onChange={handleEntryChange}
-                        placeholder={isHebrew ? `רגע ${currentStep + 1} - פרט/י כאן...` : `Moment ${currentStep + 1} - Elaborate here...`}
-                        exampleAnswer={suggestions[currentStep] ? (isHebrew ? `רגע ${currentStep + 1} - ${suggestions[currentStep]}` : `Moment ${currentStep + 1} - ${suggestions[currentStep]}`) : undefined}
-                        gradeResult={currentGrade}
-                        isLoading={isGrading}
-                    />
+        <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="max-w-2xl mx-auto px-4 py-6 space-y-6 animate-fadeIn pb-24">
+            {/* Header & Neuroscience Dosing Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-black/5">
+                <div>
+                    <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
+                        {t.common.appName}
+                    </h1>
+                    <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                        {t.common.tagline}
+                    </p>
                 </div>
+                <DosingScheduleBadge dosingSchedule={userProfile.dosingSchedule} locale={locale} />
+            </div>
 
-                {/* Action Button - Equal spacing matching input margin */}
-                <div style={{ marginTop: '24px' }}>
-                    {!isStepComplete ? (
-                        <button
-                            onClick={handleCheck}
-                            disabled={!hasText || isGrading}
-                            className={!hasText || isGrading ? '' : 'animate-pulseOnHover'}
-                            style={{
-                                width: '100%',
-                                padding: '16px',
-                                background: (!hasText || isGrading)
-                                    ? 'rgba(255, 182, 193, 0.25)'  // Soft, cohesive disabled state instead of gray
-                                    : 'linear-gradient(135deg, #FFA500, #E8860C)',
-                                color: (!hasText || isGrading) ? '#d280a5' : 'black',
-                                fontSize: '18px',
-                                fontWeight: 700,
-                                border: (!hasText || isGrading) ? '2px dashed rgba(255, 182, 193, 0.4)' : 'none',
-                                borderRadius: '9999px',
-                                cursor: (!hasText || isGrading) ? 'not-allowed' : 'pointer',
-                                boxShadow: (!hasText || isGrading)
-                                    ? 'none'
-                                    : '0 4px 15px rgba(255, 105, 180, 0.4)',
-                                transition: 'all 0.3s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '12px'
-                            }}
-                        >
-                            <span>{isGrading ? (isHebrew ? 'בודק...' : 'Checking...') : (isHebrew ? 'בדיקה' : 'Check')}</span>
-                            <div className={`badge-icon ${isGrading ? 'badge-icon-loading' : 'badge-icon-check'} badge-unlocked`} style={{ transform: 'scale(0.4)', margin: '-20px', filter: (!hasText && !isGrading) ? 'grayscale(0.8) opacity(0.5)' : 'none' }}>
-                                <FluentIcon name={isGrading ? "Loading" : "Check"} size={40} />
-                            </div>
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleContinue}
-                            style={{
-                                width: '100%',
-                                padding: '16px',
-                                background: 'linear-gradient(135deg, #FFA500, #E8860C)',
-                                color: 'black',
-                                fontSize: '18px',
-                                fontWeight: 700,
-                                border: 'none',
-                                borderRadius: '9999px',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 15px rgba(255, 105, 180, 0.4)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '12px'
-                            }}
-                        >
-                            <span>{currentStep < 2 ? (isHebrew ? 'המשך' : 'Continue') : (isHebrew ? 'סיים ושמור' : 'Finish & Save')}</span>
-                            <div className="badge-icon badge-icon-continue badge-unlocked" style={{ transform: 'scale(0.4)', margin: '-20px' }}>
-                                <FluentIcon name="Sparkles" size={40} />
-                            </div>
-                        </button>
-                    )}
-                </div>
+            {/* Protocol Switcher Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                <button
+                    type="button"
+                    onClick={() => setActiveProtocol('three_good_things')}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                        activeProtocol === 'three_good_things'
+                            ? 'bg-neutral-900 text-white shadow-sm'
+                            : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                    }`}
+                >
+                    {t.nav.daily} (3GT)
+                </button>
 
-                {/* Scientific Fact Banner - Exact equal spacing as above */}
-                {scientificFact && (
-                    <div style={{ marginTop: '24px' }}>
-                        <ScientificFactBanner
-                            statement={scientificFact.statement}
-                            citation={scientificFact.citation}
-                            isHebrew={isHebrew}
-                        />
-                    </div>
+                <button
+                    type="button"
+                    onClick={() => setShowGQ6Modal(true)}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-all shrink-0"
+                >
+                    📊 {t.gq6.title}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setShowLetterModal(true)}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 transition-all shrink-0"
+                >
+                    ✉️ {t.letters.title}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setShowVirtualVisitModal(true)}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 transition-all shrink-0"
+                >
+                    🪑 {t.emptyChair.title}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setShowHubermanModal(true)}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 transition-all shrink-0"
+                >
+                    🧠 {t.huberman.title}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setShowSubtractionModal(true)}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 transition-all shrink-0"
+                >
+                    ⏳ {t.mentalSubtraction.title}
+                </button>
+            </div>
+
+            {/* Main Structured 3GT Form with Mandatory Causal Reflection & Affect Rating */}
+            <ThreeGoodThingsForm
+                stepIndex={currentStep}
+                userProfile={userProfile}
+                item={items[currentStep]}
+                empiricalContext={empiricalContext}
+                onChange={(updated) => handleItemChange(currentStep, updated)}
+                onCompleted={() => handleItemCompleted(currentStep)}
+            />
+
+            {/* Step Controls */}
+            <div className="flex items-center justify-between gap-4 pt-2">
+                <button
+                    type="button"
+                    onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
+                    disabled={currentStep === 0}
+                    className="px-4 py-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 disabled:opacity-30 rounded-xl"
+                >
+                    {t.common.previous}
+                </button>
+
+                {currentStep < 2 ? (
+                    <button
+                        type="button"
+                        onClick={() => setCurrentStep((prev) => Math.min(prev + 1, 2))}
+                        className="px-6 py-2.5 text-xs sm:text-sm font-bold bg-neutral-800 hover:bg-neutral-900 text-white rounded-xl shadow-md transition-all"
+                    >
+                        {t.common.next}
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={handleSaveEntry}
+                        disabled={isSaving}
+                        className="px-8 py-3 text-xs sm:text-sm font-black bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                    >
+                        {isSaving ? t.common.loading : `✓ ${t.common.complete}`}
+                    </button>
                 )}
             </div>
+
+            {/* Scientific Fact Banner */}
+            {scientificFact && (
+                <div className="pt-4">
+                    <ScientificFactBanner
+                        statement={scientificFact.statement}
+                        citation={scientificFact.citation}
+                        isHebrew={locale === 'he'}
+                    />
+                </div>
+            )}
+
+            {/* Clinical Protocols Modals (Code-Split via Suspense) */}
+            <React.Suspense fallback={<LoadingSpinner />}>
+                {showGQ6Modal && (
+                    <GQ6AssessmentModal
+                        userProfile={userProfile}
+                        onClose={() => setShowGQ6Modal(false)}
+                        onCompleted={() => setShowGQ6Modal(false)}
+                    />
+                )}
+
+                {showLetterModal && (
+                    <GratitudeLetterModal
+                        userProfile={userProfile}
+                        onClose={() => setShowLetterModal(false)}
+                        onSaved={() => setShowLetterModal(false)}
+                        isHebrew={locale === 'he'}
+                    />
+                )}
+
+                {showVirtualVisitModal && (
+                    <VirtualGratitudeVisitModal
+                        userProfile={userProfile}
+                        onClose={() => setShowVirtualVisitModal(false)}
+                        onCompleted={() => setShowVirtualVisitModal(false)}
+                    />
+                )}
+
+                {showHubermanModal && (
+                    <HubermanRecallModal
+                        userProfile={userProfile}
+                        onClose={() => setShowHubermanModal(false)}
+                        onCompleted={() => setShowHubermanModal(false)}
+                    />
+                )}
+
+                {showSubtractionModal && (
+                    <MentalSubtractionModal
+                        userProfile={userProfile}
+                        onClose={() => setShowSubtractionModal(false)}
+                        onCompleted={(reflection) => setSubtractionReflection(reflection)}
+                        isHebrew={locale === 'he'}
+                    />
+                )}
+            </React.Suspense>
         </div>
     );
 };

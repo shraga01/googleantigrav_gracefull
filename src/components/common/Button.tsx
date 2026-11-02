@@ -31,7 +31,7 @@ export const Button: React.FC<ButtonProps> = ({
     const variants = {
         primary: {
             backgroundColor: 'var(--color-primary)',
-            color: 'black',
+            color: 'white',
             boxShadow: 'var(--shadow-sm)',
         },
         secondary: {

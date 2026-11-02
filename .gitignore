@@ -24,12 +24,23 @@ dist-ssr
 *.sw?
 
 # Environment files
+env
 .env
+.env.*
 .env.local
 .env.production
+server/env
 server/.env
+server/.env.*
 server/.env.local
 server/.env.production
 
 # Server
 server/node_modules
+
+# Functions
+functions/lib
+functions/node_modules
+
+# Firebase cache
+.firebase/

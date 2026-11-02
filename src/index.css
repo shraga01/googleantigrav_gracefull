@@ -36,6 +36,8 @@
 
 html {
   font-size: 16px;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Responsive font scaling */
@@ -56,20 +58,40 @@ html {
 /* ==================== */
 
 body {
-  background-color: #2e1065;
+  background-color: #4a148c;
+  /* Deep purple base */
   background-image:
-    radial-gradient(circle at 0% 0%, #8A2BE2, transparent 50%),
-    radial-gradient(circle at 100% 0%, #FF69B4, transparent 50%),
-    radial-gradient(circle at 50% 100%, #00FFFF, transparent 50%);
-  background-size: cover;
+    radial-gradient(at 0% 0%, #c2185b 0px, transparent 50%),
+    /* Deep pink */
+    radial-gradient(at 100% 0%, #512da8 0px, transparent 50%),
+    /* Royal purple */
+    radial-gradient(at 100% 100%, #006064 0px, transparent 50%),
+    /* Deep teal */
+    radial-gradient(at 0% 100%, #f57f17 0px, transparent 50%),
+    /* Deep golden orange */
+    radial-gradient(at 50% 50%, #d81b60 0px, transparent 50%);
+  /* Vibrant magenta center */
+  background-size: 100% 100%;
   background-attachment: fixed;
-  font-family: 'Rubik', sans-serif;
-  min-height: 100vh;
-  color: black;
+  font-family: 'Plus Jakarta Sans', 'Rubik', sans-serif;
+  height: 100%;
+  height: 100dvh;
+  color: white;
   text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+#root {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
 }
 
 /* Hide scrollbar */
@@ -96,7 +118,7 @@ body {
 }
 
 .text-glow {
-  text-shadow: 0 0 10px rgba(255, 165, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .text-visible {
@@ -729,4 +751,36 @@ body {
 .graded-input-container:focus-within {
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+}
+
+/* ==================== */
+/* APPRECIATION V2 UI   */
+/* ==================== */
+
+.mesh-gradient {
+  background-color: #4a148c;
+  /* Deep purple base */
+  background-image:
+    radial-gradient(at 0% 0%, #c2185b 0px, transparent 50%),
+    radial-gradient(at 100% 0%, #512da8 0px, transparent 50%),
+    radial-gradient(at 100% 100%, #006064 0px, transparent 50%),
+    radial-gradient(at 0% 100%, #f57f17 0px, transparent 50%),
+    radial-gradient(at 50% 50%, #d81b60 0px, transparent 50%);
+  background-size: 100% 100%;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.glass-button-glow {
+  box-shadow: 0 0 50px rgba(255, 255, 255, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.text-glow-white {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }

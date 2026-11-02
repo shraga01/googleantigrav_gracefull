@@ -2,8 +2,11 @@ import React from 'react';
 
 interface GradeResult {
     score: number;
+    status: string;
     feedback: string;
-    improvedVersion?: string;
+    met_criteria: string[];
+    missing_criteria: string[];
+    coaching_question: string | null;
 }
 
 interface ProgressBarProps {

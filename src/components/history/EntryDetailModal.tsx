@@ -52,12 +52,12 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
         .split('\n')
         .map(l => l.trim())
         .filter(l => l.length > 0)
-        .map(l => l.replace(/^[0-9]+[\.\-\)\s]+/, '')); // Strip any existing leading numbers from user input
+        .map(l => l.replace(/^[0-9]+[.\-)\s]+/, '')); // Strip any existing leading numbers from user input
 
     return (
         <div style={{ lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
             {lines.map((line, i) => (
-                <div key={i} className="flex gap-2 items-start py-1.5 border-b border-gray-100 last:border-0 pl-1">
+                <div key={i} className="flex gap-2 items-start py-1.5 border-b border-gray-100 last:border-0 ps-1">
                     <span className="font-bold text-primary min-w-[20px] select-none text-center">
                         {i + 1}.
                     </span>
