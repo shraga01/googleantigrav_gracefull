@@ -24,10 +24,14 @@ dist-ssr
 *.sw?
 
 # Environment files
+env
 .env
+.env.*
 .env.local
 .env.production
+server/env
 server/.env
+server/.env.*
 server/.env.local
 server/.env.production
 

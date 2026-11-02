@@ -1,389 +1,379 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
-import { LLMService } from '../../services/llm';
 import { StorageService } from '../../services/storage';
-import { encryptEntry } from '../../services/encryption';
-import type { DailyEntry } from '../../types';
-import { ApiService } from '../../services/api';
+import { FirestoreService } from '../../services/firestoreService';
+import type { DailyEntry, GratitudeItem, GratitudeProtocolType } from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { RandomProfileQuestion } from './RandomProfileQuestion';
-import { GradedInput } from './GradedInput';
-import { ProgressBar } from './ProgressBar';
 import { ScientificFactBanner } from '../common/ScientificFactBanner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
+import { ThreeGoodThingsForm } from './ThreeGoodThingsForm';
+import { GratitudeLetterModal } from './GratitudeLetterModal';
+import { MentalSubtractionModal } from './MentalSubtractionModal';
+import { PastelCard } from '../common/PastelCard';
 import { v4 as uuidv4 } from 'uuid';
-import '../../styles/badges.css';
-import { HomeScreen } from './HomeScreen';
-
-interface GradeResult {
-    score: number;
-    status: string;
-    feedback: string;
-    met_criteria: string[];
-    missing_criteria: string[];
-    coaching_question: string | null;
-}
 
 export const DailyPractice: React.FC = () => {
-    const { userProfile, googleId, isAuthenticated, refreshStreak, setNewlyUnlockedBadges } = useApp();
+    // -------------------------------------------------------------------------
+    // 1. All useState Declarations (Strictly physical top)
+    // -------------------------------------------------------------------------
+    const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
     const [isLoading, setIsLoading] = useState(true);
-    const [openingSentence, setOpeningSentence] = useState('');
-    const [suggestions, setSuggestions] = useState<string[]>([]);
-    const [entries, setEntries] = useState<string[]>(['', '', '']);
+    const [isSaving, setIsSaving] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
-    const [affirmation, setAffirmation] = useState('');
-    const [showRandomQuestion, setShowRandomQuestion] = useState(false);
-    const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
-
-    // New State for Sequential Flow
+    const [activeProtocol, setActiveProtocol] = useState<GratitudeProtocolType>('three_good_things');
     const [currentStep, setCurrentStep] = useState(0);
-    const [grades, setGrades] = useState<(GradeResult | null)[]>([null, null, null]);
-    const [isGrading, setIsGrading] = useState(false);
-    const [hasStarted, setHasStarted] = useState(false);
+
+    // Three Good Things structured items (with mandatory agency attribution)
+    const [items, setItems] = useState<GratitudeItem[]>([
+        { act: '', benefactor: '', benefit: '', agencyAttribution: '' },
+        { act: '', benefactor: '', benefit: '', agencyAttribution: '' },
+        { act: '', benefactor: '', benefit: '', agencyAttribution: '' },
+    ]);
+
+    // Modals
+    const [showLetterModal, setShowLetterModal] = useState(false);
+    const [showSubtractionModal, setShowSubtractionModal] = useState(false);
+    const [subtractionReflection, setSubtractionReflection] = useState<string | undefined>(undefined);
+
+    const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
 
     const isHebrew = userProfile?.language === 'hebrew';
 
-    useEffect(() => {
-        loadDailyContent();
-    }, [userProfile]);
+    // -------------------------------------------------------------------------
+    // 2. All useCallback Declarations (Physically above useEffect)
+    // -------------------------------------------------------------------------
+    const setDailyStateFromEntry = useCallback((entry: DailyEntry) => {
+        if (entry.items && entry.items.length === 3) {
+            setItems(entry.items);
+        }
+        if (entry.mentalSubtractionReflection) {
+            setSubtractionReflection(entry.mentalSubtractionReflection);
+        }
+        setIsCompleted(true);
+    }, []);
 
-    const loadDailyContent = async () => {
+    const loadDailyContent = useCallback(async () => {
         if (!userProfile) return;
 
         const today = new Date().toLocaleDateString('en-CA');
-        const existingEntry = StorageService.getEntryByDate(today);
+        setIsLoading(true);
 
-        // Check local storage first
-        if (existingEntry) {
-            setDailyStateFromEntry(existingEntry);
-            setIsLoading(false);
-            return;
-        }
-
-        // If authenticated, check server state
-        if (isAuthenticated) {
-            try {
-                const serverEntry = await ApiService.getTodayEntry();
-                if (serverEntry) {
-                    console.log('✅ Found existing entry on server, syncing...');
-                    StorageService.saveEntry(serverEntry);
-                    setDailyStateFromEntry(serverEntry);
+        try {
+            // Check Firestore first if authenticated
+            if (isAuthenticated && googleId) {
+                const firestoreEntry = await FirestoreService.getEntryByDate(googleId, today);
+                if (firestoreEntry) {
+                    setDailyStateFromEntry(firestoreEntry);
+                    StorageService.saveEntry(firestoreEntry);
                     setIsLoading(false);
                     return;
                 }
-            } catch (err) {
-                console.warn('Failed to sync with server:', err);
             }
-        }
 
-        if (Math.random() < 0.3) {
-            setShowRandomQuestion(true);
-        }
-
-        try {
-            // Simple personalized greeting (no AI needed)
-            const userName = userProfile.name || (isHebrew ? 'חבר/ה' : 'Friend');
-            const greeting = isHebrew
-                ? `שלום ${userName}, בואו נהרהר בשלושה רגעים ספציפיים מהיום שהביאו לך קלות או שמחה. מומלץ מאוד לתרגל בערב.`
-                : `Hello ${userName}, let's reflect on three specific moments from today that brought ease or joy. It is highly recommended that you practice in the evening.`;
-            setOpeningSentence(greeting);
+            // Check local fallback
+            const localEntry = StorageService.getEntryByDate(today);
+            if (localEntry) {
+                setDailyStateFromEntry(localEntry);
+                setIsLoading(false);
+                return;
+            }
 
             // Load scientific fact
             const fact = getRandomScientificFact(isHebrew ? 'hebrew' : 'english');
             setScientificFact(fact);
-
-            // Still get AI suggestions
-            const suggs = await LLMService.generateSuggestions(userProfile, []);
-            setSuggestions(suggs);
-        } catch (e) {
-            console.error(e);
-            const userName = userProfile.name || (isHebrew ? 'חבר/ה' : 'Friend');
-            setOpeningSentence(isHebrew
-                ? `שלום ${userName}, בואו נהרהר בשלושה רגעים ספציפיים מהיום.`
-                : `Hello ${userName}, let's reflect on three specific moments from today.`);
-            setSuggestions(isHebrew
-                ? ['מים זורמים', 'כוס קפה או תה חמה', 'היכולת ללכת']
-                : ['Running water', 'A warm cup of coffee', 'The ability to walk']);
+        } catch (error) {
+            console.error('Error loading daily practice:', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [userProfile, isAuthenticated, googleId, isHebrew, setDailyStateFromEntry]);
 
-    const setDailyStateFromEntry = (entry: DailyEntry) => {
-        setOpeningSentence(entry.openingSentence);
-        setSuggestions(entry.suggestions);
-        setIsCompleted(true);
-        const content = entry.userContent.content as string;
-        const parsedEntries = content.split('\n').filter(line => line.trim());
-        setEntries(parsedEntries.length >= 3 ? parsedEntries : ['', '', '']);
-    };
+    const handleItemChange = useCallback((index: number, updatedItem: GratitudeItem) => {
+        setItems((prev) => {
+            const next = [...prev];
+            next[index] = updatedItem;
+            return next;
+        });
+    }, []);
 
-    const handleEntryChange = (value: string) => {
-        const newEntries = [...entries];
-        newEntries[currentStep] = value;
-        setEntries(newEntries);
-
-        // Clear grade if user edits after grading (requires re-check)
-        // Only if currently graded
-        if (grades[currentStep]) {
-            const newGrades = [...grades];
-            newGrades[currentStep] = null;
-            setGrades(newGrades);
+    const handleItemCompleted = useCallback((stepIndex: number) => {
+        if (stepIndex < 2) {
+            setCurrentStep((prev) => Math.min(prev + 1, 2));
         }
-    };
+    }, []);
 
-    const handleCheck = async () => {
-        const currentText = entries[currentStep];
-        if (!currentText.trim() || !userProfile) return;
-
-        setIsGrading(true);
-        try {
-            const result = await LLMService.gradeEntry(currentText, userProfile);
-            // Convert 0-5 score to 0-100%
-            const percentScore = Math.round((result.score / 5) * 100);
-
-            const newGrades = [...grades];
-            newGrades[currentStep] = {
-                score: percentScore,
-                status: result.status,
-                feedback: result.feedback,
-                met_criteria: result.met_criteria || [],
-                missing_criteria: result.missing_criteria || [],
-                coaching_question: result.coaching_question || null
-            };
-            setGrades(newGrades);
-        } catch (error) {
-            console.error('Grading failed:', error);
-            alert(isHebrew ? 'שגיאה בבדיקה, אנא נסה שוב' : 'Error checking entry, please try again');
-        } finally {
-            setIsGrading(false);
-        }
-    };
-
-    const handleContinue = () => {
-        if (currentStep < 2) {
-            setCurrentStep(currentStep + 1);
-        } else {
-            handleSave();
-        }
-    };
-
-    const handleSave = async () => {
+    const handleSaveEntry = useCallback(async () => {
         if (!userProfile) return;
 
-        const filledEntries = entries.filter(e => e.trim().length > 0);
-        if (filledEntries.length < 3) {
-            // Should not happen in new flow, but safe guard
-            alert(isHebrew ? 'אנא כתוב לפחות 3 דברים' : 'Please write at least 3 things');
+        // Verify all 3 items have act, benefit, and mandatory agency attribution
+        const isAllValid = items.every(
+            (it) =>
+                it.act.trim().length >= 4 &&
+                it.benefit.trim().length >= 4 &&
+                it.agencyAttribution.trim().length >= 4
+        );
+
+        if (!isAllValid) {
+            alert(
+                isHebrew
+                    ? 'אנא וודא שכל 3 הרגעים כוללים פירוט קונקרטי, תועלת וסוכנות אישית.'
+                    : 'Please ensure all 3 items contain concrete details, benefit, and agency attribution.'
+            );
             return;
         }
 
-        let contentToSave = entries.join('\n');
-        setIsLoading(true); // Re-use loading state for save
-
-        if (isAuthenticated && googleId) {
-            try {
-                contentToSave = await encryptEntry(contentToSave, googleId);
-                console.log('✅ Entry encrypted before saving');
-            } catch (error) {
-                console.error('❌ Encryption failed:', error);
-                alert('Failed to encrypt entry. Please try again.');
-                setIsLoading(false);
-                return;
-            }
-        }
-
+        setIsSaving(true);
         const today = new Date().toLocaleDateString('en-CA');
-        const streak = StorageService.getStreak();
+        const currentStreakData = StorageService.getStreak();
 
-        // Calculate new streak properly based on date diff
         let newCurrentStreak = 1;
-        const lastPracticeDate = streak.lastPracticeDate;
+        const lastPracticeDate = currentStreakData.lastPracticeDate;
 
         if (lastPracticeDate) {
             const todayDate = new Date(today);
             const lastDate = new Date(lastPracticeDate);
-            const daysDiff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+            const daysDiff = Math.floor(
+                (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
 
             if (daysDiff === 1) {
-                newCurrentStreak = streak.currentStreak + 1;
+                newCurrentStreak = currentStreakData.currentStreak + 1;
             } else if (daysDiff === 0) {
-                newCurrentStreak = streak.currentStreak; // Already practiced today
+                newCurrentStreak = currentStreakData.currentStreak;
             } else {
-                newCurrentStreak = 1; // Gap larger than 1 day
+                newCurrentStreak = 1;
             }
         }
 
-        const newStreak = {
-            ...streak,
+        const updatedStreak = {
+            ...currentStreakData,
             currentStreak: newCurrentStreak,
-            longestStreak: Math.max(streak.longestStreak || 0, newCurrentStreak),
-            totalDaysPracticed: streak.totalDaysPracticed + 1,
-            lastPracticeDate: today
+            longestStreak: Math.max(currentStreakData.longestStreak || 0, newCurrentStreak),
+            totalDaysPracticed: currentStreakData.totalDaysPracticed + 1,
+            lastPracticeDate: today,
         };
-        StorageService.updateStreak(newStreak);
+
+        const compiledContent = items
+            .map(
+                (it, i) =>
+                    `[${i + 1}] ${it.act} (${it.benefactor || 'Self'}) -> ${it.benefit} | Agency: ${it.agencyAttribution}`
+            )
+            .join('\n');
 
         const newEntry: DailyEntry = {
             entryId: uuidv4(),
+            userId: userProfile.userId,
             date: today,
-            openingSentence,
-            suggestions,
+            protocol: activeProtocol,
+            openingSentence: isHebrew ? 'שלושה דברים טובים עם ייחוס סיבתי' : 'Three Good Things with Agency Attribution',
+            suggestions: [],
+            items,
+            mentalSubtractionReflection: subtractionReflection,
             userContent: {
                 type: 'text',
-                content: contentToSave,
-                duration: 0
+                content: compiledContent,
             },
             completedAt: Date.now(),
-            streakDay: newStreak.currentStreak
+            streakDay: newCurrentStreak,
+            qualityScore: 95,
         };
-        StorageService.saveEntry(newEntry);
 
-        // Sync to server if authenticated
-        if (isAuthenticated) {
-            ApiService.saveEntry(newEntry).then((res) => {
-                refreshStreak();
-                // Check if any badges were unlocked during this save
-                if (res.newBadges && res.newBadges.length > 0) {
-                    setNewlyUnlockedBadges(res.newBadges);
-                }
-            }).catch(err => {
-                console.error('Failed to sync entry to server:', err);
-            });
+        try {
+            StorageService.updateStreak(updatedStreak);
+            StorageService.saveEntry(newEntry);
+
+            if (isAuthenticated && googleId) {
+                await FirestoreService.saveEntry(googleId, newEntry);
+                await FirestoreService.updateStreak(googleId, updatedStreak);
+                await refreshStreak();
+            }
+
+            setIsCompleted(true);
+        } catch (error) {
+            console.error('Failed to save daily entry:', error);
+            alert(isHebrew ? 'שגיאה בשמירת התרגול' : 'Error saving practice');
+        } finally {
+            setIsSaving(false);
         }
+    }, [userProfile, items, isHebrew, activeProtocol, subtractionReflection, isAuthenticated, googleId, refreshStreak]);
 
-        const affirm = await LLMService.generateAffirmation(userProfile);
-        setAffirmation(affirm);
-        setIsCompleted(true);
-        setIsLoading(false);
-    };
+    // -------------------------------------------------------------------------
+    // 3. All useEffect Declarations (Strictly physical bottom)
+    // -------------------------------------------------------------------------
+    useEffect(() => {
+        void loadDailyContent();
+    }, [loadDailyContent]);
 
+    // -------------------------------------------------------------------------
+    // Render States
+    // -------------------------------------------------------------------------
     if (isLoading) {
         return <LoadingSpinner />;
     }
 
     if (isCompleted) {
         return (
-            <div className="flex flex-col items-center justify-center w-full h-full text-center animate-fadeIn px-4 z-10 relative">
-
-                <div className="glass-card p-6 sm:p-10 rounded-[2rem] flex flex-col items-center shadow-2xl">
-                    <div className="mb-4 flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-400/20 border border-orange-400/30">
-                        <span className="material-symbols-outlined text-orange-400 text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                        <span className="text-white text-2xl font-black">{StorageService.getStreak().currentStreak}</span>
-                        <span className="text-white/90 text-xl font-bold">{isHebrew ? 'ימים' : 'days'}</span>
+            <div dir={isHebrew ? 'rtl' : 'ltr'} className="max-w-xl mx-auto px-4 py-8 animate-fadeIn text-center">
+                <PastelCard
+                    variant="sage"
+                    title={isHebrew ? 'התרגול היומי הושלם בהצלחה' : 'Daily Practice Completed'}
+                    subtitle={
+                        isHebrew
+                            ? 'חיזקת את מסלולי הוויסות העצביים והכרת התודה. נתראה מחר!'
+                            : 'You have actively strengthened your neural pathways. See you tomorrow!'
+                    }
+                    badge={isHebrew ? 'תרגול בוצע' : 'Practiced'}
+                    elevated
+                >
+                    <div className="py-6 space-y-4">
+                        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-lg">
+                            <span>🔥</span>
+                            <span>{StorageService.getStreak().currentStreak}</span>
+                            <span>{isHebrew ? 'ימי תרגול רצופים' : 'Days Streak'}</span>
+                        </div>
+                        <p className="text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
+                            {isHebrew
+                                ? 'מחקרים מצביעים כי תרגול "שלושה דברים טובים" הכולל סוכנות אישית מוריד את תסמיני השחיקה ב-22% ומשפר את איכות השינה כבר בשבועות הראשונים.'
+                                : 'Studies show that Three Good Things with agency attribution decreases burnout symptoms by 22% and improves sleep depth within the first weeks.'}
+                        </p>
                     </div>
-
-                    <h2 className="text-white text-2xl sm:text-3xl font-black text-center mb-4 text-glow" style={{ lineHeight: '1.4' }}>
-                        {affirmation || (isHebrew ? 'כל הכבוד!' : 'Well done!')}
-                    </h2>
-                    <p className="text-white/80 font-medium text-lg">
-                        {isHebrew ? 'נתראה מחר' : 'See you tomorrow'}
-                    </p>
-                </div>
+                </PastelCard>
             </div>
         );
     }
 
-    if (!hasStarted) {
-        return (
-            <>
-                <div className="fixed inset-0 w-full h-full mesh-gradient pointer-events-none" style={{ zIndex: -1 }}></div>
-                <HomeScreen onStartPractice={() => setHasStarted(true)} />
-            </>
-        );
+    if (!userProfile) {
+        return null;
     }
 
-    const currentGrade = grades[currentStep];
-    const isStepComplete = !!currentGrade; // Step is complete if it has a grade result
-    const hasText = entries[currentStep].trim().length > 0;
-
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="animate-fadeIn w-full max-w-xl mx-auto px-4 relative z-10 flex flex-col items-center h-full pt-4">
+        <div dir={isHebrew ? 'rtl' : 'ltr'} className="w-full max-w-2xl mx-auto px-4 py-6 space-y-6 animate-fadeIn">
+            {/* Protocol Selector Tabs */}
+            <div className="flex items-center justify-center gap-2 pb-2 overflow-x-auto">
+                <button
+                    type="button"
+                    onClick={() => setActiveProtocol('three_good_things')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                        activeProtocol === 'three_good_things'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-sm'
+                            : 'bg-white/80 text-neutral-600 hover:bg-neutral-100'
+                    }`}
+                >
+                    ✨ {isHebrew ? 'שלושה דברים טובים' : 'Three Good Things'}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setShowLetterModal(true)}
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-purple-50 hover:text-purple-800 transition-all border border-transparent hover:border-purple-200"
+                >
+                    ✉️ {isHebrew ? 'מכתב הכרת תודה' : 'Gratitude Letter'}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setShowSubtractionModal(true)}
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-sky-50 hover:text-sky-800 transition-all border border-transparent hover:border-sky-200"
+                >
+                    🌌 {isHebrew ? 'חיסור מנטלי' : 'Mental Subtraction'}
+                </button>
+            </div>
 
-            {/* Random Profile Question (30% chance) */}
-            {showRandomQuestion && (
-                <div className="mb-6">
-                    <RandomProfileQuestion
-                        onComplete={() => setShowRandomQuestion(false)}
-                        onSkip={() => setShowRandomQuestion(false)}
+            {/* Stepper Navigation */}
+            <div className="flex items-center justify-between px-2">
+                <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                    {isHebrew ? `רגע ${currentStep + 1} מתוך 3` : `Step ${currentStep + 1} of 3`}
+                </span>
+                <div className="flex gap-2">
+                    {[0, 1, 2].map((idx) => (
+                        <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setCurrentStep(idx)}
+                            className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${
+                                currentStep === idx
+                                    ? 'bg-neutral-800 text-white shadow-md scale-105'
+                                    : items[idx].act.trim().length > 0
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : 'bg-neutral-200 text-neutral-500'
+                            }`}
+                        >
+                            {idx + 1}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Main Structured Form */}
+            <ThreeGoodThingsForm
+                stepIndex={currentStep}
+                userProfile={userProfile}
+                item={items[currentStep]}
+                onChange={(updated) => handleItemChange(currentStep, updated)}
+                onCompleted={() => handleItemCompleted(currentStep)}
+                isHebrew={isHebrew}
+            />
+
+            {/* Step Controls */}
+            <div className="flex items-center justify-between gap-4 pt-2">
+                <button
+                    type="button"
+                    onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
+                    disabled={currentStep === 0}
+                    className="px-4 py-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 disabled:opacity-30 rounded-xl"
+                >
+                    {isHebrew ? '← הקודם' : '← Previous'}
+                </button>
+
+                {currentStep < 2 ? (
+                    <button
+                        type="button"
+                        onClick={() => setCurrentStep((prev) => Math.min(prev + 1, 2))}
+                        className="px-6 py-2.5 text-xs sm:text-sm font-bold bg-neutral-800 hover:bg-neutral-900 text-white rounded-xl shadow-md transition-all"
+                    >
+                        {isHebrew ? 'הבא →' : 'Next →'}
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={handleSaveEntry}
+                        disabled={isSaving}
+                        className="px-8 py-3 text-xs sm:text-sm font-black bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                    >
+                        {isSaving
+                            ? isHebrew ? 'שומר ב-Firestore...' : 'Saving...'
+                            : isHebrew ? '✓ סיים תרגול יומי' : '✓ Complete Daily Practice'}
+                    </button>
+                )}
+            </div>
+
+            {/* Scientific Fact Banner */}
+            {scientificFact && (
+                <div className="pt-4">
+                    <ScientificFactBanner
+                        statement={scientificFact.statement}
+                        citation={scientificFact.citation}
+                        isHebrew={isHebrew}
                     />
                 </div>
             )}
 
-            <div className="w-full">
-                {/* The Appreciation Formula Header */}
-                <div className="mb-6 text-center animate-slideDown">
-                    <p className="text-white/90 text-[11px] sm:text-xs font-bold tracking-widest uppercase mb-3 text-glow">
-                        {isHebrew ? 'נוסחת ההודיה' : 'The Appreciation Formula'}
-                    </p>
-                    <div className="text-white font-semibold tracking-wide glass-card px-4 sm:px-6 py-2.5 sm:py-3 rounded-full inline-block shadow-lg text-xs sm:text-sm leading-snug">
-                        {isHebrew
-                            ? <React.Fragment>מעשה ספציפי <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> אדם <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> איך זה עזר לך</React.Fragment>
-                            : <React.Fragment>Concrete act <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> Person <span className="text-pink-400 font-bold mx-0.5 sm:mx-1">+</span> How it helped</React.Fragment>
-                        }
-                    </div>
-                </div>
+            {/* Modals for Complementary Protocols */}
+            {showLetterModal && (
+                <GratitudeLetterModal
+                    userProfile={userProfile}
+                    onClose={() => setShowLetterModal(false)}
+                    onSaved={() => setShowLetterModal(false)}
+                    isHebrew={isHebrew}
+                />
+            )}
 
-                {/* Progress Bar styled closer to theme */}
-                <div className="mb-4 opacity-80 backdrop-blur-sm rounded-full bg-white/10 p-2">
-                    <ProgressBar
-                        currentStep={currentStep}
-                        grades={grades}
-                    />
-                </div>
-
-                {/* Input Card */}
-                <div className="animate-slideUp">
-                    <GradedInput
-                        index={currentStep}
-                        value={entries[currentStep]}
-                        onChange={handleEntryChange}
-                        placeholder={isHebrew ? `רגע ${currentStep + 1} - פרט/י כאן...` : `Moment ${currentStep + 1} - Elaborate here...`}
-                        exampleAnswer={suggestions[currentStep] ? (isHebrew ? `רגע ${currentStep + 1} - ${suggestions[currentStep]}` : `Moment ${currentStep + 1} - ${suggestions[currentStep]}`) : undefined}
-                        gradeResult={currentGrade}
-                        isLoading={isGrading}
-                    />
-                </div>
-
-                {/* Action Button */}
-                <div className="mt-8 w-full max-w-md mx-auto">
-                    {!isStepComplete ? (
-                        <button
-                            onClick={handleCheck}
-                            disabled={!hasText || isGrading}
-                            className={`w-full h-16 rounded-full glass-card text-white text-xl font-black tracking-tight transition-all duration-300 flex items-center justify-center gap-2 ${!hasText || isGrading
-                                ? 'opacity-50 cursor-not-allowed border-white/20 shadow-none'
-                                : 'glass-button-glow hover:scale-[1.02] border-white/40 shadow-2xl'
-                                }`}
-                        >
-                            <span className={`material-symbols-outlined text-2xl ${isGrading ? 'animate-spin' : ''}`} style={{ fontVariationSettings: "'FILL' 1" }}>
-                                {isGrading ? 'autorenew' : 'check_circle'}
-                            </span>
-                            {isGrading ? (isHebrew ? 'בודק...' : 'Checking...') : (isHebrew ? 'בדיקה' : 'Check')}
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleContinue}
-                            className="w-full h-16 rounded-full glass-card text-white text-xl font-black tracking-tight glass-button-glow hover:scale-[1.02] transition-all duration-300 shadow-2xl flex items-center justify-center gap-2 border-white/40"
-                        >
-                            <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                                {currentStep < 2 ? 'arrow_forward' : 'done_all'}
-                            </span>
-                            {currentStep < 2 ? (isHebrew ? 'המשך' : 'Continue') : (isHebrew ? 'סיים ושמור' : 'Finish & Save')}
-                        </button>
-                    )}
-                </div>
-
-                {/* Scientific Fact Banner - Exact equal spacing as above */}
-                {scientificFact && (
-                    <div style={{ marginTop: '24px' }}>
-                        <ScientificFactBanner
-                            statement={scientificFact.statement}
-                            citation={scientificFact.citation}
-                            isHebrew={isHebrew}
-                        />
-                    </div>
-                )}
-            </div>
+            {showSubtractionModal && (
+                <MentalSubtractionModal
+                    userProfile={userProfile}
+                    onClose={() => setShowSubtractionModal(false)}
+                    onCompleted={(reflection) => setSubtractionReflection(reflection)}
+                    isHebrew={isHebrew}
+                />
+            )}
         </div>
     );
 };

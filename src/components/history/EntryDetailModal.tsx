@@ -52,7 +52,7 @@ const DecryptedContent: React.FC<{ content: string; googleId: string | null; isA
         .split('\n')
         .map(l => l.trim())
         .filter(l => l.length > 0)
-        .map(l => l.replace(/^[0-9]+[\.\-\)\s]+/, '')); // Strip any existing leading numbers from user input
+        .map(l => l.replace(/^[0-9]+[.\-)\s]+/, '')); // Strip any existing leading numbers from user input
 
     return (
         <div style={{ lineHeight: 1.6, color: 'var(--color-text-primary)' }}>

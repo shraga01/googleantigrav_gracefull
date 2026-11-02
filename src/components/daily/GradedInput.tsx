@@ -26,7 +26,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
     onChange,
     placeholder: _placeholder,
     exampleAnswer,
-    index: _index,
+    index,
     gradeResult,
     isLoading
 }) => {
@@ -63,7 +63,7 @@ export const GradedInput: React.FC<GradedInputProps> = ({
     };
 
     return (
-        <div style={{ marginBottom: '20px' }}>
+        <div data-index={index} style={{ marginBottom: '20px' }}>
             {/* Input container with glassmorphism */}
             <div
                 className="w-full max-w-md mx-auto glass-card rounded-xl p-6 shadow-2xl min-h-[250px] flex flex-col relative transition-colors duration-300"

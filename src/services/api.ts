@@ -172,7 +172,7 @@ export const ApiService = {
     /**
      * Record entry completion - only updates streak (content not stored for privacy)
      */
-    saveEntry: async (entry: DailyEntry): Promise<{ success: boolean; newBadges?: string[]; allBadges?: any[] }> => {
+    saveEntry: async (entry: DailyEntry): Promise<{ success: boolean; newBadges?: string[]; allBadges?: { code: string; awardedAt: number }[] }> => {
         try {
             const token = await ApiService.getToken();
             if (!token) {

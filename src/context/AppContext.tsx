@@ -1,8 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    useCallback,
+    type ReactNode,
+} from 'react';
 import type { UserProfile, Language, StreakData } from '../types';
 import { StorageService } from '../services/storage';
-import { onAuthChange } from '../services/auth';
-import { ApiService } from '../services/api';
+import { onAuthChange, signOut as firebaseSignOut } from '../services/auth';
+import { FirestoreService } from '../services/firestoreService';
 
 interface AppContextType {
     userProfile: UserProfile | null;
@@ -10,13 +17,13 @@ interface AppContextType {
     isLoading: boolean;
     isAuthenticated: boolean;
     googleId: string | null;
-    updateProfile: (profile: UserProfile, syncToServer?: boolean) => void;
+    updateProfile: (profile: UserProfile, syncToServer?: boolean) => Promise<void>;
     setLanguage: (lang: Language) => void;
     refreshProfile: () => void;
     fetchProfileFromServer: () => Promise<UserProfile | null>;
     setGoogleId: (id: string | null) => void;
     streak: StreakData;
-    refreshStreak: () => void;
+    refreshStreak: () => Promise<void>;
     logout: () => Promise<void>;
     newlyUnlockedBadges: string[];
     setNewlyUnlockedBadges: (badges: string[]) => void;
@@ -25,231 +32,103 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-    const [language, setLanguageState] = useState<Language>('english');
+    // -------------------------------------------------------------------------
+    // 1. All useState Declarations (Strictly at the physical top)
+    // -------------------------------------------------------------------------
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(() => StorageService.getUserProfile());
+    const [language, setLanguageState] = useState<Language>(() => {
+        const cached = StorageService.getUserProfile();
+        return cached?.language || 'english';
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [googleId, setGoogleIdState] = useState<string | null>(null);
     const [streak, setStreak] = useState<StreakData>(StorageService.getStreak());
     const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<string[]>([]);
 
-    useEffect(() => {
-        // Initial load from localStorage
-        loadFromLocalStorage();
-
-        // Listen to Firebase auth state changes
-        const unsubscribe = onAuthChange(async (user) => {
-            console.log('🔄 onAuthChange triggered, user:', user?.uid || 'null');
-            if (user) {
-                console.log('Auth state: User signed in', user.uid);
-                setIsAuthenticated(true);
-                setGoogleIdState(user.uid);
-
-                // Fetch streak 
-                fetchStreakFromServer();
-
-                // Check if cached profile matches current user
-                const cachedProfile = StorageService.getUserProfile();
-                console.log('🔍 Cached profile:', cachedProfile?.userId || 'null');
-
-                if (cachedProfile && cachedProfile.userId === user.uid) {
-                    console.log('✅ Using cached profile for user:', user.uid);
-                    setUserProfile(cachedProfile);
-                    setLanguageState(cachedProfile.language);
-                    updateDocumentDirection(cachedProfile.language);
-                    setIsLoading(false);
-                } else {
-                    // Try to fetch profile from server
-                    console.log('🌐 Fetching profile from server for user:', user.uid);
-                    try {
-                        const serverProfile = await ApiService.getProfile();
-                        console.log('📥 Server response:', serverProfile ? 'Profile found' : 'No profile');
-                        if (serverProfile) {
-                            console.log('✅ Got profile from server, setting state...');
-                            // Cache it locally
-                            StorageService.saveUserProfile(serverProfile);
-                            setUserProfile(serverProfile);
-                            setLanguageState(serverProfile.language);
-                            updateDocumentDirection(serverProfile.language);
-                        } else {
-                            console.log('⚠️ No profile on server - user needs onboarding');
-                            // No profile exists - user needs to complete onboarding
-                            setUserProfile(null);
-                        }
-                    } catch (error) {
-                        console.error('❌ Failed to fetch profile from server:', error);
-                        // Fall back to null - show onboarding
-                        setUserProfile(null);
-                    }
-                    setIsLoading(false);
-                }
-            } else {
-                console.log('Auth state: User signed out');
-                setIsAuthenticated(false);
-                setGoogleIdState(null);
-                setUserProfile(null);
-                setIsLoading(false);
-            }
-        });
-
-        return () => unsubscribe();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const loadFromLocalStorage = () => {
-        setIsLoading(true);
-        const profile = StorageService.getUserProfile();
-        if (profile) {
-            setUserProfile(profile);
-            setLanguageState(profile.language);
-            updateDocumentDirection(profile.language);
-            // Also attempt to sync streak on load if we have a profile (which implies logged in)
-            fetchStreakFromServer();
-        }
-        setIsLoading(false);
-    };
-
-    const updateDocumentDirection = (lang: Language) => {
+    // -------------------------------------------------------------------------
+    // 2. All useCallback and Pure Utility Functions (Physically above useEffect)
+    // -------------------------------------------------------------------------
+    const updateDocumentDirection = useCallback((lang: Language) => {
         document.documentElement.dir = lang === 'hebrew' ? 'rtl' : 'ltr';
         document.documentElement.lang = lang === 'hebrew' ? 'he' : 'en';
-    };
+    }, []);
 
-    const updateProfile = (profile: UserProfile, syncToServer = true) => {
-        // Save to localStorage
-        StorageService.saveUserProfile(profile);
+    const fetchStreakFromServer = useCallback(async (currentUserId?: string) => {
+        const uid = currentUserId || googleId;
+        if (!uid) return;
+
+        try {
+            const serverStreak = await FirestoreService.getStreak(uid);
+            if (serverStreak) {
+                setStreak(serverStreak);
+                StorageService.updateStreak(serverStreak);
+            }
+        } catch (error) {
+            console.error('Failed to fetch streak from Firestore:', error);
+        }
+    }, [googleId]);
+
+    const fetchProfileFromServer = useCallback(async (currentUserId?: string): Promise<UserProfile | null> => {
+        const uid = currentUserId || googleId;
+        if (!uid) return null;
+
+        try {
+            const profile = await FirestoreService.getUserProfile(uid);
+            if (profile) {
+                setUserProfile(profile);
+                setLanguageState(profile.language);
+                updateDocumentDirection(profile.language);
+                StorageService.saveUserProfile(profile);
+            }
+            return profile;
+        } catch (error) {
+            console.error('Failed to fetch profile from Firestore:', error);
+            return null;
+        }
+    }, [googleId, updateDocumentDirection]);
+
+    const updateProfile = useCallback(async (profile: UserProfile, syncToServer = true) => {
         setUserProfile(profile);
         setLanguageState(profile.language);
         updateDocumentDirection(profile.language);
+        StorageService.saveUserProfile(profile);
 
-        // Sync to server in background
-        if (syncToServer) {
-            ApiService.saveProfile(profile).catch(error => {
-                console.error('Failed to sync profile to server:', error);
-            });
+        if (syncToServer && profile.userId) {
+            try {
+                await FirestoreService.saveUserProfile(profile);
+            } catch (error) {
+                console.error('Failed to sync profile to Firestore:', error);
+            }
         }
-    };
+    }, [updateDocumentDirection]);
 
-    const setLanguage = (lang: Language) => {
+    const setLanguage = useCallback((lang: Language) => {
         setLanguageState(lang);
         updateDocumentDirection(lang);
 
-        // If profile exists, update it too
         if (userProfile) {
             const updated = { ...userProfile, language: lang };
-            updateProfile(updated);
+            void updateProfile(updated);
         }
-    };
+    }, [userProfile, updateDocumentDirection, updateProfile]);
 
-    const refreshProfile = () => {
-        loadFromLocalStorage();
-    };
-
-    const fetchProfileFromServer = async (): Promise<UserProfile | null> => {
-        try {
-            const serverProfile = await ApiService.getProfile();
-            if (serverProfile) {
-                StorageService.saveUserProfile(serverProfile);
-                setUserProfile(serverProfile);
-                setLanguageState(serverProfile.language);
-                updateDocumentDirection(serverProfile.language);
-            }
-            return serverProfile;
-        } catch (error) {
-            console.error('Failed to fetch profile from server:', error);
-            return null;
+    const refreshProfile = useCallback(() => {
+        const local = StorageService.getUserProfile();
+        if (local) {
+            setUserProfile(local);
+            setLanguageState(local.language);
+            updateDocumentDirection(local.language);
         }
-    };
+    }, [updateDocumentDirection]);
 
-    const fetchStreakFromServer = async () => {
-        try {
-            const serverStreak = await ApiService.getStreak();
-            if (serverStreak) {
-                // Ensure array fields initialized
-                const fullStreak: StreakData = {
-                    milestonesAchieved: [],
-                    ...serverStreak
-                };
-
-                // Auto-sync phase 2: If local storage has more entries than the server,
-                // we reconstruct the server's history by pushing local dates.
-                // (Server only stores dates, not content)
-                const localEntries = StorageService.getEntries();
-                if (localEntries.length > fullStreak.totalDaysPracticed) {
-                    console.log(`Syncing missing entries to server... Local: ${localEntries.length}, Server: ${fullStreak.totalDaysPracticed}`);
-
-                    // Sort local entries chronologically ascending
-                    const sortedLocalEntries = [...localEntries].sort((a, b) =>
-                        new Date(a.date).getTime() - new Date(b.date).getTime()
-                    );
-
-                    // Upload all missing dates
-                    let badgesToAward: string[] = [];
-                    for (const entry of sortedLocalEntries) {
-                        try {
-                            const res = await ApiService.saveEntry(entry);
-                            if (res.success && res.newBadges && res.newBadges.length > 0) {
-                                badgesToAward = [...badgesToAward, ...res.newBadges];
-                            }
-                        } catch (err) {
-                            console.warn(`Failed to sync date ${entry.date}:`, err);
-                        }
-                    }
-
-                    if (badgesToAward.length > 0) {
-                        const uniqueBadges = Array.from(new Set(badgesToAward));
-                        setNewlyUnlockedBadges(uniqueBadges);
-                    }
-
-                    // Refetch the fully corrected streak from the server
-                    const correctedStreak = await ApiService.getStreak();
-                    if (correctedStreak) {
-                        const finalStreak: StreakData = {
-                            milestonesAchieved: [],
-                            ...correctedStreak
-                        };
-                        StorageService.updateStreak(finalStreak);
-                        setStreak(finalStreak);
-                        return; // Done syncing
-                    }
-                }
-
-                // Temporary Phase 3 patch: Repair frozen/wrong streakDays in local entries based on server truth
-                if (serverStreak.currentStreak < localEntries.length) {
-                    const today = new Date().toLocaleDateString('en-CA');
-                    const sortedLocalEntries = [...localEntries].sort((a, b) =>
-                        new Date(b.date).getTime() - new Date(a.date).getTime()
-                    );
-
-                    if (sortedLocalEntries.length > 0 && sortedLocalEntries[0].date === today && sortedLocalEntries[0].streakDay !== serverStreak.currentStreak) {
-                        console.log(`Patching today's corrupted local streakDay (${sortedLocalEntries[0].streakDay}) to match server (${serverStreak.currentStreak})`);
-                        sortedLocalEntries[0].streakDay = serverStreak.currentStreak;
-
-                        // Clear array and resave to fix corrupted local state
-                        StorageService.clearAllData();
-                        StorageService.saveUserProfile(userProfile!); // Put profile back
-                        StorageService.updateStreak(fullStreak); // Put streak back
-                        sortedLocalEntries.reverse().forEach(e => StorageService.saveEntry(e)); // Put entries back corrected
-                    }
-                }
-
-                StorageService.updateStreak(fullStreak);
-                setStreak(fullStreak);
-            }
-        } catch (error) {
-            console.error('Failed to fetch streak:', error);
-        }
-    };
-
-    const setGoogleId = (id: string | null) => {
+    const setGoogleId = useCallback((id: string | null) => {
         setGoogleIdState(id);
-    };
+    }, []);
 
-    const logout = async () => {
-        console.log('Logging out...');
-        // 1. Clear profile from localStorage (important for security - don't show old profile to new user)
+    const logout = useCallback(async () => {
+        console.log('Logging out cleanly...');
         StorageService.clearUserProfile();
-
-        // 2. Clear React state
         setUserProfile(null);
         setIsAuthenticated(false);
         setGoogleIdState(null);
@@ -259,33 +138,57 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             totalDaysPracticed: 0,
             lastPracticeDate: null,
             practiceDates: [],
-            milestonesAchieved: []
+            milestonesAchieved: [],
+        });
+        await firebaseSignOut();
+    }, []);
+
+    // -------------------------------------------------------------------------
+    // 3. All useEffect Hooks (Physically below all state & callbacks)
+    // -------------------------------------------------------------------------
+    useEffect(() => {
+        const unsubscribe = onAuthChange(async (firebaseUser) => {
+            if (firebaseUser) {
+                setIsAuthenticated(true);
+                setGoogleIdState(firebaseUser.uid);
+
+                // Fetch empirical Firestore data
+                await fetchStreakFromServer(firebaseUser.uid);
+                await fetchProfileFromServer(firebaseUser.uid);
+                setIsLoading(false);
+            } else {
+                setIsAuthenticated(false);
+                setGoogleIdState(null);
+                setUserProfile(null);
+                setIsLoading(false);
+            }
         });
 
-        // 3. Sign out of Firebase
-        const { signOut } = await import('../services/auth');
-        await signOut();
-        console.log('Logout complete');
-    };
+        return () => unsubscribe();
+    }, [updateDocumentDirection, fetchStreakFromServer, fetchProfileFromServer]);
 
     return (
-        <AppContext.Provider value={{
-            userProfile,
-            language,
-            isLoading,
-            isAuthenticated,
-            googleId,
-            updateProfile,
-            setLanguage,
-            refreshProfile,
-            fetchProfileFromServer,
-            setGoogleId,
-            streak,
-            refreshStreak: fetchStreakFromServer,
-            logout,
-            newlyUnlockedBadges,
-            setNewlyUnlockedBadges
-        }}>
+        <AppContext.Provider
+            value={{
+                userProfile,
+                language,
+                isLoading,
+                isAuthenticated,
+                googleId,
+                updateProfile,
+                setLanguage,
+                refreshProfile,
+                fetchProfileFromServer,
+                setGoogleId,
+                streak,
+                refreshStreak: async () => {
+                    await fetchStreakFromServer();
+                },
+                logout,
+                newlyUnlockedBadges,
+                setNewlyUnlockedBadges,
+            }}
+        >
             {children}
         </AppContext.Provider>
     );
