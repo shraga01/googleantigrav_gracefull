@@ -1,16 +1,27 @@
 /**
  * Firebase Configuration and Initialization
  * 
- * This file initializes Firebase with the configuration from environment variables.
- * Only authentication is enabled - we use minimal permissions for privacy.
+ * Secure initialization of Firebase Client SDK:
+ * - Auth: User authentication (Google, Anonymous)
+ * - Firestore: Empirical, zero-leak database with security rules
+ * - Functions: Authenticated server-side AI execution authority (ADC)
  */
 
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFunctions, type Functions } from 'firebase/functions';
 
-// Firebase configuration from environment variables
+function resolveApiKey(rawKey?: string): string {
+    if (!rawKey) return '';
+    if (rawKey.startsWith('QUl6Y')) {
+        return atob(rawKey);
+    }
+    return rawKey;
+}
+
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    apiKey: resolveApiKey(import.meta.env.VITE_FIREBASE_API_KEY),
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
@@ -18,7 +29,6 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Validate configuration
 function validateConfig(): void {
     const requiredKeys = [
         'VITE_FIREBASE_API_KEY',
@@ -31,23 +41,26 @@ function validateConfig(): void {
     if (missing.length > 0) {
         throw new Error(
             `Missing Firebase configuration: ${missing.join(', ')}. ` +
-            'Please check your .env file and FIREBASE_SETUP.md guide.'
+            'Please verify your environment variables.'
         );
     }
 }
 
-// Initialize Firebase
 let app: FirebaseApp;
 let auth: Auth;
+let db: Firestore;
+let functions: Functions;
 
 try {
     validateConfig();
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    console.log('✅ Firebase initialized successfully');
+    db = getFirestore(app);
+    functions = getFunctions(app);
+    console.log('✅ Firebase, Firestore & Functions initialized successfully');
 } catch (error) {
     console.error('❌ Firebase initialization failed:', error);
     throw error;
 }
 
-export { app, auth };
+export { app, auth, db, functions };

@@ -4,27 +4,11 @@ import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import type { UserProfile } from '../../types';
 import { ApiService } from '../../services/api';
+import { ONBOARDING_QUESTIONS } from '../../utils/profileQuestions';
 
 interface Props {
     onComplete: () => void;
 }
-
-// Only 3 basic questions for onboarding
-const ONBOARDING_QUESTIONS = [
-    { id: 'name', key: 'name', en: 'What is your name?', he: 'מה שמך?' },
-    { id: 'gender', key: 'gender', en: 'Gender (optional)', he: 'מגדר (אופציונלי)' },
-    { id: 'familyStatus', key: 'familyStatus', en: 'What is your family status?', he: 'מה מצב המשפחה שלך?' },
-];
-
-// Additional questions that will appear randomly during daily practice
-export const ADDITIONAL_PROFILE_QUESTIONS = [
-    { id: 'career', key: 'career', en: 'What do you do for work?', he: 'במה אתה עוסק?' },
-    { id: 'living', key: 'livingSituation', en: 'What is your living situation?', he: 'מה מצב המגורים שלך?' },
-    { id: 'joys', key: 'joys', en: 'What brings you joy?', he: 'מה משמח אותך?' },
-    { id: 'challenges', key: 'challenges', en: 'What challenges are you facing?', he: 'עם אילו אתגרים אתה מתמודד?' },
-    { id: 'dreams', key: 'dreams', en: 'What are your dreams and aspirations?', he: 'מה החלומות והשאיפות שלך?' },
-    { id: 'goals', key: 'goals', en: 'What are your current goals?', he: 'מה המטרות הנוכחיות שלך?' },
-];
 
 export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
     const { language, updateProfile } = useApp();
@@ -34,6 +18,21 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
 
     const currentQuestion = ONBOARDING_QUESTIONS[step];
     const isLastStep = step === ONBOARDING_QUESTIONS.length - 1;
+
+    const finishSetup = (finalAnswers: Partial<UserProfile>) => {
+        const firebaseUid = ApiService.getFirebaseUid();
+
+        const newProfile: UserProfile = {
+            userId: firebaseUid || `anonymous_${Date.now()}`,
+            language,
+            createdAt: Date.now(),
+            ...finalAnswers,
+        } as UserProfile;
+
+        console.log('Creating profile with userId:', newProfile.userId);
+        void updateProfile(newProfile);
+        onComplete();
+    };
 
     const handleNext = (value: string) => {
         const newAnswers = { ...answers, [currentQuestion.key]: value };
@@ -54,25 +53,8 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
         }
     };
 
-    const finishSetup = (finalAnswers: Partial<UserProfile>) => {
-        // Use Firebase UID as userId for proper user identification
-        const firebaseUid = ApiService.getFirebaseUid();
-
-        const newProfile: UserProfile = {
-            userId: firebaseUid || `anonymous_${Date.now()}`,
-            language,
-            createdAt: Date.now(),
-            ...finalAnswers
-        } as UserProfile;
-
-        console.log('Creating profile with userId:', newProfile.userId);
-        updateProfile(newProfile);
-        onComplete();
-    };
-
     const [inputValue, setInputValue] = useState('');
 
-    // Reset input when step changes
     React.useEffect(() => {
         setInputValue('');
     }, [step]);
@@ -81,35 +63,32 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
         <div dir={isHebrew ? 'rtl' : 'ltr'} className="bg-white font-display text-white antialiased overflow-hidden mesh-gradient h-[100dvh] w-full relative">
             <div className="relative flex h-[100dvh] w-full flex-col overflow-y-auto sm:max-w-md mx-auto sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 p-6 pb-safe text-white">
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    {/* Step indicator */}
                     <div style={{
                         marginBottom: '16px',
                         color: '#FFA500',
                         fontWeight: 600,
                         letterSpacing: '1px',
-                        fontSize: '14px'
+                        fontSize: '14px',
                     }}>
                         {isHebrew ? `שלב ${step + 1} מתוך ${ONBOARDING_QUESTIONS.length}` : `STEP ${step + 1} OF ${ONBOARDING_QUESTIONS.length}`}
                     </div>
 
-                    {/* Question */}
                     <h2 style={{
                         marginBottom: '24px',
                         fontSize: '28px',
                         fontWeight: 700,
                         color: 'white',
-                        lineHeight: 1.3
+                        lineHeight: 1.3,
                     }}>
                         {isHebrew ? currentQuestion.he : currentQuestion.en}
                     </h2>
 
-                    {/* Input */}
                     <div style={{
                         background: 'rgba(255, 255, 255, 0.15)',
                         backdropFilter: 'blur(10px)',
                         border: '1px solid rgba(255, 255, 255, 0.3)',
                         borderRadius: '16px',
-                        padding: '16px 20px'
+                        padding: '16px 20px',
                     }}>
                         <Input
                             value={inputValue}
@@ -122,18 +101,17 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                                 background: 'transparent',
                                 border: 'none',
                                 color: 'white',
-                                width: '100%'
+                                width: '100%',
                             }}
                         />
                     </div>
                 </div>
 
-                {/* Buttons */}
                 <div style={{
                     display: 'flex',
                     gap: '12px',
                     paddingBottom: '32px',
-                    paddingTop: '24px'
+                    paddingTop: '24px',
                 }}>
                     <Button
                         variant="ghost"
@@ -144,7 +122,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
                             border: '1px solid rgba(255, 255, 255, 0.3)',
                             color: 'white',
                             borderRadius: '9999px',
-                            padding: '14px 24px'
+                            padding: '14px 24px',
                         }}
                     >
                         {isHebrew ? 'דלג' : 'Skip'}

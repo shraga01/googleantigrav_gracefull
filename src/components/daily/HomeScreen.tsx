@@ -12,7 +12,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartPractice }) => {
     return (
         <div className="flex flex-col items-center justify-center w-full h-full animate-fadeIn relative z-10 mt-[-5vh]">
             {/* Background Decorative Elements */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
+            <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
 
             <div className="text-center mb-12 relative z-10">
                 <p className="text-white/90 text-sm font-bold tracking-widest uppercase mb-3 text-glow">

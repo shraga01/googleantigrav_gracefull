@@ -1,4 +1,5 @@
 import type { UserProfile, DailyEntry } from '../types';
+
 import { getTimeInfo, getTimeDescription, type TimeOfDay } from '../utils/timeUtils';
 
 // ==========================================
@@ -6,7 +7,7 @@ import { getTimeInfo, getTimeDescription, type TimeOfDay } from '../utils/timeUt
 // ==========================================
 
 // API Configuration - Using Gemini 2.5 Flash
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const API_KEY = '';
 const MODEL = 'gemini-2.5-flash'; // Gemini 2.5 Flash (stable)
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
 

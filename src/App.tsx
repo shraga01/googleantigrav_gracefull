@@ -1,31 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { LanguageSelection } from './components/onboarding/LanguageSelection';
 import { AuthChoice } from './components/onboarding/AuthChoice';
 import { WelcomeScreen } from './components/onboarding/WelcomeScreen';
 import { ProfileSetup } from './components/onboarding/ProfileSetup';
 import { DailyPractice } from './components/daily/DailyPractice';
-import { HistoryView } from './components/history/HistoryView';
-import { StatsDashboard } from './components/stats/StatsDashboard';
-import { SettingsMenu } from './components/settings/SettingsMenu';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { AppHeader } from './components/layout/AppHeader';
 import { BottomNav } from './components/layout/BottomNav';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { BadgeUnlockOverlay } from './components/common/BadgeUnlockOverlay';
 
-const AppContent: React.FC = () => {
-  const { userProfile, isLoading, isAuthenticated, logout, refreshProfile, fetchProfileFromServer } = useApp();
+// Code-split heavy tab views
+const HistoryView = lazy(() =>
+  import('./components/history/HistoryView').then((m) => ({ default: m.HistoryView }))
+);
+const StatsDashboard = lazy(() =>
+  import('./components/stats/StatsDashboard').then((m) => ({ default: m.StatsDashboard }))
+);
+const SettingsMenu = lazy(() =>
+  import('./components/settings/SettingsMenu').then((m) => ({ default: m.SettingsMenu }))
+);
 
-  // Track which step of the onboarding flow ONLY when actually onboarding
+const AppContent: React.FC = () => {
+  // -------------------------------------------------------------------------
+  // 1. All useState Declarations (Strictly physical top - TDZ Prevention)
+  // -------------------------------------------------------------------------
+  const { userProfile, isLoading, isAuthenticated, logout, refreshProfile, fetchProfileFromServer } = useApp();
   const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
-
-  // Track if we've already checked for server profile after auth
   const [hasCheckedServerProfile, setHasCheckedServerProfile] = useState(false);
 
-  // When user becomes authenticated, check if they have a profile on the server
-  React.useEffect(() => {
+  // -------------------------------------------------------------------------
+  // 2. All useCallback Declarations (Physically above useEffect)
+  // -------------------------------------------------------------------------
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout();
+      setOnboardingStep('language');
+      setHasCheckedServerProfile(false);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }, [logout]);
+
+  const handleLanguageSelected = useCallback(() => setOnboardingStep('auth'), []);
+  const handleAuthCompleted = useCallback(() => setOnboardingStep('welcome'), []);
+  const handleWelcomeCompleted = useCallback(() => setOnboardingStep('profile'), []);
+  const handleProfileCompleted = useCallback(() => {
+    refreshProfile();
+  }, [refreshProfile]);
+
+  const handleGoogleSignIn = useCallback(async () => {
+    handleAuthCompleted();
+  }, [handleAuthCompleted]);
+
+  const handleContinueAnonymously = useCallback(() => {
+    handleAuthCompleted();
+  }, [handleAuthCompleted]);
+
+  const handleAuthError = useCallback((error: Error) => {
+    console.error('Auth error:', error);
+    alert(error.message);
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // 3. All useEffect Declarations (Strictly physical bottom)
+  // -------------------------------------------------------------------------
+  useEffect(() => {
     const checkServerProfile = async () => {
       if (isAuthenticated && !userProfile && !hasCheckedServerProfile && !isLoading) {
         console.log('User authenticated but no local profile, checking server...');
@@ -39,24 +81,9 @@ const AppContent: React.FC = () => {
         }
       }
     };
-    checkServerProfile();
+    void checkServerProfile();
   }, [isAuthenticated, userProfile, hasCheckedServerProfile, isLoading, fetchProfileFromServer]);
 
-  // Reset state when user logs out
-  React.useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
-      setOnboardingStep('language');
-      setHasCheckedServerProfile(false);
-    }
-  }, [isAuthenticated, isLoading]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -84,12 +111,14 @@ const AppContent: React.FC = () => {
             title={getPageTitle()}
           />
 
-          {/* Main Content */}
+          {/* Main Content with Suspense Code-Splitting */}
           <main className="flex-1 w-full relative overflow-y-auto no-scrollbar flex flex-col">
-            {currentTab === 'daily' && <DailyPractice />}
-            {currentTab === 'history' && <HistoryView />}
-            {currentTab === 'stats' && <StatsDashboard />}
-            {currentTab === 'settings' && <SettingsMenu />}
+            <Suspense fallback={<LoadingSpinner />}>
+              {currentTab === 'daily' && <DailyPractice />}
+              {currentTab === 'history' && <HistoryView />}
+              {currentTab === 'stats' && <StatsDashboard />}
+              {currentTab === 'settings' && <SettingsMenu />}
+            </Suspense>
           </main>
 
           {/* Bottom Navigation */}
@@ -101,27 +130,6 @@ const AppContent: React.FC = () => {
       </div>
     );
   }
-
-  // Onboarding Flow handlers
-  const handleLanguageSelected = () => setOnboardingStep('auth');
-  const handleAuthCompleted = () => setOnboardingStep('welcome');
-  const handleWelcomeCompleted = () => setOnboardingStep('profile');
-  const handleProfileCompleted = () => {
-    refreshProfile();
-  };
-
-  const handleGoogleSignIn = async () => {
-    handleAuthCompleted();
-  };
-
-  const handleContinueAnonymously = () => {
-    handleAuthCompleted();
-  };
-
-  const handleAuthError = (error: Error) => {
-    console.error('Auth error:', error);
-    alert(error.message);
-  };
 
   return (
     <div className="h-[100dvh] overflow-hidden animate-fadeIn">

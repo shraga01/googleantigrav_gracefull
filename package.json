@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build:mobile": "npm run build && npx cap sync",
     "lint": "eslint .",
+    "verify:css": "node scripts/verify-logical-css.js",
     "preview": "vite preview"
   },
   "dependencies": {

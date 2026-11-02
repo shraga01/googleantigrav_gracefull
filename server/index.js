@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import entryRoutes from './routes/entries.js';
 import streakRoutes from './routes/streak.js';
+import aiRoutes from './routes/ai.js';
 
 dotenv.config();
 
@@ -21,15 +22,18 @@ app.use(express.json({ limit: '10mb' })); // Increased limit for audio blobs
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch((err) => console.error('❌ MongoDB connection error:', err));
+if (process.env.MONGODB_URI) {
+    mongoose.connect(process.env.MONGODB_URI)
+        .then(() => console.log('✅ Connected to MongoDB'))
+        .catch((err) => console.error('❌ MongoDB connection error:', err));
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/entries', entryRoutes);
 app.use('/api/streak', streakRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

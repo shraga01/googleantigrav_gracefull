@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
-import { ADDITIONAL_PROFILE_QUESTIONS } from '../onboarding/ProfileSetup';
+import { ADDITIONAL_PROFILE_QUESTIONS, type ProfileQuestion } from '../../utils/profileQuestions';
 
 interface Props {
     onComplete: () => void;
@@ -13,38 +13,35 @@ export const RandomProfileQuestion: React.FC<Props> = ({ onComplete, onSkip }) =
     const { userProfile, updateProfile } = useApp();
     const [answer, setAnswer] = useState('');
 
-    if (!userProfile) return null;
-
-    const isHebrew = userProfile.language === 'hebrew';
-
-    // Get a random question that hasn't been answered yet
-    const getRandomQuestion = () => {
-        const unansweredQuestions = ADDITIONAL_PROFILE_QUESTIONS.filter(q => {
+    // Select the random question once on initial mount via lazy state initializer
+    const [question] = useState<ProfileQuestion | null>(() => {
+        if (!userProfile) return null;
+        const unanswered = ADDITIONAL_PROFILE_QUESTIONS.filter((q) => {
             const key = q.key as keyof typeof userProfile;
             return !userProfile[key];
         });
+        if (unanswered.length === 0) return null;
+        const idx = Math.floor(Math.random() * unanswered.length);
+        return unanswered[idx];
+    });
 
-        if (unansweredQuestions.length === 0) return null;
+    useEffect(() => {
+        if (!question) {
+            onSkip();
+        }
+    }, [question, onSkip]);
 
-        const randomIndex = Math.floor(Math.random() * unansweredQuestions.length);
-        return unansweredQuestions[randomIndex];
-    };
+    if (!userProfile || !question) return null;
 
-    const question = getRandomQuestion();
-
-    if (!question) {
-        // All questions answered, skip this
-        onSkip();
-        return null;
-    }
+    const isHebrew = userProfile.language === 'hebrew';
 
     const handleSave = () => {
         if (answer.trim()) {
             const updatedProfile = {
                 ...userProfile,
-                [question.key]: answer
+                [question.key]: answer,
             };
-            updateProfile(updatedProfile);
+            void updateProfile(updatedProfile);
         }
         onComplete();
     };
