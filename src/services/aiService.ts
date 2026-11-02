@@ -7,7 +7,7 @@
  * - STRICT PROHIBITION: Zero thinking_budget, zero temperature, top_p, top_k sampling params.
  */
 
-import type { UserProfile, GratitudeItem } from '../types';
+import type { UserProfile, ThreeGoodThingsItem } from '../types';
 import { PromptEngine } from './promptEngine';
 
 export interface EvaluationResult {
@@ -34,7 +34,6 @@ export const AiService = {
     ): Promise<string> => {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-        // If no API key configured, provide a safe clinical offline fallback without throwing
         if (!apiKey) {
             console.warn('AiService: VITE_GEMINI_API_KEY is not configured, returning clinical default.');
             return '';
@@ -87,11 +86,11 @@ export const AiService = {
     /**
      * Evaluates a single gratitude item with agency attribution validation
      */
-    evaluateItem: async (item: GratitudeItem, user: UserProfile): Promise<EvaluationResult> => {
-        const isHeb = user.language === 'hebrew';
+    evaluateItem: async (item: ThreeGoodThingsItem, user: UserProfile): Promise<EvaluationResult> => {
+        const isHeb = user.language === 'hebrew' || user.locale === 'he';
 
-        // Basic offline validation
-        const hasAgency = Boolean(item.agencyAttribution && item.agencyAttribution.trim().length > 5);
+        // Basic offline empirical validation
+        const hasAgency = Boolean(item.causalReflection && item.causalReflection.trim().length > 5);
         const hasAct = Boolean(item.act && item.act.trim().length > 5);
         const hasBenefit = Boolean(item.benefit && item.benefit.trim().length > 5);
 
@@ -119,7 +118,6 @@ export const AiService = {
             const prompt = PromptEngine.buildEvaluationPrompt(item, user);
             const response = await AiService.executeCleanPrompt(prompt, 'medium');
 
-            // Clean json response from markdown code fences if present
             const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
             const parsed = JSON.parse(cleanJson);
             return {
@@ -129,7 +127,6 @@ export const AiService = {
                 recommendedEnhancement: parsed.recommendedEnhancement,
             };
         } catch {
-            // Empirical fallback based on structural checklist
             return {
                 totalScore: 90,
                 hasAgencyAttribution: true,
@@ -141,7 +138,7 @@ export const AiService = {
     },
 
     /**
-     * Composes a Gratitude Visit Letter
+     * Composes a Gratitude Visit Letter (~300 words)
      */
     composeGratitudeLetter: async (
         recipient: string,

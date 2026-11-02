@@ -6,22 +6,37 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Isolated User Profile & Sub-collections
+    // Isolated User Profile & Clinical Sub-collections
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      // User Gratitude Entries
+      // 1. Three Good Things Entries
       match /entries/{entryId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
-      // User Streak & Milestones
+      // 2. Streak & Practice Summary
       match /streak/{streakId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
-      // User Gratitude Letters
+      // 3. Gratitude Letters (~300 words)
       match /letters/{letterId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 4. Virtual Gratitude Visits (Empty Chair 3-position)
+      match /visits/{visitId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 5. Longitudinal GQ-6 Assessments (T1, T2, T3)
+      match /assessments/{assessmentId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 6. Huberman Narrative Recall Stories
+      match /stories/{storyId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }

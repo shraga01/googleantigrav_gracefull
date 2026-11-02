@@ -5,12 +5,12 @@
  * - Targets: Self, Close Other, Stranger, Environment, Adversity Relief
  * - Lenses: Somatic/Body, Relational, Competence, Sensory
  * - Angles: Novelty, Depth, Mental Subtraction
- * - Constraints: No generic nouns, Require agency attribution, Concise
+ * - Constraints: No generic nouns, Require agency attribution, Active locale natural phrasing
  */
 
 import type {
     UserProfile,
-    GratitudeItem,
+    ThreeGoodThingsItem,
     PromptTarget,
     PromptLens,
     PromptAngle,
@@ -83,13 +83,13 @@ export const PromptEngine = {
      * Builds the system context enforcing evidence-based gratitude guidelines
      */
     buildSystemContext: (user: UserProfile): string => {
-        const isHeb = user.language === 'hebrew';
+        const isHeb = user.language === 'hebrew' || user.locale === 'he';
         return `
 You are the Clinical Guide for an evidence-based gratitude application rooted in neurobiology (mPFC activation, vagal tone regulation, and dopamine-serotonin pathways).
 
 CORE PRINCIPLES (Seligman 3GT & Huberman Protocols):
 1. SPECIFICITY: Generic nouns (e.g., "family", "health", "sunshine") provide zero neurological rewiring. Concrete actions are required.
-2. AGENCY ATTRIBUTION (ייחוס סיבתי): The user must explicitly identify why the good event occurred and what role they played or what condition made it possible. Without personal agency or causal clarity, gratitude does not build resilience.
+2. CAUSAL REFLECTION / AGENCY ATTRIBUTION (ייחוס סיבתי וסוכנות אישית): The user must explicitly identify why the good event occurred and what role they played or what condition made it possible. Without personal agency or causal clarity, gratitude does not build resilience.
 3. LANGUAGE: ${isHeb ? 'Hebrew (עברית) ONLY' : 'English ONLY'}.
 4. FORMAT: Crisp, dignified, compassionate. No toxic positivity. No flattery.
 `;
@@ -98,8 +98,8 @@ CORE PRINCIPLES (Seligman 3GT & Huberman Protocols):
     /**
      * Prompt for evaluating and grading gratitude items with agency attribution
      */
-    buildEvaluationPrompt: (item: GratitudeItem, user: UserProfile): string => {
-        const isHeb = user.language === 'hebrew';
+    buildEvaluationPrompt: (item: ThreeGoodThingsItem, user: UserProfile): string => {
+        const isHeb = user.language === 'hebrew' || user.locale === 'he';
         return `
 ${PromptEngine.buildSystemContext(user)}
 
@@ -108,7 +108,8 @@ TASK: Evaluate this gratitude practice item.
 ACT (What happened): "${item.act}"
 PERSON / BENEFACTOR: "${item.benefactor || 'Self'}"
 BENEFIT (Concrete value): "${item.benefit}"
-AGENCY ATTRIBUTION (Why it happened / user role): "${item.agencyAttribution}"
+CAUSAL REFLECTION / AGENCY (Why it happened / user role): "${item.causalReflection}"
+AFFECT RATING: ${item.affectRating || 5}/7
 ${item.mentalSubtraction ? `COUNTERFACTUAL (Mental subtraction): "${item.mentalSubtraction}"` : ''}
 
 EVALUATION RUBRIC:
@@ -130,11 +131,11 @@ RESPOND STRICTLY IN JSON FORMAT:
      * Prompt for the Gratitude Letter & Empty Chair protocol
      */
     buildLetterPrompt: (recipient: string, relationship: string, impact: string, user: UserProfile): string => {
-        const isHeb = user.language === 'hebrew';
+        const isHeb = user.language === 'hebrew' || user.locale === 'he';
         return `
 ${PromptEngine.buildSystemContext(user)}
 
-TASK: Assist the user in structuring a Gratitude Visit Letter (Martin Seligman protocol).
+TASK: Assist the user in structuring a Gratitude Visit Letter (~300 words) according to Martin Seligman's protocol.
 RECIPIENT: ${recipient} (${relationship})
 SPECIFIC LIFE IMPACT: ${impact}
 
@@ -143,7 +144,7 @@ GUIDELINES FOR THE LETTER:
 - Describe the specific past event and what the recipient sacrificed or provided.
 - Describe how it changed the user's trajectory or perspective.
 - Formatted for reading aloud in person or in a Virtual Empty-Chair exercise.
-- Keep the draft heartfelt, authentic, and around 200-300 words.
+- Keep the draft heartfelt, authentic, and around 250-300 words.
 - Language: ${isHeb ? 'Hebrew' : 'English'}.
 
 Output ONLY the draft text of the letter.
@@ -154,7 +155,7 @@ Output ONLY the draft text of the letter.
      * Prompt for Mental Subtraction (George Bailey effect)
      */
     buildMentalSubtractionPrompt: (blessing: string, user: UserProfile): string => {
-        const isHeb = user.language === 'hebrew';
+        const isHeb = user.language === 'hebrew' || user.locale === 'he';
         return `
 ${PromptEngine.buildSystemContext(user)}
 

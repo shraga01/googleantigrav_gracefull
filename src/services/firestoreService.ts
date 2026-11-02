@@ -17,11 +17,19 @@ import {
     getDocs,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserProfile, DailyEntry, StreakData, GratitudeLetter } from '../types';
+import type {
+    UserProfile,
+    DailyEntry,
+    StreakData,
+    GratitudeLetter,
+    VirtualGratitudeVisit,
+    GQ6Assessment,
+    HubermanStory,
+} from '../types';
 
 export const FirestoreService = {
     /**
-     * User Profile
+     * User Profile & Dosing Schedule
      */
     getUserProfile: async (userId: string): Promise<UserProfile | null> => {
         try {
@@ -48,7 +56,7 @@ export const FirestoreService = {
     },
 
     /**
-     * Daily Entries
+     * Daily Entries (3GT)
      */
     getEntries: async (userId: string, count = 30): Promise<DailyEntry[]> => {
         try {
@@ -147,5 +155,106 @@ export const FirestoreService = {
             console.error('Error fetching gratitude letters:', error);
             throw error;
         }
+    },
+
+    /**
+     * Virtual Gratitude Visits (Empty Chair 3-Position Protocol)
+     */
+    saveVirtualGratitudeVisit: async (userId: string, visit: VirtualGratitudeVisit): Promise<void> => {
+        try {
+            const visitDocRef = doc(db, 'users', userId, 'visits', visit.visitId);
+            await setDoc(visitDocRef, visit);
+        } catch (error) {
+            console.error('Error saving virtual gratitude visit to Firestore:', error);
+            throw error;
+        }
+    },
+
+    getVirtualGratitudeVisits: async (userId: string): Promise<VirtualGratitudeVisit[]> => {
+        try {
+            const visitsColRef = collection(db, 'users', userId, 'visits');
+            const q = query(visitsColRef, orderBy('completedAt', 'desc'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map((d) => d.data() as VirtualGratitudeVisit);
+        } catch (error) {
+            console.error('Error fetching virtual gratitude visits:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * GQ-6 Longitudinal Assessments
+     */
+    saveGQ6Assessment: async (userId: string, assessment: GQ6Assessment): Promise<void> => {
+        try {
+            const docRef = doc(db, 'users', userId, 'assessments', assessment.assessmentId);
+            await setDoc(docRef, assessment);
+        } catch (error) {
+            console.error('Error saving GQ-6 assessment to Firestore:', error);
+            throw error;
+        }
+    },
+
+    getGQ6Assessments: async (userId: string): Promise<GQ6Assessment[]> => {
+        try {
+            const colRef = collection(db, 'users', userId, 'assessments');
+            const q = query(colRef, orderBy('completedAt', 'desc'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map((d) => d.data() as GQ6Assessment);
+        } catch (error) {
+            console.error('Error fetching GQ-6 assessments:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Huberman Story Recall
+     */
+    saveHubermanStory: async (userId: string, story: HubermanStory): Promise<void> => {
+        try {
+            const docRef = doc(db, 'users', userId, 'stories', story.storyId);
+            await setDoc(docRef, story);
+        } catch (error) {
+            console.error('Error saving Huberman story to Firestore:', error);
+            throw error;
+        }
+    },
+
+    getHubermanStories: async (userId: string): Promise<HubermanStory[]> => {
+        try {
+            const colRef = collection(db, 'users', userId, 'stories');
+            const q = query(colRef, orderBy('completedAt', 'desc'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map((d) => d.data() as HubermanStory);
+        } catch (error) {
+            console.error('Error fetching Huberman stories:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Zero-Hallucination Empirical Historical Context Query.
+     * Enforces the Empirical Law before invoking Vertex AI prompts.
+     */
+    getEmpiricalHistoricalContext: async (userId: string) => {
+        const [profile, streak, recentEntries, gq6Assessments, visits, stories] = await Promise.all([
+            FirestoreService.getUserProfile(userId),
+            FirestoreService.getStreak(userId),
+            FirestoreService.getEntries(userId, 5),
+            FirestoreService.getGQ6Assessments(userId),
+            FirestoreService.getVirtualGratitudeVisits(userId),
+            FirestoreService.getHubermanStories(userId),
+        ]);
+
+        return {
+            profile,
+            streak,
+            recentEntries,
+            latestGQ6: gq6Assessments[0] || null,
+            totalGQ6Count: gq6Assessments.length,
+            latestVisit: visits[0] || null,
+            latestStory: stories[0] || null,
+            dosingPhase: profile?.dosingSchedule?.phase || 'onboarding_daily_21',
+        };
     },
 };

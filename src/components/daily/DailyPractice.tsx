@@ -2,14 +2,24 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { StorageService } from '../../services/storage';
 import { FirestoreService } from '../../services/firestoreService';
-import type { DailyEntry, GratitudeItem, GratitudeProtocolType } from '../../types';
+import type {
+    DailyEntry,
+    ThreeGoodThingsItem,
+    GratitudeProtocolType,
+    Locale,
+} from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { ScientificFactBanner } from '../common/ScientificFactBanner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
 import { ThreeGoodThingsForm } from './ThreeGoodThingsForm';
 import { GratitudeLetterModal } from './GratitudeLetterModal';
 import { MentalSubtractionModal } from './MentalSubtractionModal';
+import { GQ6AssessmentModal } from '../clinical/GQ6AssessmentModal';
+import { VirtualGratitudeVisitModal } from '../clinical/VirtualGratitudeVisitModal';
+import { HubermanRecallModal } from '../clinical/HubermanRecallModal';
+import { DosingScheduleBadge } from '../clinical/DosingScheduleBadge';
 import { PastelCard } from '../common/PastelCard';
+import { getDictionary } from '../../locales';
 import { v4 as uuidv4 } from 'uuid';
 
 export const DailyPractice: React.FC = () => {
@@ -23,21 +33,25 @@ export const DailyPractice: React.FC = () => {
     const [activeProtocol, setActiveProtocol] = useState<GratitudeProtocolType>('three_good_things');
     const [currentStep, setCurrentStep] = useState(0);
 
-    // Three Good Things structured items (with mandatory agency attribution)
-    const [items, setItems] = useState<GratitudeItem[]>([
-        { act: '', benefactor: '', benefit: '', agencyAttribution: '' },
-        { act: '', benefactor: '', benefit: '', agencyAttribution: '' },
-        { act: '', benefactor: '', benefit: '', agencyAttribution: '' },
+    // Three Good Things structured items (with mandatory causal/agency attribution & 1-7 affect rating)
+    const [items, setItems] = useState<ThreeGoodThingsItem[]>([
+        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
     ]);
 
     // Modals
     const [showLetterModal, setShowLetterModal] = useState(false);
+    const [showVirtualVisitModal, setShowVirtualVisitModal] = useState(false);
+    const [showGQ6Modal, setShowGQ6Modal] = useState(false);
+    const [showHubermanModal, setShowHubermanModal] = useState(false);
     const [showSubtractionModal, setShowSubtractionModal] = useState(false);
     const [subtractionReflection, setSubtractionReflection] = useState<string | undefined>(undefined);
 
     const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
 
-    const isHebrew = userProfile?.language === 'hebrew';
+    const locale: Locale = userProfile?.locale || (userProfile?.language === 'hebrew' ? 'he' : 'en');
+    const t = getDictionary(locale);
 
     // -------------------------------------------------------------------------
     // 2. All useCallback Declarations (Physically above useEffect)
@@ -79,16 +93,16 @@ export const DailyPractice: React.FC = () => {
             }
 
             // Load scientific fact
-            const fact = getRandomScientificFact(isHebrew ? 'hebrew' : 'english');
+            const fact = getRandomScientificFact(locale === 'he' ? 'hebrew' : 'english');
             setScientificFact(fact);
         } catch (error) {
             console.error('Error loading daily practice:', error);
         } finally {
             setIsLoading(false);
         }
-    }, [userProfile, isAuthenticated, googleId, isHebrew, setDailyStateFromEntry]);
+    }, [userProfile, isAuthenticated, googleId, locale, setDailyStateFromEntry]);
 
-    const handleItemChange = useCallback((index: number, updatedItem: GratitudeItem) => {
+    const handleItemChange = useCallback((index: number, updatedItem: ThreeGoodThingsItem) => {
         setItems((prev) => {
             const next = [...prev];
             next[index] = updatedItem;
@@ -105,18 +119,18 @@ export const DailyPractice: React.FC = () => {
     const handleSaveEntry = useCallback(async () => {
         if (!userProfile) return;
 
-        // Verify all 3 items have act, benefit, and mandatory agency attribution
+        // Verify all 3 items have act, benefit, and mandatory causal reflection (agency attribution)
         const isAllValid = items.every(
             (it) =>
                 it.act.trim().length >= 4 &&
                 it.benefit.trim().length >= 4 &&
-                it.agencyAttribution.trim().length >= 4
+                it.causalReflection.trim().length >= 4
         );
 
         if (!isAllValid) {
             alert(
-                isHebrew
-                    ? 'אנא וודא שכל 3 הרגעים כוללים פירוט קונקרטי, תועלת וסוכנות אישית.'
+                locale === 'he'
+                    ? 'אנא וודא שכל 3 הרגעים כוללים פירוט קונקרטי, תועלת וסוכנות אישית (ייחוס סיבתי).'
                     : 'Please ensure all 3 items contain concrete details, benefit, and agency attribution.'
             );
             return;
@@ -156,7 +170,7 @@ export const DailyPractice: React.FC = () => {
         const compiledContent = items
             .map(
                 (it, i) =>
-                    `[${i + 1}] ${it.act} (${it.benefactor || 'Self'}) -> ${it.benefit} | Agency: ${it.agencyAttribution}`
+                    `[${i + 1}] ${it.act} (${it.benefactor || 'Self'}) -> ${it.benefit} | Causal Agency: ${it.causalReflection} (Affect: ${it.affectRating}/7)`
             )
             .join('\n');
 
@@ -165,7 +179,7 @@ export const DailyPractice: React.FC = () => {
             userId: userProfile.userId,
             date: today,
             protocol: activeProtocol,
-            openingSentence: isHebrew ? 'שלושה דברים טובים עם ייחוס סיבתי' : 'Three Good Things with Agency Attribution',
+            openingSentence: locale === 'he' ? 'שלושה דברים טובים עם ייחוס סיבתי' : 'Three Good Things with Causal Attribution',
             suggestions: [],
             items,
             mentalSubtractionReflection: subtractionReflection,
@@ -191,11 +205,11 @@ export const DailyPractice: React.FC = () => {
             setIsCompleted(true);
         } catch (error) {
             console.error('Failed to save daily entry:', error);
-            alert(isHebrew ? 'שגיאה בשמירת התרגול' : 'Error saving practice');
+            alert(locale === 'he' ? 'שגיאה בשמירת התרגול' : 'Error saving practice');
         } finally {
             setIsSaving(false);
         }
-    }, [userProfile, items, isHebrew, activeProtocol, subtractionReflection, isAuthenticated, googleId, refreshStreak]);
+    }, [userProfile, items, locale, activeProtocol, subtractionReflection, isAuthenticated, googleId, refreshStreak]);
 
     // -------------------------------------------------------------------------
     // 3. All useEffect Declarations (Strictly physical bottom)
@@ -213,27 +227,23 @@ export const DailyPractice: React.FC = () => {
 
     if (isCompleted) {
         return (
-            <div dir={isHebrew ? 'rtl' : 'ltr'} className="max-w-xl mx-auto px-4 py-8 animate-fadeIn text-center">
+            <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="max-w-xl mx-auto px-4 py-8 animate-fadeIn text-center">
                 <PastelCard
                     variant="sage"
-                    title={isHebrew ? 'התרגול היומי הושלם בהצלחה' : 'Daily Practice Completed'}
-                    subtitle={
-                        isHebrew
-                            ? 'חיזקת את מסלולי הוויסות העצביים והכרת התודה. נתראה מחר!'
-                            : 'You have actively strengthened your neural pathways. See you tomorrow!'
-                    }
-                    badge={isHebrew ? 'תרגול בוצע' : 'Practiced'}
+                    title={t.common.wellDone}
+                    subtitle={t.common.seeYouTomorrow}
+                    badge={t.common.verified}
                     elevated
                 >
                     <div className="py-6 space-y-4">
                         <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-lg">
                             <span>🔥</span>
                             <span>{StorageService.getStreak().currentStreak}</span>
-                            <span>{isHebrew ? 'ימי תרגול רצופים' : 'Days Streak'}</span>
+                            <span>{t.common.daysStreak}</span>
                         </div>
                         <p className="text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-                            {isHebrew
-                                ? 'מחקרים מצביעים כי תרגול "שלושה דברים טובים" הכולל סוכנות אישית מוריד את תסמיני השחיקה ב-22% ומשפר את איכות השינה כבר בשבועות הראשונים.'
+                            {locale === 'he'
+                                ? 'מחקרים מוכיחים כי תרגול "שלושה דברים טובים" הכולל סוכנות אישית מוריד את תסמיני השחיקה ב-22% ומשפר את איכות השינה כבר בשבועות הראשונים.'
                                 : 'Studies show that Three Good Things with agency attribution decreases burnout symptoms by 22% and improves sleep depth within the first weeks.'}
                         </p>
                     </div>
@@ -247,40 +257,67 @@ export const DailyPractice: React.FC = () => {
     }
 
     return (
-        <div dir={isHebrew ? 'rtl' : 'ltr'} className="w-full max-w-2xl mx-auto px-4 py-6 space-y-6 animate-fadeIn">
-            {/* Protocol Selector Tabs */}
-            <div className="flex items-center justify-center gap-2 pb-2 overflow-x-auto">
+        <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="w-full max-w-2xl mx-auto px-4 py-6 space-y-6 animate-fadeIn">
+            {/* Dosing Schedule Status Badge */}
+            <DosingScheduleBadge
+                dosingSchedule={userProfile.dosingSchedule}
+                locale={locale}
+            />
+
+            {/* Evidence-Based Protocol Selector Tabs */}
+            <div className="flex items-center justify-start gap-2 pb-2 overflow-x-auto no-scrollbar">
                 <button
                     type="button"
                     onClick={() => setActiveProtocol('three_good_things')}
-                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                    className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                         activeProtocol === 'three_good_things'
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-sm'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-xs'
                             : 'bg-white/80 text-neutral-600 hover:bg-neutral-100'
                     }`}
                 >
-                    ✨ {isHebrew ? 'שלושה דברים טובים' : 'Three Good Things'}
+                    ✨ {t.threeGoodThings.title}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setShowGQ6Modal(true)}
+                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-amber-50 hover:text-amber-900 transition-all border border-transparent hover:border-amber-200 whitespace-nowrap"
+                >
+                    📊 GQ-6
                 </button>
                 <button
                     type="button"
                     onClick={() => setShowLetterModal(true)}
-                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-purple-50 hover:text-purple-800 transition-all border border-transparent hover:border-purple-200"
+                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-purple-50 hover:text-purple-800 transition-all border border-transparent hover:border-purple-200 whitespace-nowrap"
                 >
-                    ✉️ {isHebrew ? 'מכתב הכרת תודה' : 'Gratitude Letter'}
+                    ✉️ {t.letters.title}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setShowVirtualVisitModal(true)}
+                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-purple-50 hover:text-purple-800 transition-all border border-transparent hover:border-purple-200 whitespace-nowrap"
+                >
+                    🪑 Empty Chair
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setShowHubermanModal(true)}
+                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-sky-50 hover:text-sky-800 transition-all border border-transparent hover:border-sky-200 whitespace-nowrap"
+                >
+                    💓 Huberman
                 </button>
                 <button
                     type="button"
                     onClick={() => setShowSubtractionModal(true)}
-                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-sky-50 hover:text-sky-800 transition-all border border-transparent hover:border-sky-200"
+                    className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/80 text-neutral-600 hover:bg-sky-50 hover:text-sky-800 transition-all border border-transparent hover:border-sky-200 whitespace-nowrap"
                 >
-                    🌌 {isHebrew ? 'חיסור מנטלי' : 'Mental Subtraction'}
+                    🌌 Subtraction
                 </button>
             </div>
 
             {/* Stepper Navigation */}
             <div className="flex items-center justify-between px-2">
                 <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                    {isHebrew ? `רגע ${currentStep + 1} מתוך 3` : `Step ${currentStep + 1} of 3`}
+                    {t.threeGoodThings.stepBadge.replace('{step}', String(currentStep + 1))}
                 </span>
                 <div className="flex gap-2">
                     {[0, 1, 2].map((idx) => (
@@ -302,14 +339,13 @@ export const DailyPractice: React.FC = () => {
                 </div>
             </div>
 
-            {/* Main Structured Form */}
+            {/* Main Structured 3GT Form with Mandatory Causal Reflection & Affect Rating */}
             <ThreeGoodThingsForm
                 stepIndex={currentStep}
                 userProfile={userProfile}
                 item={items[currentStep]}
                 onChange={(updated) => handleItemChange(currentStep, updated)}
                 onCompleted={() => handleItemCompleted(currentStep)}
-                isHebrew={isHebrew}
             />
 
             {/* Step Controls */}
@@ -320,7 +356,7 @@ export const DailyPractice: React.FC = () => {
                     disabled={currentStep === 0}
                     className="px-4 py-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 disabled:opacity-30 rounded-xl"
                 >
-                    {isHebrew ? '← הקודם' : '← Previous'}
+                    {t.common.previous}
                 </button>
 
                 {currentStep < 2 ? (
@@ -329,7 +365,7 @@ export const DailyPractice: React.FC = () => {
                         onClick={() => setCurrentStep((prev) => Math.min(prev + 1, 2))}
                         className="px-6 py-2.5 text-xs sm:text-sm font-bold bg-neutral-800 hover:bg-neutral-900 text-white rounded-xl shadow-md transition-all"
                     >
-                        {isHebrew ? 'הבא →' : 'Next →'}
+                        {t.common.next}
                     </button>
                 ) : (
                     <button
@@ -338,9 +374,7 @@ export const DailyPractice: React.FC = () => {
                         disabled={isSaving}
                         className="px-8 py-3 text-xs sm:text-sm font-black bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                     >
-                        {isSaving
-                            ? isHebrew ? 'שומר ב-Firestore...' : 'Saving...'
-                            : isHebrew ? '✓ סיים תרגול יומי' : '✓ Complete Daily Practice'}
+                        {isSaving ? t.common.loading : `✓ ${t.common.complete}`}
                     </button>
                 )}
             </div>
@@ -351,18 +385,42 @@ export const DailyPractice: React.FC = () => {
                     <ScientificFactBanner
                         statement={scientificFact.statement}
                         citation={scientificFact.citation}
-                        isHebrew={isHebrew}
+                        isHebrew={locale === 'he'}
                     />
                 </div>
             )}
 
-            {/* Modals for Complementary Protocols */}
+            {/* Clinical Protocols Modals */}
+            {showGQ6Modal && (
+                <GQ6AssessmentModal
+                    userProfile={userProfile}
+                    onClose={() => setShowGQ6Modal(false)}
+                    onCompleted={() => setShowGQ6Modal(false)}
+                />
+            )}
+
             {showLetterModal && (
                 <GratitudeLetterModal
                     userProfile={userProfile}
                     onClose={() => setShowLetterModal(false)}
                     onSaved={() => setShowLetterModal(false)}
-                    isHebrew={isHebrew}
+                    isHebrew={locale === 'he'}
+                />
+            )}
+
+            {showVirtualVisitModal && (
+                <VirtualGratitudeVisitModal
+                    userProfile={userProfile}
+                    onClose={() => setShowVirtualVisitModal(false)}
+                    onCompleted={() => setShowVirtualVisitModal(false)}
+                />
+            )}
+
+            {showHubermanModal && (
+                <HubermanRecallModal
+                    userProfile={userProfile}
+                    onClose={() => setShowHubermanModal(false)}
+                    onCompleted={() => setShowHubermanModal(false)}
                 />
             )}
 
@@ -371,7 +429,7 @@ export const DailyPractice: React.FC = () => {
                     userProfile={userProfile}
                     onClose={() => setShowSubtractionModal(false)}
                     onCompleted={(reflection) => setSubtractionReflection(reflection)}
-                    isHebrew={isHebrew}
+                    isHebrew={locale === 'he'}
                 />
             )}
         </div>
