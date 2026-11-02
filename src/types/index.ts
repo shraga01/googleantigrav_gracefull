@@ -10,6 +10,15 @@ export interface DosingSchedule {
     lastPracticeDate: string | null; // YYYY-MM-DD
 }
 
+export interface ReminderSettings {
+    enabled: boolean;
+    eveningTime: string;
+    timezone: string;
+    preferredDays: number[];
+    fcmToken?: string;
+    digitalSunsetMode: boolean;
+}
+
 export interface UserProfile {
     userId: string;
     language: Language;
@@ -27,6 +36,7 @@ export interface UserProfile {
     challenges?: string;
     otherInfo?: string;
     dosingSchedule?: DosingSchedule;
+    reminderSettings?: ReminderSettings;
     unlockedBadges?: { code: string; awardedAt: number }[];
     createdAt: number;
     reminderTime?: string;

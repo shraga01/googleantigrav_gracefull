@@ -64,6 +64,10 @@ export const DailyPractice: React.FC = () => {
     const [showSubtractionModal, setShowSubtractionModal] = useState(false);
     const [subtractionReflection, setSubtractionReflection] = useState<string | undefined>(undefined);
 
+    const [isEveningRitual] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        return new URLSearchParams(window.location.search).get('mode') === 'evening_ritual';
+    });
     const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
 
     const locale: Locale = userProfile?.locale || (userProfile?.language === 'hebrew' ? 'he' : 'en');
@@ -347,6 +351,28 @@ export const DailyPractice: React.FC = () => {
                     ⏳ {t.mentalSubtraction.title}
                 </button>
             </div>
+
+                        {/* Evening Ritual Deep-Link Banner */}
+            {isEveningRitual && (
+                <div className="p-3.5 bg-purple-950 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 animate-fadeIn">
+                    <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">🌙</span>
+                        <div className="text-xs">
+                            <div className="font-extrabold text-sm text-purple-100">
+                                {locale === 'he' ? 'טקס ערב לפני השינה' : 'Pre-Sleep Evening Ritual'}
+                            </div>
+                            <div className="text-purple-200/90">
+                                {locale === 'he'
+                                    ? '3 דברים טובים עם ייחוס סוכנות אישית לוויסות וגאלי והרגעת מחשבות'
+                                    : 'Seligman 3GT with causal agency reflection for vagal calming and restful sleep'}
+                            </div>
+                        </div>
+                    </div>
+                    <span className="px-2.5 py-1 bg-white/20 rounded-full text-[10px] font-bold text-white shrink-0">
+                        {locale === 'he' ? 'פעיל' : 'Active'}
+                    </span>
+                </div>
+            )}
 
             {/* Main Structured 3GT Form with Mandatory Causal Reflection & Affect Rating */}
             <ThreeGoodThingsForm

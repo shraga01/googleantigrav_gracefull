@@ -158,3 +158,94 @@ export const generateMentalSubtraction = onCall(
         return { result };
     }
 );
+
+
+/**
+ * Test Trigger Callable for Clinical Evening Reminder
+ * Validates authentication, queries Firestore profile & today's entries,
+ * and if FCM token is present, sends the notification.
+ */
+export const triggerTestEveningReminder = onCall(
+    { cors: true },
+    async (request) => {
+        if (!request.auth || !request.auth.uid) {
+            throw new HttpsError('unauthenticated', 'User must be signed in.');
+        }
+        const userId = request.auth.uid;
+        const db = admin.firestore();
+
+        // 1. Fetch user profile
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            throw new HttpsError('not-found', 'User profile not found in Firestore.');
+        }
+        const userData = userDoc.data() || {};
+        const reminderSettings = userData.reminderSettings || {};
+        const fcmToken = reminderSettings.fcmToken;
+
+        // 2. Check today completion (Suppression check)
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const entriesSnap = await db.collection('users').doc(userId).collection('entries')
+            .where('date', '==', todayStr).limit(1).get();
+        const isCompletedToday = !entriesSnap.empty || userData.dosingSchedule?.lastPracticeDate === todayStr;
+
+        const isMaintenance = userData.dosingSchedule?.phase === 'maintenance_variety';
+        const locale = userData.locale || (userData.language === 'hebrew' ? 'he' : 'en');
+
+        const title = locale === 'he'
+            ? 'טקס הכרת תודה לפני השינה 🌙'
+            : 'Evening Gratitude Ritual 🌙';
+        const body = locale === 'he'
+            ? '10 דקות של 3 דברים טובים וייחוס סוכנות אישית לוויסות וגאלי והרגעת מחשבות לפני השינה.'
+            : '10-minute Seligman 3GT with causal agency reflection for pre-sleep vagal regulation.';
+
+        let pushSent = false;
+        let pushError: string | null = null;
+
+        if (fcmToken) {
+            try {
+                await admin.messaging().send({
+                    token: fcmToken,
+                    notification: {
+                        title,
+                        body,
+                    },
+                    data: {
+                        url: '/?mode=evening_ritual&source=fcm_test',
+                    },
+                    webpush: {
+                        fcmOptions: {
+                            link: 'https://daily-appreciation-app-275bf.web.app/?mode=evening_ritual',
+                        },
+                    },
+                });
+                pushSent = true;
+            } catch (err: unknown) {
+                pushError = err instanceof Error ? err.message : 'FCM send failed';
+            }
+        }
+
+        return {
+            success: true,
+            userId,
+            isCompletedToday,
+            isMaintenance,
+            pushSent,
+            hasFcmToken: !!fcmToken,
+            pushError,
+            message: isCompletedToday
+                ? 'Clinical suppression: Practice already completed today.'
+                : 'Reminder is active and clinically indicated.',
+        };
+    }
+);
+
+export const sendEveningGratitudeReminders = onCall(
+    { cors: true },
+    async (request) => {
+        if (!request.auth || !request.auth.uid) {
+            throw new HttpsError('unauthenticated', 'User must be signed in.');
+        }
+        return { status: 'acknowledged', timestamp: Date.now() };
+    }
+);
