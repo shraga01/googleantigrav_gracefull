@@ -64,6 +64,10 @@ export const DailyPractice: React.FC = () => {
     const [showSubtractionModal, setShowSubtractionModal] = useState(false);
     const [subtractionReflection, setSubtractionReflection] = useState<string | undefined>(undefined);
 
+    const [isEveningRitual] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        return new URLSearchParams(window.location.search).get('mode') === 'evening_ritual';
+    });
     const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
 
     const locale: Locale = userProfile?.locale || (userProfile?.language === 'hebrew' ? 'he' : 'en');
@@ -254,7 +258,7 @@ export const DailyPractice: React.FC = () => {
 
     if (isCompleted) {
         return (
-            <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="max-w-xl mx-auto px-4 py-8 animate-fadeIn text-center">
+            <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="w-full max-w-full min-w-0 py-4 animate-fadeIn text-center">
                 <PastelCard
                     variant="sage"
                     title={t.common.wellDone}
@@ -267,7 +271,7 @@ export const DailyPractice: React.FC = () => {
                             <span>🔥</span>
                             <span>{t.common.daysStreak}</span>
                         </div>
-                        <p className="text-sm text-neutral-600 max-w-sm mx-auto">
+                        <p className="text-sm text-neutral-600 max-w-sm mx-auto break-words">
                             {locale === 'he'
                                 ? 'התרגול היומי הושלם בהצלחה. המוח שלך חיזק את מסלולי ההערכה והסוכנות האישית.'
                                 : 'Daily practice complete. Your medial prefrontal cortex has reinforced neural pathways of appreciation and agency.'}
@@ -279,26 +283,26 @@ export const DailyPractice: React.FC = () => {
     }
 
     return (
-        <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="max-w-2xl mx-auto px-4 py-6 space-y-6 animate-fadeIn pb-24">
-            {/* Header & Neuroscience Dosing Badge */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-black/5">
-                <div>
-                    <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
+        <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="w-full max-w-full min-w-0 space-y-4 animate-fadeIn">
+            {/* Header & Neuroscience Dosing Badge - Vertical Stack */}
+            <div className="flex flex-col gap-3 w-full min-w-0 pb-3 border-b border-black/5">
+                <div className="w-full min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight break-words">
                         {t.common.appName}
                     </h1>
-                    <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                    <p className="text-xs text-neutral-500 font-medium mt-0.5 break-words">
                         {t.common.tagline}
                     </p>
                 </div>
                 <DosingScheduleBadge dosingSchedule={userProfile.dosingSchedule} locale={locale} />
             </div>
 
-            {/* Protocol Switcher Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            {/* Protocol Switcher Pills - Responsive Multi-Line Wrapped Layout */}
+            <div className="flex flex-wrap items-center gap-2 w-full py-1">
                 <button
                     type="button"
                     onClick={() => setActiveProtocol('three_good_things')}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                    className={`text-xs sm:text-sm px-3 py-2 rounded-xl font-bold transition-all flex-shrink-0 ${
                         activeProtocol === 'three_good_things'
                             ? 'bg-neutral-900 text-white shadow-sm'
                             : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
@@ -310,7 +314,7 @@ export const DailyPractice: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => setShowGQ6Modal(true)}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-all shrink-0"
+                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-all flex-shrink-0"
                 >
                     📊 {t.gq6.title}
                 </button>
@@ -318,7 +322,7 @@ export const DailyPractice: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => setShowLetterModal(true)}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 transition-all shrink-0"
+                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 transition-all flex-shrink-0"
                 >
                     ✉️ {t.letters.title}
                 </button>
@@ -326,7 +330,7 @@ export const DailyPractice: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => setShowVirtualVisitModal(true)}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 transition-all shrink-0"
+                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 transition-all flex-shrink-0"
                 >
                     🪑 {t.emptyChair.title}
                 </button>
@@ -334,7 +338,7 @@ export const DailyPractice: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => setShowHubermanModal(true)}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 transition-all shrink-0"
+                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 transition-all flex-shrink-0"
                 >
                     🧠 {t.huberman.title}
                 </button>
@@ -342,11 +346,33 @@ export const DailyPractice: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => setShowSubtractionModal(true)}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 transition-all shrink-0"
+                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 transition-all flex-shrink-0"
                 >
                     ⏳ {t.mentalSubtraction.title}
                 </button>
             </div>
+
+            {/* Evening Ritual Deep-Link Banner */}
+            {isEveningRitual && (
+                <div className="p-3.5 bg-purple-950 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 animate-fadeIn w-full min-w-0 box-border">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span className="text-2xl flex-shrink-0">🌙</span>
+                        <div className="text-xs min-w-0 flex-1">
+                            <div className="font-extrabold text-sm text-purple-100 break-words">
+                                {locale === 'he' ? 'טקס ערב לפני השינה' : 'Pre-Sleep Evening Ritual'}
+                            </div>
+                            <div className="text-purple-200/90 break-words">
+                                {locale === 'he'
+                                    ? '3 דברים טובים עם ייחוס סוכנות אישית לוויסות וגאלי והרגעת מחשבות'
+                                    : 'Seligman 3GT with causal agency reflection for vagal calming and restful sleep'}
+                            </div>
+                        </div>
+                    </div>
+                    <span className="px-2.5 py-1 bg-white/20 rounded-full text-[10px] font-bold text-white shrink-0 ms-2">
+                        {locale === 'he' ? 'פעיל' : 'Active'}
+                    </span>
+                </div>
+            )}
 
             {/* Main Structured 3GT Form with Mandatory Causal Reflection & Affect Rating */}
             <ThreeGoodThingsForm

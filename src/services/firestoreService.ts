@@ -19,6 +19,7 @@ import {
 import { db } from './firebase';
 import type {
     UserProfile,
+    ReminderSettings,
     DailyEntry,
     StreakData,
     GratitudeLetter,
@@ -55,6 +56,15 @@ export const FirestoreService = {
         }
     },
 
+        updateReminderSettings: async (userId: string, settings: ReminderSettings): Promise<void> => {
+        try {
+            const userDocRef = doc(db, 'users', userId);
+            await setDoc(userDocRef, { reminderSettings: settings }, { merge: true });
+        } catch (error) {
+            console.error('Error updating reminder settings in Firestore:', error);
+            throw error;
+        }
+    },
     /**
      * Daily Entries (3GT)
      */

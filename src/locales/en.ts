@@ -93,4 +93,22 @@ export const en = {
         blessingLabel: 'Identify a blessing or condition you might take for granted:',
         reflectionLabel: 'Your reflection: What would life look like without it, and how does returning to reality feel?',
     },
+    pwa: {
+        title: 'Install on Samsung Galaxy S26',
+        subtitle: 'Full AMOLED standalone display, instant offline access & reliable evening alarms',
+        installBtn: 'Install App ⚡',
+        installed: '✓ App installed successfully!',
+        tip: 'Add to home screen for native-grade performance',
+    },
+    reminders: {
+        title: 'Evening Reminder & Pre-Sleep Ritual',
+        subtitle: 'Doctrine-aware reminder engine for pre-sleep vagal relaxation',
+        enableLabel: 'Enable Evening Reminders',
+        timeLabel: 'Evening Reminder Time (15-30m before bed)',
+        preferredDaysLabel: 'Preferred Practice Days (Maintenance phase - 3 days recommended)',
+        digitalSunsetLabel: 'Digital Sunset Mode',
+        digitalSunsetDesc: 'Shifts to warm low-blue-light pastel palette after 20:00 to protect melatonin',
+        syncCalendarBtn: 'Sync Evening Ritual to Galaxy S26 Calendar/Alarm',
+        pushLabel: 'Browser Push Notifications',
+    },
 };

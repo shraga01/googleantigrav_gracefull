@@ -70,7 +70,7 @@ export const PastelCard: React.FC<PastelCardProps> = ({
             role={onClick ? 'button' : undefined}
             tabIndex={onClick ? 0 : undefined}
             className={`
-                rounded-2xl border p-5 transition-all duration-300
+                w-full max-w-full min-w-0 box-border overflow-hidden rounded-2xl border p-4 sm:p-5 transition-all duration-300
                 ${styles.container}
                 ${elevated ? 'shadow-md hover:shadow-lg' : 'shadow-sm hover:shadow-md'}
                 ${onClick ? 'cursor-pointer hover:-translate-y-0.5 active:translate-y-0' : ''}
@@ -78,35 +78,37 @@ export const PastelCard: React.FC<PastelCardProps> = ({
             `}
         >
             {(title || icon || badge || action) && (
-                <div className="flex items-center justify-between mb-3 gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        {icon && <span className="text-xl flex-shrink-0">{icon}</span>}
+                <div className="flex items-start justify-between mb-3 gap-2 w-full min-w-0">
+                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                        {icon && <span className="text-xl flex-shrink-0 mt-0.5">{icon}</span>}
                         {title && (
-                            <div>
-                                <h3 className={`font-semibold text-base sm:text-lg leading-snug tracking-tight ${styles.title}`}>
+                            <div className="min-w-0 flex-1">
+                                <h3 className={`font-semibold text-base sm:text-lg leading-snug tracking-tight break-words ${styles.title}`}>
                                     {title}
                                 </h3>
                                 {subtitle && (
-                                    <p className="text-xs sm:text-sm text-gray-500 font-normal leading-normal mt-0.5">
+                                    <p className="text-xs sm:text-sm text-gray-500 font-normal leading-relaxed mt-0.5 break-words">
                                         {subtitle}
                                     </p>
                                 )}
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        {badge && (
-                            <span
-                                className={`text-xs px-2.5 py-1 rounded-full font-medium border ${badgeColor || styles.badge}`}
-                            >
-                                {badge}
-                            </span>
-                        )}
-                        {action && <div>{action}</div>}
-                    </div>
+                    {(badge || action) && (
+                        <div className="flex items-center gap-1.5 flex-shrink-0 ms-2">
+                            {badge && (
+                                <span
+                                    className={`text-xs px-2.5 py-1 rounded-full font-medium border whitespace-nowrap ${badgeColor || styles.badge}`}
+                                >
+                                    {badge}
+                                </span>
+                            )}
+                            {action && <div className="flex-shrink-0">{action}</div>}
+                        </div>
+                    )}
                 </div>
             )}
-            <div>{children}</div>
+            <div className="w-full min-w-0 box-border">{children}</div>
         </div>
     );
 };

@@ -92,24 +92,24 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
             subtitle={t.threeGoodThings.subtitle}
             badge={t.threeGoodThings.stepBadge.replace('{step}', String(stepIndex + 1))}
             elevated
-            className="w-full mb-6"
+            className="w-full max-w-full min-w-0 box-border mb-4"
         >
-            <div className="space-y-4 pt-2">
+            <div className="space-y-4 pt-1 w-full min-w-0 box-border">
                 {/* Empirical Neuroscience Focus Prompt */}
                 {targetHint && lensHint && (
-                    <div className="p-3 bg-white/70 rounded-xl border border-black/5 text-xs text-neutral-600 space-y-1">
-                        <div className="font-bold text-neutral-800">
+                    <div className="w-full min-w-0 box-border p-3 bg-white/70 rounded-xl border border-black/5 text-xs text-neutral-600 space-y-1 break-words">
+                        <div className="font-bold text-neutral-800 break-words">
                             💡 {locale === 'he' ? 'זווית התבוננות מומלצת להיום:' : 'Recommended focus lens for today:'}
                         </div>
-                        <p className="leading-relaxed">
+                        <p className="leading-relaxed break-words">
                             {targetHint} <span className="opacity-40">|</span> {lensHint}
                         </p>
                     </div>
                 )}
 
                 {/* Field 1: Concrete Act */}
-                <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
+                <div className="w-full min-w-0 box-border">
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80 text-start break-words">
                         {t.threeGoodThings.actLabel}
                     </label>
                     <textarea
@@ -117,14 +117,14 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                         onChange={(e) => handleFieldChange('act', e.target.value)}
                         placeholder={t.threeGoodThings.actPlaceholder}
                         rows={2}
-                        className="w-full text-sm rounded-xl p-3 bg-white/90 border border-black/10 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all text-neutral-800 resize-none shadow-xs"
+                        className="w-full min-w-0 box-border text-sm rounded-xl p-3 bg-white/90 border border-black/10 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all text-neutral-800 resize-none shadow-xs text-start"
                     />
                 </div>
 
                 {/* Field 2 & 3: Benefactor & Benefit */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0 box-border">
+                    <div className="w-full min-w-0 box-border">
+                        <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80 text-start break-words">
                             {t.threeGoodThings.benefactorLabel}
                         </label>
                         <input
@@ -132,12 +132,12 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                             value={item.benefactor || ''}
                             onChange={(e) => handleFieldChange('benefactor', e.target.value)}
                             placeholder={t.threeGoodThings.benefactorPlaceholder}
-                            className="w-full text-sm rounded-xl p-2.5 bg-white/90 border border-black/10 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all text-neutral-800 shadow-xs"
+                            className="w-full min-w-0 box-border text-sm rounded-xl p-2.5 bg-white/90 border border-black/10 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all text-neutral-800 shadow-xs text-start"
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
+                    <div className="w-full min-w-0 box-border">
+                        <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80 text-start break-words">
                             {t.threeGoodThings.benefitLabel}
                         </label>
                         <input
@@ -145,17 +145,17 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                             value={item.benefit}
                             onChange={(e) => handleFieldChange('benefit', e.target.value)}
                             placeholder={t.threeGoodThings.benefitPlaceholder}
-                            className="w-full text-sm rounded-xl p-2.5 bg-white/90 border border-black/10 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all text-neutral-800 shadow-xs"
+                            className="w-full min-w-0 box-border text-sm rounded-xl p-2.5 bg-white/90 border border-black/10 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all text-neutral-800 shadow-xs text-start"
                         />
                     </div>
                 </div>
 
                 {/* Field 4: Mandatory Causal Reflection (Agency Attribution) */}
-                <div className="rounded-xl p-3.5 bg-amber-50/80 border border-amber-200">
-                    <label className="block text-xs font-black uppercase tracking-wider mb-1 text-amber-950">
+                <div className="w-full min-w-0 box-border rounded-xl p-3.5 bg-amber-50/80 border border-amber-200">
+                    <label className="block text-xs font-black uppercase tracking-wider mb-1 text-amber-950 text-start break-words">
                         {t.threeGoodThings.agencyLabel}
                     </label>
-                    <p className="text-xs text-amber-900/90 mb-2 leading-relaxed">
+                    <p className="text-xs text-amber-900/90 mb-2 leading-relaxed text-start break-words">
                         {t.threeGoodThings.agencyHelper}
                     </p>
                     <textarea
@@ -163,23 +163,23 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                         onChange={(e) => handleFieldChange('causalReflection', e.target.value)}
                         placeholder={t.threeGoodThings.agencyPlaceholder}
                         rows={2}
-                        className="w-full text-sm rounded-xl p-3 bg-white border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-all text-neutral-800 resize-none shadow-xs"
+                        className="w-full min-w-0 box-border text-sm rounded-xl p-3 bg-white border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-all text-neutral-800 resize-none shadow-xs text-start"
                     />
                 </div>
 
                 {/* Field 5: Affect Rating (1-7 Likert) */}
-                <div className="p-3 bg-white/80 rounded-xl border border-black/5 shadow-xs space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-neutral-700">
-                        <span>{t.threeGoodThings.affectLabel}</span>
-                        <span className="text-amber-800 text-sm font-black">{item.affectRating || 5} / 7</span>
+                <div className="w-full min-w-0 box-border p-3 bg-white/80 rounded-xl border border-black/5 shadow-xs space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-neutral-700 w-full min-w-0">
+                        <span className="truncate flex-1 min-w-0">{t.threeGoodThings.affectLabel}</span>
+                        <span className="text-amber-800 text-sm font-black flex-shrink-0 ms-2">{item.affectRating || 5} / 7</span>
                     </div>
-                    <div className="flex items-center justify-between gap-1">
+                    <div className="w-full flex items-center justify-between gap-1 py-0.5">
                         {[1, 2, 3, 4, 5, 6, 7].map((num) => (
                             <button
                                 key={num}
                                 type="button"
                                 onClick={() => handleFieldChange('affectRating', num)}
-                                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                                className={`flex-1 min-w-[34px] max-w-[48px] h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${
                                     (item.affectRating || 5) === num
                                         ? 'bg-amber-600 text-white shadow-sm scale-105'
                                         : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
@@ -193,16 +193,16 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
 
                 {/* Evaluation Feedback */}
                 {lastEvaluation && (
-                    <div className="rounded-xl p-3.5 bg-white/95 border border-emerald-300 text-xs shadow-xs space-y-1">
+                    <div className="w-full min-w-0 box-border rounded-xl p-3.5 bg-white/95 border border-emerald-300 text-xs shadow-xs space-y-1 break-words">
                         <div className="flex items-center justify-between font-bold text-emerald-800">
                             <span>Clinical Quality Score:</span>
                             <span className="text-sm px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900">
                                 {lastEvaluation.totalScore} / 100
                             </span>
                         </div>
-                        <p className="text-neutral-700">{lastEvaluation.feedback}</p>
+                        <p className="text-neutral-700 break-words">{lastEvaluation.feedback}</p>
                         {lastEvaluation.recommendedEnhancement && (
-                            <p className="text-amber-800 italic mt-1 font-medium">
+                            <p className="text-amber-800 italic mt-1 font-medium break-words">
                                 💡 {lastEvaluation.recommendedEnhancement}
                             </p>
                         )}
@@ -214,7 +214,7 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                     type="button"
                     onClick={handleEvaluate}
                     disabled={!isFormFilled || isEvaluating}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-xs ${
+                    className={`w-full min-w-0 box-border py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-xs ${
                         !isFormFilled || isEvaluating
                             ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                             : 'bg-neutral-800 hover:bg-neutral-900 text-white active:scale-[0.99]'
