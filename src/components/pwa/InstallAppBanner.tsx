@@ -119,7 +119,7 @@ export const InstallAppBanner: React.FC<InstallAppBannerProps> = ({
     return (
         <aside
             aria-label={t.pwa?.title || 'Install Application'}
-            className={`w-full px-4 pt-2 pb-1 animate-fadeIn ${className}`}
+            className={`w-full min-w-0 box-border mb-3 animate-fadeIn ${className}`}
         >
             <PastelCard
                 variant="peach"

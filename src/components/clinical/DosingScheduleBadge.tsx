@@ -24,17 +24,17 @@ export const DosingScheduleBadge: React.FC<DosingScheduleBadgeProps> = ({
             variant="sage"
             title={isMaintenance ? t.dosing.maintenanceTitle : t.dosing.onboardingTitle}
             subtitle={isMaintenance ? t.dosing.maintenanceDesc : t.dosing.onboardingDesc}
-            badge={isMaintenance ? 'Maintenance' : `Day ${currentDay}/21`}
-            className="w-full"
+            badge={isMaintenance ? 'Maintenance' : `${currentDay}/21`}
+            className="w-full max-w-full box-border"
         >
-            <div className="pt-2">
-                <div className="flex items-center justify-between text-xs font-bold text-emerald-950 mb-1.5">
-                    <span>
+            <div className="pt-2 w-full min-w-0 box-border">
+                <div className="flex items-center justify-between text-xs font-bold text-emerald-950 mb-1.5 gap-2 w-full min-w-0">
+                    <span className="truncate flex-1 min-w-0">
                         {isMaintenance
                             ? t.dosing.weeklyGoal.replace('{count}', String(targetCount))
                             : t.dosing.currentDay.replace('{day}', String(currentDay))}
                     </span>
-                    <span>
+                    <span className="flex-shrink-0 ms-2 whitespace-nowrap">
                         {isMaintenance
                             ? `${weeklyCount} / ${targetCount}`
                             : `${Math.round((currentDay / 21) * 100)}%`}

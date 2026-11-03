@@ -13,10 +13,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
 
     return (
         <nav
-            className="pt-2 px-4 z-10 w-full shrink-0 animate-fadeIn"
+            className="fixed sm:absolute bottom-0 start-0 end-0 z-40 w-full max-w-[440px] mx-auto pt-2 px-4 shrink-0 animate-fadeIn pointer-events-auto"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.25rem)' }}
         >
-            <div className="glass-card rounded-full p-2 flex items-center justify-between gap-1 border-white/10 shadow-2xl backdrop-blur-xl bg-white/10 mx-auto max-w-md">
+            <div className="glass-card rounded-full p-2 flex items-center justify-between gap-1 border-white/10 shadow-2xl backdrop-blur-xl bg-white/10 mx-auto w-full">
 
                 {/* Settings Tab */}
                 <button
