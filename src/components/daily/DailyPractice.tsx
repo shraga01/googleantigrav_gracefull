@@ -17,6 +17,7 @@ import { DosingScheduleBadge } from '../clinical/DosingScheduleBadge';
 import { PastelCard } from '../common/PastelCard';
 import { getDictionary } from '../../locales';
 import { v4 as uuidv4 } from 'uuid';
+import { IconChevronDown, IconChevronUp } from '../common/SvgIcon';
 
 // Lazy-loaded clinical modals for code-splitting and bundle optimization
 const GratitudeLetterModal = React.lazy(() =>
@@ -43,8 +44,9 @@ export const DailyPractice: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
-    const [activeProtocol, setActiveProtocol] = useState<GratitudeProtocolType>('three_good_things');
+    const [activeProtocol] = useState<GratitudeProtocolType>('three_good_things');
     const [currentStep, setCurrentStep] = useState(0);
+    const [showDeeperTools, setShowDeeperTools] = useState(false);
 
     // Empirical historical context loaded directly from Firestore
     const [empiricalContext, setEmpiricalContext] = useState<EmpiricalHistoricalContext | null>(null);
@@ -146,19 +148,16 @@ export const DailyPractice: React.FC = () => {
     const handleSaveEntry = useCallback(async () => {
         if (!userProfile) return;
 
-        // Verify all 3 items have act, benefit, and mandatory causal reflection (agency attribution)
+        // Verify all 3 items have act and agency attribution
         const isAllValid = items.every(
-            (it) =>
-                it.act.trim().length >= 4 &&
-                it.benefit.trim().length >= 4 &&
-                it.causalReflection.trim().length >= 4
+            (it) => it.act.trim().length >= 4 && it.causalReflection.trim().length >= 4
         );
 
         if (!isAllValid) {
             alert(
                 locale === 'he'
-                    ? 'אנא וודא שכל 3 הרגעים כוללים פירוט קונקרטי, תועלת וסוכנות אישית (ייחוס סיבתי).'
-                    : 'Please ensure all 3 items contain concrete details, benefit, and agency attribution.'
+                    ? 'אנא וודא שכל 3 הרגעים הטובים כוללים פירוט קצר וכיצד תרמת להם.'
+                    : 'Please ensure all 3 moments contain your reflection and personal contribution.'
             );
             return;
         }
@@ -194,10 +193,18 @@ export const DailyPractice: React.FC = () => {
             lastPracticeDate: today,
         };
 
-        const compiledContent = items
+        // Guarantee backward-compatibility for Firestore
+        const normalizedItems = items.map((it) => ({
+            ...it,
+            benefit: it.benefit || it.act,
+            benefactor: it.benefactor || (locale === 'he' ? 'עצמי / אחרים' : 'Myself / Others'),
+            affectRating: it.affectRating || 5,
+        }));
+
+        const compiledContent = normalizedItems
             .map(
                 (it, i) =>
-                    `[${i + 1}] ${it.act} (${it.benefactor || 'Self'}) -> ${it.benefit} | Causal Agency: ${it.causalReflection} (Affect: ${it.affectRating}/7)`
+                    `[${i + 1}] ${it.act} -> Causal Agency: ${it.causalReflection} (Affect: ${it.affectRating}/7)`
             )
             .join('\n');
 
@@ -206,9 +213,9 @@ export const DailyPractice: React.FC = () => {
             userId: userProfile.userId,
             date: today,
             protocol: activeProtocol,
-            openingSentence: locale === 'he' ? 'שלושה דברים טובים עם ייחוס סיבתי' : 'Three Good Things with Causal Attribution',
+            openingSentence: locale === 'he' ? 'שלושה דברים טובים' : 'Three Good Things',
             suggestions: [],
-            items,
+            items: normalizedItems,
             mentalSubtractionReflection: subtractionReflection,
             userContent: {
                 type: 'text',
@@ -271,10 +278,10 @@ export const DailyPractice: React.FC = () => {
                             <span>🔥</span>
                             <span>{t.common.daysStreak}</span>
                         </div>
-                        <p className="text-sm text-neutral-600 max-w-sm mx-auto break-words">
+                        <p className="text-base text-neutral-700 max-w-sm mx-auto break-words leading-relaxed">
                             {locale === 'he'
-                                ? 'התרגול היומי הושלם בהצלחה. המוח שלך חיזק את מסלולי ההערכה והסוכנות האישית.'
-                                : 'Daily practice complete. Your medial prefrontal cortex has reinforced neural pathways of appreciation and agency.'}
+                                ? 'התרגול היומי הושלם בהצלחה. המוח שלך חיזק את מסלולי ההערכה והשקט הנפשי.'
+                                : 'Daily practice complete. Your brain has reinforced neural pathways of appreciation and calm.'}
                         </p>
                     </div>
                 </PastelCard>
@@ -282,74 +289,23 @@ export const DailyPractice: React.FC = () => {
         );
     }
 
+    const allThreeFilled = items.every(
+        (it) => it.act.trim().length >= 4 && it.causalReflection.trim().length >= 4
+    );
+
     return (
         <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="w-full max-w-full min-w-0 space-y-4 animate-fadeIn">
-            {/* Header & Neuroscience Dosing Badge - Vertical Stack */}
+            {/* Header & Neuroscience Dosing Badge */}
             <div className="flex flex-col gap-3 w-full min-w-0 pb-3 border-b border-black/5">
-                <div className="w-full min-w-0">
+                <div className="w-full min-w-0 text-start">
                     <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight break-words">
                         {t.common.appName}
                     </h1>
-                    <p className="text-xs text-neutral-500 font-medium mt-0.5 break-words">
+                    <p className="text-sm text-neutral-600 font-medium mt-0.5 break-words">
                         {t.common.tagline}
                     </p>
                 </div>
                 <DosingScheduleBadge dosingSchedule={userProfile.dosingSchedule} locale={locale} />
-            </div>
-
-            {/* Protocol Switcher Pills - Responsive Multi-Line Wrapped Layout */}
-            <div className="flex flex-wrap items-center gap-2 w-full py-1">
-                <button
-                    type="button"
-                    onClick={() => setActiveProtocol('three_good_things')}
-                    className={`text-xs sm:text-sm px-3 py-2 rounded-xl font-bold transition-all flex-shrink-0 ${
-                        activeProtocol === 'three_good_things'
-                            ? 'bg-neutral-900 text-white shadow-sm'
-                            : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
-                    }`}
-                >
-                    {t.nav.daily} (3GT)
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setShowGQ6Modal(true)}
-                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-all flex-shrink-0"
-                >
-                    📊 {t.gq6.title}
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setShowLetterModal(true)}
-                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 transition-all flex-shrink-0"
-                >
-                    ✉️ {t.letters.title}
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setShowVirtualVisitModal(true)}
-                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 transition-all flex-shrink-0"
-                >
-                    🪑 {t.emptyChair.title}
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setShowHubermanModal(true)}
-                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 transition-all flex-shrink-0"
-                >
-                    🧠 {t.huberman.title}
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setShowSubtractionModal(true)}
-                    className="text-xs sm:text-sm px-3 py-2 rounded-xl font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 transition-all flex-shrink-0"
-                >
-                    ⏳ {t.mentalSubtraction.title}
-                </button>
             </div>
 
             {/* Evening Ritual Deep-Link Banner */}
@@ -363,34 +319,35 @@ export const DailyPractice: React.FC = () => {
                             </div>
                             <div className="text-purple-200/90 break-words">
                                 {locale === 'he'
-                                    ? '3 דברים טובים עם ייחוס סוכנות אישית לוויסות וגאלי והרגעת מחשבות'
-                                    : 'Seligman 3GT with causal agency reflection for vagal calming and restful sleep'}
+                                    ? '3 דברים טובים לשקט נפשי ושינה רגועה ומחדשת'
+                                    : '3 Good Things for evening calm and restorative sleep'}
                             </div>
                         </div>
                     </div>
-                    <span className="px-2.5 py-1 bg-white/20 rounded-full text-[10px] font-bold text-white shrink-0 ms-2">
+                    <span className="px-2.5 py-1 bg-white/20 rounded-full text-xs font-bold text-white shrink-0 ms-2">
                         {locale === 'he' ? 'פעיל' : 'Active'}
                     </span>
                 </div>
             )}
 
-            {/* Main Structured 3GT Form with Mandatory Causal Reflection & Affect Rating */}
+            {/* Main Structured 3GT Form with Overview, 2 Questions, and 1-7 Feeling Scale */}
             <ThreeGoodThingsForm
-                stepIndex={currentStep}
+                items={items}
+                activeStep={currentStep}
+                onSelectStep={setCurrentStep}
                 userProfile={userProfile}
-                item={items[currentStep]}
                 empiricalContext={empiricalContext}
-                onChange={(updated) => handleItemChange(currentStep, updated)}
+                onChange={handleItemChange}
                 onCompleted={() => handleItemCompleted(currentStep)}
             />
 
-            {/* Step Controls */}
-            <div className="flex items-center justify-between gap-4 pt-2">
+            {/* Moment Step Controls & Completion Button */}
+            <div className="flex items-center justify-between gap-3 pt-2">
                 <button
                     type="button"
                     onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
                     disabled={currentStep === 0}
-                    className="px-4 py-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 disabled:opacity-30 rounded-xl"
+                    className="px-4 py-2.5 text-sm font-bold text-neutral-700 hover:text-neutral-900 disabled:opacity-30 rounded-xl bg-white/60 hover:bg-white border border-black/5"
                 >
                     {t.common.previous}
                 </button>
@@ -399,25 +356,99 @@ export const DailyPractice: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => setCurrentStep((prev) => Math.min(prev + 1, 2))}
-                        className="px-6 py-2.5 text-xs sm:text-sm font-bold bg-neutral-800 hover:bg-neutral-900 text-white rounded-xl shadow-md transition-all"
+                        className="px-6 py-2.5 text-sm font-bold bg-neutral-900 hover:bg-black text-white rounded-xl shadow-md transition-all active:scale-[0.98]"
                     >
-                        {t.common.next}
+                        {locale === 'he' ? 'לרגע הבא →' : 'Next Moment →'}
                     </button>
                 ) : (
                     <button
                         type="button"
                         onClick={handleSaveEntry}
-                        disabled={isSaving}
-                        className="px-8 py-3 text-xs sm:text-sm font-black bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                        disabled={isSaving || !allThreeFilled}
+                        className={`px-7 py-3 text-sm sm:text-base font-black rounded-xl shadow-lg transition-all active:scale-[0.98] ${
+                            allThreeFilled && !isSaving
+                                ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20'
+                                : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                        }`}
                     >
-                        {isSaving ? t.common.loading : `✓ ${t.common.complete}`}
+                        {isSaving ? t.common.loading : (locale === 'he' ? '✓ שמור תרגול יומי' : '✓ Complete Practice')}
                     </button>
+                )}
+            </div>
+
+            {/* Secondary Clinical Tools Section (Expandable 2-Column Grid) */}
+            <div className="pt-4 border-t border-black/10">
+                <button
+                    type="button"
+                    onClick={() => setShowDeeperTools((prev) => !prev)}
+                    className="w-full p-3.5 bg-white/70 hover:bg-white rounded-2xl border border-black/10 flex items-center justify-between text-start transition-all"
+                >
+                    <div className="min-w-0 flex-1">
+                        <div className="font-bold text-sm text-neutral-900 truncate">
+                            {t.threeGoodThings.deeperToolsTitle}
+                        </div>
+                        <div className="text-xs text-neutral-500 truncate">
+                            {t.threeGoodThings.deeperToolsSubtitle}
+                        </div>
+                    </div>
+                    <div className="ms-2 flex-shrink-0 text-neutral-600">
+                        {showDeeperTools ? <IconChevronUp className="w-5 h-5" /> : <IconChevronDown className="w-5 h-5" />}
+                    </div>
+                </button>
+
+                {showDeeperTools && (
+                    <div className="grid grid-cols-2 gap-2.5 w-full pt-3 animate-fadeIn">
+                        <button
+                            type="button"
+                            onClick={() => setShowLetterModal(true)}
+                            className="p-3 text-start bg-rose-50/90 hover:bg-rose-100/90 text-rose-950 rounded-xl border border-rose-200 transition-all shadow-xs"
+                        >
+                            <div className="text-lg mb-1">✉️</div>
+                            <div className="font-bold text-xs">{t.letters.title}</div>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowGQ6Modal(true)}
+                            className="p-3 text-start bg-amber-50/90 hover:bg-amber-100/90 text-amber-950 rounded-xl border border-amber-200 transition-all shadow-xs"
+                        >
+                            <div className="text-lg mb-1">📊</div>
+                            <div className="font-bold text-xs">{t.gq6.title}</div>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowVirtualVisitModal(true)}
+                            className="p-3 text-start bg-purple-50/90 hover:bg-purple-100/90 text-purple-950 rounded-xl border border-purple-200 transition-all shadow-xs"
+                        >
+                            <div className="text-lg mb-1">🪑</div>
+                            <div className="font-bold text-xs">{t.emptyChair.title}</div>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowHubermanModal(true)}
+                            className="p-3 text-start bg-blue-50/90 hover:bg-blue-100/90 text-blue-950 rounded-xl border border-blue-200 transition-all shadow-xs"
+                        >
+                            <div className="text-lg mb-1">🧠</div>
+                            <div className="font-bold text-xs">{t.huberman.title}</div>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowSubtractionModal(true)}
+                            className="p-3 text-start bg-emerald-50/90 hover:bg-emerald-100/90 text-emerald-950 rounded-xl border border-emerald-200 transition-all shadow-xs col-span-2"
+                        >
+                            <div className="text-lg mb-1">⏳</div>
+                            <div className="font-bold text-xs">{t.mentalSubtraction.title}</div>
+                        </button>
+                    </div>
                 )}
             </div>
 
             {/* Scientific Fact Banner */}
             {scientificFact && (
-                <div className="pt-4">
+                <div className="pt-2">
                     <ScientificFactBanner
                         statement={scientificFact.statement}
                         citation={scientificFact.citation}

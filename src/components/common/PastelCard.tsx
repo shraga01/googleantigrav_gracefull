@@ -8,7 +8,7 @@ interface PastelCardProps {
     title?: string;
     subtitle?: string;
     icon?: React.ReactNode;
-    badge?: string;
+    badge?: React.ReactNode;
     badgeColor?: string;
     action?: React.ReactNode;
     className?: string;
@@ -83,11 +83,11 @@ export const PastelCard: React.FC<PastelCardProps> = ({
                         {icon && <span className="text-xl flex-shrink-0 mt-0.5">{icon}</span>}
                         {title && (
                             <div className="min-w-0 flex-1">
-                                <h3 className={`font-semibold text-base sm:text-lg leading-snug tracking-tight break-words ${styles.title}`}>
+                                <h3 className={`font-bold text-lg sm:text-xl leading-snug tracking-tight break-words ${styles.title}`}>
                                     {title}
                                 </h3>
                                 {subtitle && (
-                                    <p className="text-xs sm:text-sm text-gray-500 font-normal leading-relaxed mt-0.5 break-words">
+                                    <p className="text-sm text-slate-700 font-normal leading-relaxed mt-1 break-words">
                                         {subtitle}
                                     </p>
                                 )}
@@ -98,7 +98,7 @@ export const PastelCard: React.FC<PastelCardProps> = ({
                         <div className="flex items-center gap-1.5 flex-shrink-0 ms-2">
                             {badge && (
                                 <span
-                                    className={`text-xs px-2.5 py-1 rounded-full font-medium border whitespace-nowrap ${badgeColor || styles.badge}`}
+                                    className={`text-xs sm:text-sm px-2.5 py-1 rounded-full font-bold border whitespace-nowrap ${badgeColor || styles.badge}`}
                                 >
                                     {badge}
                                 </span>

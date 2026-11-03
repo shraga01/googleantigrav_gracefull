@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { FluentIcon } from '../common/FluentIcon';
+import { IconBack, IconInfo } from '../common/SvgIcon';
 
 interface AppHeaderProps {
     onLogout: () => void;
@@ -17,18 +18,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onLogout, title }) => {
 
     return (
         <header className="flex items-center px-4 py-3 sm:px-6 sm:py-4 justify-between z-40 w-full shrink-0 relative gap-2">
-            <button className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full glass-card text-white hover:bg-white/20 transition-colors shadow-lg flex-shrink-0">
-                <span className="material-symbols-outlined text-lg sm:text-xl">arrow_back</span>
+            <button
+                type="button"
+                aria-label={isHebrew ? 'חזרה' : 'Back'}
+                className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full glass-card text-white hover:bg-white/20 transition-colors shadow-lg flex-shrink-0"
+            >
+                <IconBack className="w-5 h-5 text-white" />
             </button>
             <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-white text-glow text-center truncate px-2 flex-1 min-w-0">
                 {title}
             </h1>
             <div className="relative flex-shrink-0">
                 <button
+                    type="button"
+                    aria-label={isHebrew ? 'מידע והגדרות חשבון' : 'Information & Profile'}
                     onClick={() => setMenuOpen(!menuOpen)}
                     className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full glass-card text-white hover:bg-white/20 transition-colors shadow-lg"
                 >
-                    <span className="material-symbols-outlined text-lg sm:text-xl">info</span>
+                    <IconInfo className="w-5 h-5 text-white" />
                 </button>
 
                 {/* Dropdown Menu */}

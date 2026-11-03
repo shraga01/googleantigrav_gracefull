@@ -120,7 +120,7 @@ const AppContent: React.FC = () => {
         }`}
       >
         <div
-          className="relative flex min-h-dvh w-full sm:max-w-[440px] mx-auto flex-col sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 overflow-x-hidden"
+          className="relative flex min-h-dvh w-full max-w-full sm:max-w-[440px] mx-auto flex-col sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 overflow-x-hidden box-border"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
             paddingBottom: 'env(safe-area-inset-bottom)',
@@ -132,7 +132,7 @@ const AppContent: React.FC = () => {
           />
 
           {/* Main Content with Suspense Code-Splitting */}
-          <main className="flex-1 w-full relative overflow-y-auto overflow-x-hidden px-4 pt-4 pb-32 flex flex-col min-w-0">
+          <main className="flex-1 w-full max-w-full relative overflow-y-auto overflow-x-hidden px-3.5 sm:px-5 pt-3 pb-32 flex flex-col min-w-0 box-border">
             {/* Quick PWA Install Callout on S26 if running in browser */}
             {currentTab === 'daily' && (
               <InstallAppBanner locale={userProfile.locale || (isHebrew ? 'he' : 'en')} />
