@@ -1,6 +1,8 @@
 import React from 'react';
 import '../../styles/navigation.css';
 import { useApp } from '../../context/AppContext';
+import { getDictionary } from '../../locales';
+import type { Locale } from '../../types';
 import { IconSun, IconJournal, IconStats, IconSettings } from '../common/SvgIcon';
 
 interface BottomNavProps {
@@ -10,7 +12,9 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab }) => {
     const { userProfile } = useApp();
-    const isHebrew = userProfile?.language === 'hebrew';
+    const locale: Locale = userProfile?.locale || (userProfile?.language === 'hebrew' ? 'he' : 'en');
+    const isHebrew = locale === 'he';
+    const t = getDictionary(locale);
 
     const tabs: Array<{
         id: 'daily' | 'history' | 'stats' | 'settings';
@@ -19,22 +23,22 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
     }> = [
         {
             id: 'daily',
-            label: isHebrew ? 'היום' : 'Today',
+            label: t.nav.daily,
             icon: IconSun,
         },
         {
             id: 'history',
-            label: isHebrew ? 'יומן' : 'Journal',
+            label: t.nav.journal,
             icon: IconJournal,
         },
         {
             id: 'stats',
-            label: isHebrew ? 'מדדים' : 'Stats',
+            label: t.nav.stats,
             icon: IconStats,
         },
         {
             id: 'settings',
-            label: isHebrew ? 'הגדרות' : 'Settings',
+            label: t.nav.settings,
             icon: IconSettings,
         },
     ];
@@ -43,10 +47,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
         <nav
             translate="no"
             aria-label={isHebrew ? 'ניווט ראשי' : 'Main Navigation'}
-            className="notranslate fixed sm:absolute bottom-0 start-0 end-0 z-40 w-full max-w-[440px] mx-auto pt-2 px-3 shrink-0 animate-fadeIn pointer-events-auto box-border"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+            className="notranslate stitch-bottom-nav fixed sm:absolute bottom-0 start-0 end-0 z-40 w-full max-w-[440px] mx-auto bg-white/95 backdrop-blur-lg border-t border-stone-100 shadow-floating-bar px-4 pt-2 shrink-0 box-border"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}
         >
-            <div className="glass-card rounded-2xl p-1.5 grid grid-cols-4 w-full h-16 items-center border-white/10 shadow-2xl backdrop-blur-xl bg-white/10 mx-auto box-border">
+            <div className="grid grid-cols-4 w-full items-center">
                 {tabs.map((tab) => {
                     const isActive = currentTab === tab.id;
                     const IconComponent = tab.icon;
@@ -55,14 +59,25 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, setCurrentTab 
                             key={tab.id}
                             type="button"
                             onClick={() => setCurrentTab(tab.id)}
-                            className={`flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl transition-all h-full ${
+                            aria-current={isActive ? 'page' : undefined}
+                            className={`flex flex-col items-center justify-center gap-1 py-1 px-1 transition-colors focus:outline-none ${
                                 isActive
-                                    ? 'bg-white text-pink-600 shadow-md font-bold'
-                                    : 'text-white/80 hover:text-white font-medium'
+                                    ? 'text-amber-600'
+                                    : 'text-stone-400 hover:text-stone-600'
                             }`}
                         >
-                            <IconComponent className="w-5 h-5 shrink-0" />
-                            <span className="text-[11px] sm:text-xs truncate max-w-full tracking-tight">
+                            <div
+                                className={`w-10 h-7 rounded-xl flex items-center justify-center transition-transform ${
+                                    isActive ? 'bg-amber-50 text-amber-600 shadow-xs' : ''
+                                }`}
+                            >
+                                <IconComponent className="w-5 h-5 shrink-0" />
+                            </div>
+                            <span
+                                className={`text-[11px] truncate max-w-full tracking-tight ${
+                                    isActive ? 'font-bold text-amber-600' : 'font-medium'
+                                }`}
+                            >
                                 {tab.label}
                             </span>
                         </button>

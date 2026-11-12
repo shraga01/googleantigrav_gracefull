@@ -1,25 +1,38 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { DosingSchedule, Locale } from '../../types';
-import { PastelCard } from '../common/PastelCard';
 import { getDictionary } from '../../locales';
-import { IconInfo, IconChevronDown, IconChevronUp } from '../common/SvgIcon';
 
 interface DosingScheduleBadgeProps {
     dosingSchedule?: DosingSchedule;
+    streakCount?: number;
     locale: Locale;
 }
 
 export const DosingScheduleBadge: React.FC<DosingScheduleBadgeProps> = ({
     dosingSchedule,
+    streakCount,
     locale,
 }) => {
-    const [isScienceExpanded, setIsScienceExpanded] = useState(false);
     const t = getDictionary(locale);
 
     const isMaintenance = dosingSchedule?.phase === 'maintenance_variety';
-    const currentDay = dosingSchedule?.currentDay || 1;
+    const currentDay = Math.max(1, dosingSchedule?.currentDay || 0, streakCount || 0);
+    const clampedOnboardingDay = Math.min(21, currentDay);
     const weeklyCount = dosingSchedule?.weeklyCompletedCount || 0;
-    const targetCount = isMaintenance ? 3 : 7;
+    const targetCount = 3;
+
+    const progressPercent = Math.min(
+        100,
+        Math.round(
+            isMaintenance
+                ? (weeklyCount / targetCount) * 100
+                : (clampedOnboardingDay / 21) * 100
+        )
+    );
+
+    const badgeText = isMaintenance
+        ? `${weeklyCount} / ${targetCount}`
+        : t.dosing.currentDay.replace('{day}', String(clampedOnboardingDay));
 
     const titleText = isMaintenance
         ? t.dosing.maintenanceTitle
@@ -29,71 +42,43 @@ export const DosingScheduleBadge: React.FC<DosingScheduleBadgeProps> = ({
         ? t.dosing.maintenanceDesc
         : t.dosing.onboardingDesc;
 
-    const progressPercent = Math.min(
-        100,
-        Math.round(
-            isMaintenance
-                ? (weeklyCount / targetCount) * 100
-                : (currentDay / 21) * 100
-        )
-    );
-
     return (
-        <PastelCard
-            variant="sage"
-            title={titleText}
-            subtitle={subtitleText}
-            action={
-                <button
-                    type="button"
-                    aria-label={t.dosing.scienceToggle}
-                    onClick={() => setIsScienceExpanded((prev) => !prev)}
-                    className="p-1.5 rounded-full text-emerald-800 hover:bg-emerald-200/50 transition-colors flex items-center gap-1 text-xs font-semibold"
-                >
-                    <IconInfo className="w-4 h-4 text-emerald-800" />
-                    {isScienceExpanded ? (
-                        <IconChevronUp className="w-3.5 h-3.5 text-emerald-800" />
-                    ) : (
-                        <IconChevronDown className="w-3.5 h-3.5 text-emerald-800" />
-                    )}
-                </button>
-            }
-            className="w-full max-w-full box-border"
+        <section
+            aria-label={titleText}
+            className="bg-white/95 rounded-2xl p-3.5 shadow-sm border border-amber-100/80 flex items-center justify-between gap-3 w-full min-w-0 box-border"
         >
-            <div className="pt-2 w-full min-w-0 box-border">
-                {/* Single clean progress status row (no duplicate day strings) */}
-                <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-emerald-950 mb-1.5 gap-2 w-full min-w-0">
-                    <span className="truncate flex-1 min-w-0">
-                        {isMaintenance
-                            ? t.dosing.weeklyGoal.replace('{count}', String(targetCount))
-                            : t.dosing.currentDay.replace('{day}', String(currentDay))}
-                    </span>
-                    <span dir="ltr" className="flex-shrink-0 ms-2 whitespace-nowrap font-bold">
-                        {isMaintenance ? `${weeklyCount} / ${targetCount}` : `${progressPercent}%`}
-                    </span>
+            {/* Start Side (Right in RTL): Flame + Day Badge + Track Labels */}
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-lg shadow-inner shrink-0">
+                    🔥
                 </div>
+                <div className="min-w-0 flex-1 text-start">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                            {badgeText}
+                        </span>
+                        <span className="text-xs font-semibold text-stone-700 truncate">
+                            {titleText}
+                        </span>
+                    </div>
+                    <p className="text-[11px] text-stone-500 mt-0.5 truncate">
+                        {subtitleText}
+                    </p>
+                </div>
+            </div>
 
-                {/* Progress bar with logical styling */}
-                <div className="w-full h-2.5 bg-emerald-200/70 rounded-full overflow-hidden">
+            {/* End Side (Left in RTL): Dynamic Percentage + Progress Bar */}
+            <div className="w-20 shrink-0 flex flex-col items-end">
+                <span dir="ltr" className="text-xs font-bold text-amber-600 mb-1">
+                    {progressPercent}%
+                </span>
+                <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-emerald-600 rounded-full transition-all duration-500"
-                        style={{
-                            width: `${progressPercent}%`,
-                        }}
+                        className="bg-gradient-to-l from-amber-400 to-amber-500 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
                     />
                 </div>
-
-                {/* Expandable Neuroscience Summary */}
-                {isScienceExpanded && (
-                    <div className="mt-3 p-3 bg-white/90 rounded-xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed animate-fadeIn">
-                        <div className="font-bold mb-1 flex items-center gap-1.5 text-emerald-950">
-                            <span>🧠</span>
-                            <span>{t.dosing.scienceToggle}</span>
-                        </div>
-                        <p>{t.dosing.scienceDesc}</p>
-                    </div>
-                )}
             </div>
-        </PastelCard>
+        </section>
     );
 };

@@ -11,6 +11,8 @@ import { BottomNav } from './components/layout/BottomNav';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { BadgeUnlockOverlay } from './components/common/BadgeUnlockOverlay';
 import { ReminderEngine } from './services/reminderEngine';
+import { getDictionary } from './locales';
+import type { Locale } from './types';
 
 // Code-split heavy tab views
 const HistoryView = lazy(() =>
@@ -48,6 +50,14 @@ const AppContent: React.FC = () => {
       console.error('Logout failed:', error);
     }
   }, [logout]);
+
+  const handleBack = useCallback(() => {
+    if (currentTab !== 'daily') {
+      setCurrentTab('daily');
+    } else if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentTab]);
 
   const handleLanguageSelected = useCallback(() => setOnboardingStep('auth'), []);
   const handleAuthCompleted = useCallback(() => setOnboardingStep('welcome'), []);
@@ -93,33 +103,62 @@ const AppContent: React.FC = () => {
     return <LoadingSpinner />;
   }
 
-  // If we have a profile, show the main app
+  // If we have a profile, show the Stitch Warm Cream & Amber main app
   if (userProfile) {
-    const isHebrew = userProfile.language === 'hebrew';
+    const locale: Locale = userProfile.locale || (userProfile.language === 'hebrew' ? 'he' : 'en');
+    const isHebrew = locale === 'he';
     const isSunset = ReminderEngine.isDigitalSunsetActive(userProfile);
+    const t = getDictionary(locale);
 
-    const getPageTitle = () => {
+    const getHeaderMeta = () => {
       if (isEveningRitualMode && currentTab === 'daily') {
-        return isHebrew ? 'טקס ערב 🌙' : 'Evening Ritual 🌙';
+        return {
+          title: isHebrew ? 'טקס ערב 🌙' : 'Evening Ritual 🌙',
+          subtitle: t.common.tagline,
+        };
       }
       switch (currentTab) {
-        case 'daily': return isHebrew ? 'יום הודיה' : 'Daily Appreciation';
-        case 'history': return isHebrew ? 'יומן' : 'Journal';
-        case 'stats': return isHebrew ? 'מדדים' : 'Your Progress';
-        case 'settings': return isHebrew ? 'הגדרות' : 'Settings';
-        default: return 'Daily Appreciation';
+        case 'daily':
+          return {
+            title: t.common.appName,
+            subtitle: t.common.tagline,
+          };
+        case 'history':
+          return {
+            title: t.nav.journal,
+            subtitle: isHebrew ? 'הרגעים הטובים שנשמרו לאורך הדרך' : 'Saved moments along your journey',
+          };
+        case 'stats':
+          return {
+            title: t.nav.stats,
+            subtitle: isHebrew ? 'מעקב הרגלים וחוסן נפשי' : 'Habit streaks & wellbeing progress',
+          };
+        case 'settings':
+          return {
+            title: t.nav.settings,
+            subtitle: isHebrew ? 'התאמה אישית ותזכורות ערב' : 'Preferences & evening reminders',
+          };
+        default:
+          return {
+            title: t.common.appName,
+            subtitle: t.common.tagline,
+          };
       }
     };
+
+    const headerMeta = getHeaderMeta();
 
     return (
       <div
         dir={isHebrew ? 'rtl' : 'ltr'}
-        className={`font-display text-slate-800 antialiased min-h-[100dvh] w-full relative transition-colors duration-700 overflow-x-hidden ${
-          isSunset ? 'bg-[#FAF4ED]' : 'bg-white mesh-gradient'
+        className={`font-sans text-stone-900 antialiased min-h-[100dvh] w-full relative transition-colors duration-700 overflow-x-hidden ${
+          isSunset
+            ? 'bg-[#FAF4ED]'
+            : 'bg-gradient-to-b from-[#FFFDF9] via-[#FAF5EE] to-[#F5EFFE]'
         }`}
       >
         <div
-          className="relative flex min-h-[100dvh] w-full max-w-full sm:max-w-[440px] mx-auto flex-col sm:border-x sm:border-white/20 sm:shadow-2xl bg-white/5 backdrop-blur-3xl sm:backdrop-blur-sm sm:bg-white/10 overflow-x-hidden box-border"
+          className="relative flex min-h-[100dvh] w-full max-w-full sm:max-w-[440px] mx-auto flex-col sm:border-x sm:border-amber-100/80 sm:shadow-2xl bg-white/40 overflow-x-hidden box-border"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
             paddingBottom: 'env(safe-area-inset-bottom)',
@@ -127,11 +166,13 @@ const AppContent: React.FC = () => {
         >
           <AppHeader
             onLogout={handleLogout}
-            title={getPageTitle()}
+            onBack={handleBack}
+            title={headerMeta.title}
+            subtitle={headerMeta.subtitle}
           />
 
-          {/* Main Content with Suspense Code-Splitting */}
-          <main className="flex-1 w-full max-w-full relative overflow-y-auto overflow-x-hidden px-3.5 sm:px-5 pt-2 pb-36 flex flex-col min-w-0 box-border">
+          {/* Main Content with Suspense Code-Splitting & pb-28 clearance for BottomNav */}
+          <main className="flex-1 w-full max-w-full relative overflow-y-auto overflow-x-hidden px-4 sm:px-5 pt-1 pb-28 flex flex-col min-w-0 box-border">
             <Suspense fallback={<LoadingSpinner />}>
               {currentTab === 'daily' && <DailyPractice />}
               {currentTab === 'history' && <HistoryView />}
@@ -140,7 +181,7 @@ const AppContent: React.FC = () => {
             </Suspense>
           </main>
 
-          {/* Bottom Navigation */}
+          {/* Sticky/Fixed 4-Tab Bottom Navigation */}
           <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
           {/* Global Badge Unlock Animation Overlay */}

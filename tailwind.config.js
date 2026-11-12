@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'sans': ['Plus Jakarta Sans', 'Rubik', 'sans-serif'],
-        'display': ['Plus Jakarta Sans', 'sans-serif'],
+        'sans': ['Rubik', 'Plus Jakarta Sans', 'sans-serif'],
+        'display': ['Rubik', 'Plus Jakarta Sans', 'sans-serif'],
         'serif': ['Playfair Display', 'serif'],
       },
       colors: {
@@ -28,6 +28,9 @@ export default {
       boxShadow: {
         'soft': '0 4px 15px -3px rgba(0, 0, 0, 0.05), 0 2px 8px -2px rgba(0, 0, 0, 0.02)',
         'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.03)',
+        'soft-card': '0 10px 30px -5px rgba(234, 179, 8, 0.08), 0 4px 15px -3px rgba(0, 0, 0, 0.03)',
+        'floating-bar': '0 -4px 20px rgba(0, 0, 0, 0.05), 0 2px 10px rgba(0, 0, 0, 0.02)',
+        'glow-amber': '0 0 20px rgba(245, 158, 11, 0.35)',
       },
       borderRadius: {
         'DEFAULT': '1rem',

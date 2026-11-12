@@ -1,0 +1,41 @@
+/* Warm Cream & Amber Stitch Design System Overrides */
+body {
+  background-color: #FFFDF9;
+  background-image: linear-gradient(to bottom, #FFFDF9 0%, #FAF5EE 50%, #F5EFFE 100%);
+  background-size: 100% 100%;
+  background-attachment: fixed;
+  font-family: 'Rubik', 'Plus Jakarta Sans', sans-serif;
+  color: #1c1917;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes gentle-sparkle {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+
+.animate-gentle {
+  animation: gentle-sparkle 3s ease-in-out infinite;
+}
+
+/* Keep fixed bottom nav unobtrusive when Android virtual keyboard shrinks viewport */
+@media (max-height: 480px) {
+  .stitch-bottom-nav {
+    display: none;
+  }
+}
