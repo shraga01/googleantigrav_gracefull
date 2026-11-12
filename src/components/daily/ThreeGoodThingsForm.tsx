@@ -1,88 +1,233 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import type { ThreeGoodThingsItem, UserProfile, Locale, EmpiricalHistoricalContext } from '../../types';
-import { PastelCard, type PastelVariant } from '../common/PastelCard';
-import { AiService, type EvaluationResult } from '../../services/aiService';
+import { AiService } from '../../services/aiService';
 import { FirestoreService } from '../../services/firestoreService';
 import { PromptEngine, TARGET_DESCRIPTIONS, LENS_DESCRIPTIONS } from '../../services/promptEngine';
 import { getDictionary } from '../../locales';
-import { IconCheck, IconSparkles } from '../common/SvgIcon';
+import { IconCheck } from '../common/SvgIcon';
 
 interface ThreeGoodThingsFormProps {
     items: ThreeGoodThingsItem[];
+    activeStep: 0 | 1 | 2;
     userProfile: UserProfile;
     empiricalContext?: EmpiricalHistoricalContext | null;
     lastSavedAt?: number | null;
+    validationError?: string | null;
+    stepCardRef?: React.RefObject<HTMLElement | null>;
+    onStepChange: (step: 0 | 1 | 2) => void;
     onChange: (stepIndex: number, updated: ThreeGoodThingsItem) => void;
 }
 
-const STEP_VARIANTS: PastelVariant[] = ['peach', 'sage', 'lavender'];
+interface StrengthChipDef {
+    id: string;
+    emoji: string;
+    label: string;
+    token: string;
+}
+
+interface AiAssistantState {
+    mode: 'feedback' | 'inspiration';
+    message: string;
+    starterPrompt?: string;
+}
+
+function parseCausalReflection(
+    raw: string,
+    chipTokens: string[]
+): { selectedTokens: string[]; customText: string } {
+    if (!raw || !raw.trim()) {
+        return { selectedTokens: [], customText: '' };
+    }
+    const parts = raw
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
+    const selectedTokens: string[] = [];
+    const customParts: string[] = [];
+
+    for (const part of parts) {
+        if (chipTokens.includes(part)) {
+            if (!selectedTokens.includes(part)) selectedTokens.push(part);
+        } else {
+            customParts.push(part);
+        }
+    }
+
+    return {
+        selectedTokens,
+        customText: customParts.join(', '),
+    };
+}
+
+function serializeCausalReflection(selectedTokens: string[], customText: string): string {
+    const cleanCustom = customText.trim();
+    const parts = [...selectedTokens];
+    if (cleanCustom) {
+        parts.push(cleanCustom);
+    }
+    return parts.join(', ');
+}
+
+function getFeelingDescription(score: number, isHebrew: boolean): string {
+    if (isHebrew) {
+        switch (score) {
+            case 1:
+                return '1: עייפות / זקוק להקלה';
+            case 2:
+                return '2: מעט כבד אבל עובר';
+            case 3:
+                return '3: רגוע חלקית';
+            case 4:
+                return '4: יציב ומאוזן';
+            case 5:
+                return '5: נעים ומלא הערכה ☀️';
+            case 6:
+                return '6: מרומם ושמח';
+            case 7:
+                return '7: מרומם ומלא שמחה ✨';
+            default:
+                return '5: נעים ומלא הערכה ☀️';
+        }
+    }
+    switch (score) {
+        case 1:
+            return '1: Tired / needs relief';
+        case 2:
+            return '2: Heavy but passing';
+        case 3:
+            return '3: Somewhat calm';
+        case 4:
+            return '4: Steady & balanced';
+        case 5:
+            return '5: Pleasant & appreciative ☀️';
+        case 6:
+            return '6: Uplifted & warm';
+        case 7:
+            return '7: Uplifted & joyful ✨';
+        default:
+            return '5: Pleasant & appreciative ☀️';
+    }
+}
 
 export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
     items,
+    activeStep,
     userProfile,
     empiricalContext,
     lastSavedAt,
+    validationError,
+    stepCardRef,
+    onStepChange,
     onChange,
 }) => {
     // -------------------------------------------------------------------------
     // 1. All useState & useRef Declarations (Strictly physical top - TDZ Prevention)
     // -------------------------------------------------------------------------
-    const [evaluatingIndex, setEvaluatingIndex] = useState<number | null>(null);
-    const [evaluations, setEvaluations] = useState<Record<number, EvaluationResult | null>>({});
-
-    const textareaRefs = useRef<Array<HTMLTextAreaElement | null>>([null, null, null]);
+    const [aiLoading, setAiLoading] = useState<boolean>(false);
+    const [aiOutputs, setAiOutputs] = useState<Record<number, AiAssistantState | null>>({});
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     const locale: Locale = userProfile.locale || (userProfile.language === 'hebrew' ? 'he' : 'en');
     const isHebrew = locale === 'he';
     const t = getDictionary(locale);
 
-    const suggestionChips = isHebrew
-        ? [t.threeGoodThings.chip1, t.threeGoodThings.chip2, t.threeGoodThings.chip3]
-        : [t.threeGoodThings.chip1, t.threeGoodThings.chip2, t.threeGoodThings.chip3];
+    const strengthChips: StrengthChipDef[] = useMemo(
+        () => [
+            {
+                id: 'help',
+                emoji: '💪',
+                label: t.threeGoodThings.strengthChip1,
+                token: `💪 ${t.threeGoodThings.strengthChip1}`,
+            },
+            {
+                id: 'patience',
+                emoji: '✨',
+                label: t.threeGoodThings.strengthChip2,
+                token: `✨ ${t.threeGoodThings.strengthChip2}`,
+            },
+            {
+                id: 'creativity',
+                emoji: '🌱',
+                label: t.threeGoodThings.strengthChip3,
+                token: `🌱 ${t.threeGoodThings.strengthChip3}`,
+            },
+            {
+                id: 'mutual',
+                emoji: '🙏',
+                label: t.threeGoodThings.strengthChip4,
+                token: `🙏 ${t.threeGoodThings.strengthChip4}`,
+            },
+        ],
+        [
+            t.threeGoodThings.strengthChip1,
+            t.threeGoodThings.strengthChip2,
+            t.threeGoodThings.strengthChip3,
+            t.threeGoodThings.strengthChip4,
+        ]
+    );
+
+    const chipTokens = useMemo(() => strengthChips.map((c) => c.token), [strengthChips]);
+
+    const currentItem = useMemo(
+        () =>
+            items[activeStep] || {
+                act: '',
+                benefactor: '',
+                benefit: '',
+                causalReflection: '',
+                affectRating: 5,
+            },
+        [items, activeStep]
+    );
+
+    const { selectedTokens, customText } = parseCausalReflection(
+        currentItem.causalReflection || '',
+        chipTokens
+    );
 
     // -------------------------------------------------------------------------
     // 2. All useCallback Declarations
     // -------------------------------------------------------------------------
-    const handleJumpToBox = useCallback((idx: number) => {
-        const el = textareaRefs.current[idx];
-        if (el) {
-            el.focus();
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, []);
-
     const handleQuestion1Change = useCallback(
-        (idx: number, val: string) => {
-            const current = items[idx];
-            onChange(idx, {
-                ...current,
+        (val: string) => {
+            onChange(activeStep, {
+                ...currentItem,
                 act: val,
-                benefit: val, // preserve Firestore schema compatibility
+                benefit: val,
             });
-            setEvaluations((prev) => (prev[idx] ? { ...prev, [idx]: null } : prev));
+            setAiOutputs((prev) => (prev[activeStep] ? { ...prev, [activeStep]: null } : prev));
         },
-        [items, onChange]
+        [activeStep, currentItem, onChange]
     );
 
-    const handleQuestion2Change = useCallback(
-        (idx: number, val: string) => {
-            const current = items[idx];
-            onChange(idx, {
-                ...current,
-                causalReflection: val,
+    const handleToggleChip = useCallback(
+        (chipToken: string) => {
+            const parsed = parseCausalReflection(currentItem.causalReflection || '', chipTokens);
+            const exists = parsed.selectedTokens.includes(chipToken);
+            const nextTokens = exists
+                ? parsed.selectedTokens.filter((tk) => tk !== chipToken)
+                : [...parsed.selectedTokens, chipToken];
+
+            const nextCausal = serializeCausalReflection(nextTokens, parsed.customText);
+            onChange(activeStep, {
+                ...currentItem,
+                causalReflection: nextCausal,
             });
-            setEvaluations((prev) => (prev[idx] ? { ...prev, [idx]: null } : prev));
         },
-        [items, onChange]
+        [activeStep, chipTokens, currentItem, onChange]
     );
 
-    const handleChipClick = useCallback(
-        (idx: number, chipText: string) => {
-            const currentText = (items[idx]?.causalReflection || '').trim();
-            const nextVal = currentText ? `${currentText}, ${chipText}` : chipText;
-            handleQuestion2Change(idx, nextVal);
+    const handleCustomStrengthChange = useCallback(
+        (val: string) => {
+            const parsed = parseCausalReflection(currentItem.causalReflection || '', chipTokens);
+            const nextCausal = serializeCausalReflection(parsed.selectedTokens, val);
+            onChange(activeStep, {
+                ...currentItem,
+                causalReflection: nextCausal,
+            });
         },
-        [items, handleQuestion2Change]
+        [activeStep, chipTokens, currentItem, onChange]
     );
 
     const handleAffectChange = useCallback(
@@ -97,279 +242,378 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
         [items, onChange]
     );
 
-    const handleEvaluate = useCallback(
-        async (idx: number) => {
-            const targetItem = items[idx];
-            if (!targetItem || !targetItem.act.trim() || !targetItem.causalReflection.trim()) {
-                return;
-            }
-
-            setEvaluatingIndex(idx);
-            try {
-                let context = empiricalContext;
-                if (!context && userProfile.userId) {
-                    try {
-                        context = await FirestoreService.getEmpiricalHistoricalContext(userProfile.userId);
-                    } catch (err) {
-                        console.warn('Could not fetch empirical context from Firestore:', err);
-                    }
-                }
-
-                const result = await AiService.evaluateItem(targetItem, userProfile, context || undefined);
-                setEvaluations((prev) => ({ ...prev, [idx]: result }));
-            } catch (error) {
-                console.error('Failed to evaluate gratitude item:', error);
-            } finally {
-                setEvaluatingIndex(null);
-            }
-        },
-        [items, empiricalContext, userProfile]
-    );
-
-    const handleInputFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
-        const target = e.currentTarget;
-        // Slight delay gives Samsung soft keyboard time to resize viewport before centering
+    const handleTextareaFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
+        const el = e.currentTarget;
         setTimeout(() => {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 120);
     }, []);
 
-    const currentFeeling = items[0]?.affectRating || 5;
+    const handleAiAssist = useCallback(async () => {
+        const actText = currentItem.act.trim();
+
+        // Branch A: Question 1 is empty -> generate personalized inspiration prompt
+        if (actText.length < 3) {
+            const cfg = PromptEngine.getDailyConfig(activeStep, userProfile, empiricalContext || undefined);
+            const targetHint = TARGET_DESCRIPTIONS[cfg.target]?.[locale] || '';
+            const lensHint = LENS_DESCRIPTIONS[cfg.lens]?.[locale] || '';
+
+            const stepStartersHe = [
+                'שיחה קצרה או עזרה קטנה שקיבלתי היום, ואני מודה לעצמי שהייתי פתוח/ה להיעזר...',
+                'רגע קטן של שקט או נשימה באמצע היום שבחרתי לעצור ולהעריך...',
+                'משימה או פרט קטן שהצלחתי לקדם היום בזכות סבלנות והתמדה שלי...',
+            ];
+            const stepStartersEn = [
+                'A small act of support I received today, and I appreciate being open to accepting help...',
+                'A quiet pause in the middle of my day that I intentionally slowed down to notice...',
+                'A small task or detail I moved forward today through patience and steady effort...',
+            ];
+
+            const starterPrompt = (isHebrew ? stepStartersHe : stepStartersEn)[activeStep];
+            const message = isHebrew
+                ? `רעיון להתבוננות (${targetHint} | ${lensHint}): נסה/י להיזכר ברגע ספציפי מהשעות האחרונות שבו חווית הקלה או חום אנושי.`
+                : `Reflection angle (${targetHint} | ${lensHint}): Recall one specific moment from the last few hours that brought ease or warmth.`;
+
+            setAiOutputs((prev) => ({
+                ...prev,
+                [activeStep]: {
+                    mode: 'inspiration',
+                    message,
+                    starterPrompt,
+                },
+            }));
+            return;
+        }
+
+        // Branch B: User already typed in Q1 -> request warm empowering AI reflection
+        setAiLoading(true);
+        try {
+            let context = empiricalContext;
+            if (!context && userProfile.userId) {
+                try {
+                    context = await FirestoreService.getEmpiricalHistoricalContext(userProfile.userId);
+                } catch (err) {
+                    console.warn('Could not fetch empirical context:', err);
+                }
+            }
+
+            const promptText = isHebrew
+                ? `המשתמש תיאר רגע של הכרת תודה: "${actText}". החוזקה שזוייגה: "${currentItem.causalReflection || 'טרם סומנה'}". כתוב משוב מעצים, חם וממוקד ב-2 משפטים המכיר בפרט הספציפי ובסוכנות האישית שלו.`
+                : `The user wrote this gratitude moment: "${actText}". Strength tagged: "${currentItem.causalReflection || 'none yet'}". Write a warm, encouraging 2-sentence reflection acknowledging their concrete detail and personal agency.`;
+
+            const aiResponse = await AiService.orchestrateGratitudeAi(
+                'evaluate_3gt',
+                promptText,
+                'medium',
+                context || undefined,
+                locale
+            );
+
+            let feedbackMessage = aiResponse;
+            if (aiResponse) {
+                try {
+                    const parsed = JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '').trim());
+                    if (parsed?.feedback) feedbackMessage = parsed.feedback;
+                } catch {
+                    // Use plain text response directly
+                }
+            }
+
+            if (!feedbackMessage) {
+                feedbackMessage = isHebrew
+                    ? 'בחירה מדויקת ומלאת נוכחות. העצירה לשים לב לרגע הזה ולחלק שלך בו מחזקת תחושת מסוגלות ורוגע לפני השינה.'
+                    : 'Thoughtful and specific reflection. Noticing this moment and your active role in it reinforces calm and personal agency.';
+            }
+
+            setAiOutputs((prev) => ({
+                ...prev,
+                [activeStep]: {
+                    mode: 'feedback',
+                    message: feedbackMessage,
+                },
+            }));
+        } catch (error) {
+            console.error('AI assistance failed:', error);
+        } finally {
+            setAiLoading(false);
+        }
+    }, [activeStep, currentItem, empiricalContext, isHebrew, locale, userProfile]);
+
+    const handleUseStarter = useCallback(
+        (starter: string) => {
+            handleQuestion1Change(starter);
+            setAiOutputs((prev) => ({ ...prev, [activeStep]: null }));
+            setTimeout(() => textareaRef.current?.focus(), 60);
+        },
+        [activeStep, handleQuestion1Change]
+    );
+
+    const stepTitles = [
+        t.threeGoodThings.stepTitle1,
+        t.threeGoodThings.stepTitle2,
+        t.threeGoodThings.stepTitle3,
+    ];
+    const callouts = [
+        t.threeGoodThings.callout1,
+        t.threeGoodThings.callout2,
+        t.threeGoodThings.callout3,
+    ];
+    const currentFeeling = currentItem.affectRating || 5;
+    const currentAiOutput = aiOutputs[activeStep];
 
     return (
         <div className="w-full max-w-full min-w-0 box-border space-y-4">
-            {/* High-Contrast Overview Header & Quick Jump Status Pills */}
-            <div className="w-full min-w-0 box-border px-1 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="text-base sm:text-lg font-bold text-white drop-shadow-xs">
-                        {t.threeGoodThings.overviewTitle}
-                    </h2>
-                    {lastSavedAt && (
-                        <span className="text-xs font-semibold text-emerald-200 bg-emerald-950/50 border border-emerald-400/30 px-2.5 py-0.5 rounded-full">
-                            {t.threeGoodThings.draftSaved}
+            {/* Interactive 3-Step Progressive Wizard Card */}
+            <section
+                ref={stepCardRef as React.RefObject<HTMLElement>}
+                data-purpose="gratitude-reflection-card"
+                className="bg-white rounded-3xl p-5 shadow-soft-card border border-amber-100/80 relative overflow-hidden transition-all w-full box-border"
+            >
+                {/* Header of Card: Step Number Badge, Dynamic Step Title & Step Counter Pill */}
+                <div className="flex items-center justify-between gap-2 pb-3.5 border-b border-stone-100">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                            {activeStep + 1}
                         </span>
+                        <h2 className="font-bold text-base text-stone-900 truncate">
+                            {stepTitles[activeStep]}
+                        </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-medium text-stone-600 bg-stone-100/90 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            {t.threeGoodThings.stepBadge.replace('{step}', String(activeStep + 1))}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Clickable Step Progress Dots (1 • 2 • 3) & Back Navigation */}
+                <div className="flex items-center justify-between gap-2 pt-3">
+                    <div className="flex items-center gap-1.5" role="tablist" aria-label={isHebrew ? 'ניווט בין 3 רגעים' : 'Step navigation'}>
+                        {([0, 1, 2] as const).map((idx) => {
+                            const isCurrent = activeStep === idx;
+                            const isFilled = (items[idx]?.act || '').trim().length >= 3;
+                            return (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={isCurrent}
+                                    aria-label={isHebrew ? `עבור לרגע ${idx + 1}` : `Go to moment ${idx + 1}`}
+                                    onClick={() => onStepChange(idx)}
+                                    className={`h-7 px-2.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all ${
+                                        isCurrent
+                                            ? 'bg-amber-500 text-white shadow-xs'
+                                            : isFilled
+                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                    }`}
+                                >
+                                    {isFilled && !isCurrent && <IconCheck className="w-3 h-3" />}
+                                    <span>{idx + 1}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {lastSavedAt && (
+                            <span className="text-[11px] font-semibold text-emerald-700">
+                                {t.threeGoodThings.draftSaved}
+                            </span>
+                        )}
+                        {activeStep > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => onStepChange((activeStep - 1) as 0 | 1)}
+                                className="text-xs font-semibold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+                            >
+                                {isHebrew ? '→ חזרה לרגע הקודם' : `← ${t.threeGoodThings.backToPrevStep}`}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Reflection Opportunity Callout Box */}
+                <div className="mt-3.5 p-3 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-pink-50/60 border border-amber-100/80 flex items-start gap-2.5">
+                    <span className="text-amber-500 text-base leading-tight mt-0.5 shrink-0">✨</span>
+                    <p className="text-xs leading-relaxed text-stone-700 text-start">
+                        <strong className="font-semibold text-amber-900">
+                            {t.threeGoodThings.calloutPrefix}
+                        </strong>{' '}
+                        {callouts[activeStep]}
+                    </p>
+                </div>
+
+                {/* Question 1: Combined Event & Agency Textarea */}
+                <div className="mt-4">
+                    <label
+                        htmlFor={`moment-description-${activeStep}`}
+                        className="block text-sm font-semibold text-stone-800 mb-2 text-start"
+                    >
+                        {t.threeGoodThings.q1Label}
+                    </label>
+                    <div className="relative">
+                        <textarea
+                            id={`moment-description-${activeStep}`}
+                            ref={textareaRef}
+                            dir={isHebrew ? 'rtl' : 'ltr'}
+                            rows={4}
+                            value={currentItem.act}
+                            onChange={(e) => handleQuestion1Change(e.target.value)}
+                            onFocus={handleTextareaFocus}
+                            placeholder={t.threeGoodThings.q1Placeholder}
+                            className="w-full min-h-[120px] text-sm sm:text-base rounded-2xl border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-200/60 focus:outline-none p-3.5 pb-8 placeholder:text-stone-400 text-stone-800 bg-white resize-none leading-relaxed transition-all text-start box-border"
+                        />
+                        <div className="absolute bottom-2.5 end-3 text-[11px] text-stone-400 select-none pointer-events-none">
+                            {t.threeGoodThings.privacyBadge}
+                        </div>
+                    </div>
+
+                    {validationError && (
+                        <p role="alert" className="mt-1.5 text-xs font-semibold text-rose-600 text-start">
+                            {validationError}
+                        </p>
                     )}
                 </div>
 
-                <p className="text-sm text-purple-100/95 font-medium">
-                    {t.threeGoodThings.overviewHelper}
-                </p>
+                {/* Question 2: Interactive Strength Tagging Chips + Custom Input */}
+                <div className="mt-4 pt-3.5 border-t border-stone-100">
+                    <div className="flex items-center justify-between mb-2.5 gap-2">
+                        <label
+                            htmlFor={`moment-strength-input-${activeStep}`}
+                            className="text-sm font-semibold text-stone-800 text-start"
+                        >
+                            {t.threeGoodThings.q2Label}
+                        </label>
+                        <span className="text-amber-600 text-xs font-semibold shrink-0">
+                            {t.threeGoodThings.q2Choose}
+                        </span>
+                    </div>
 
-                {/* Quick Status / Jump Pills (tap focuses direct textarea inside matching card) */}
-                <div className="grid grid-cols-3 gap-2 w-full pt-0.5">
-                    {items.map((it, idx) => {
-                        const isDone = it.act.trim().length >= 4 && it.causalReflection.trim().length >= 4;
+                    <div className="flex flex-wrap gap-2 mb-3">
+                        {strengthChips.map((chip) => {
+                            const isActive = selectedTokens.includes(chip.token);
+                            return (
+                                <button
+                                    key={chip.id}
+                                    type="button"
+                                    aria-pressed={isActive}
+                                    onClick={() => handleToggleChip(chip.token)}
+                                    className={`px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5 transition-all active:scale-95 ${
+                                        isActive
+                                            ? 'bg-amber-500 text-white font-bold shadow-sm border border-amber-500'
+                                            : 'bg-stone-50 text-stone-700 border border-stone-200 hover:bg-amber-50/70 hover:border-amber-300 font-medium'
+                                    }`}
+                                >
+                                    <span>{chip.emoji}</span>
+                                    <span>{chip.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <input
+                        id={`moment-strength-input-${activeStep}`}
+                        type="text"
+                        dir={isHebrew ? 'rtl' : 'ltr'}
+                        value={customText}
+                        onChange={(e) => handleCustomStrengthChange(e.target.value)}
+                        placeholder={t.threeGoodThings.customStrengthPlaceholder}
+                        className="w-full text-xs sm:text-sm rounded-xl border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-200/50 focus:outline-none py-2.5 px-3 text-stone-700 placeholder:text-stone-400 bg-white text-start box-border"
+                    />
+                </div>
+
+                {/* AI Inspiration & Empowering Feedback */}
+                <div className="mt-4 pt-3 space-y-3">
+                    <button
+                        type="button"
+                        onClick={() => void handleAiAssist()}
+                        disabled={aiLoading}
+                        className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-violet-50 via-amber-50 to-rose-50 border border-amber-200/70 hover:border-amber-300 flex items-center justify-center gap-2 text-xs font-semibold text-stone-700 shadow-xs active:scale-[0.99] transition-all disabled:opacity-60"
+                    >
+                        <span className="animate-gentle text-amber-500">✨</span>
+                        <span>
+                            {aiLoading ? t.common.checking : t.threeGoodThings.aiButton}
+                        </span>
+                        <span className="text-[10px] bg-white px-2 py-0.5 rounded-full text-violet-700 font-bold shadow-2xs border border-violet-100">
+                            {t.threeGoodThings.aiNewBadge}
+                        </span>
+                    </button>
+
+                    {currentAiOutput && (
+                        <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs sm:text-sm text-stone-800 space-y-2 animate-fadeIn text-start">
+                            <div className="font-bold text-amber-950">
+                                {currentAiOutput.mode === 'feedback'
+                                    ? `✨ ${t.threeGoodThings.encouragingInsight}`
+                                    : isHebrew
+                                    ? '✨ רעיון להשראה:'
+                                    : '✨ Inspiration Prompt:'}
+                            </div>
+                            <p className="leading-relaxed text-stone-700">{currentAiOutput.message}</p>
+                            {currentAiOutput.starterPrompt && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleUseStarter(currentAiOutput.starterPrompt!)}
+                                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs"
+                                >
+                                    {isHebrew ? 'השתמש כהתחלה ✓' : 'Use as starter ✓'}
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* Mood / Wellbeing Rating Card (1 to 7) */}
+            <section
+                data-purpose="mood-scale"
+                className="bg-white rounded-3xl p-4 shadow-soft-card border border-amber-100/80 w-full box-border"
+            >
+                <div className="text-center mb-3">
+                    <h3 className="text-sm font-bold text-stone-900">
+                        {t.threeGoodThings.feelingTitle}
+                    </h3>
+                    <p className="text-[11px] text-stone-500 mt-0.5">
+                        {t.threeGoodThings.feelingSubtitle}
+                    </p>
+                </div>
+
+                {/* 1 to 7 Scale Selector (1 on Right in RTL, 7 on Left in RTL) */}
+                <div
+                    dir={isHebrew ? 'rtl' : 'ltr'}
+                    className="flex justify-between items-center px-1 max-w-sm mx-auto gap-1"
+                >
+                    {[1, 2, 3, 4, 5, 6, 7].map((num) => {
+                        const isSelected = currentFeeling === num;
                         return (
                             <button
-                                key={idx}
+                                key={num}
                                 type="button"
-                                onClick={() => handleJumpToBox(idx)}
-                                className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 shadow-xs ${
-                                    isDone
-                                        ? 'bg-emerald-500/90 text-white border-emerald-300'
-                                        : 'bg-white/20 hover:bg-white/30 text-white border-white/30'
+                                onClick={() => handleAffectChange(num)}
+                                aria-pressed={isSelected}
+                                aria-label={isHebrew ? `דרגה ${num}` : `Rating ${num}`}
+                                className={`rounded-full flex items-center justify-center transition-all ${
+                                    isSelected
+                                        ? 'w-10 h-10 text-sm font-bold text-white bg-amber-400 bg-gradient-to-tr from-amber-500 to-amber-400 shadow-md shadow-glow-amber scale-110 ring-4 ring-amber-100'
+                                        : 'w-9 h-9 text-xs font-medium text-stone-600 bg-stone-50 hover:bg-stone-100 border border-stone-200'
                                 }`}
                             >
-                                {isDone && <IconCheck className="w-3.5 h-3.5 text-white" />}
-                                <span>{isHebrew ? `רגע ${idx + 1}` : `Moment ${idx + 1}`}</span>
+                                {num}
                             </button>
                         );
                     })}
                 </div>
-            </div>
 
-            {/* All 3 Gratitude Cards Rendered Directly with Accessible <textarea> Inputs */}
-            <div className="space-y-4 w-full min-w-0 box-border">
-                {items.map((item, idx) => {
-                    const variant = STEP_VARIANTS[idx % STEP_VARIANTS.length];
-                    const isItemFilled =
-                        item.act.trim().length >= 4 && item.causalReflection.trim().length >= 4;
-                    const evaluation = evaluations[idx];
-                    const isEvaluating = evaluatingIndex === idx;
-
-                    const promptConfig = PromptEngine.getDailyConfig(
-                        idx,
-                        userProfile,
-                        empiricalContext || undefined
-                    );
-                    const targetHint = TARGET_DESCRIPTIONS[promptConfig.target]?.[locale];
-                    const lensHint = LENS_DESCRIPTIONS[promptConfig.lens]?.[locale];
-
-                    return (
-                        <PastelCard
-                            key={idx}
-                            variant={variant}
-                            title={isHebrew ? `דבר טוב ${idx + 1}` : `Good Thing ${idx + 1}`}
-                            subtitle={idx === 0 ? t.threeGoodThings.subtitle : undefined}
-                            badge={
-                                isItemFilled ? (
-                                    <span className="inline-flex items-center gap-1 text-emerald-800 font-bold">
-                                        <IconCheck className="w-3.5 h-3.5 text-emerald-700" />
-                                        <span>{isHebrew ? 'מוכן' : 'Ready'}</span>
-                                    </span>
-                                ) : (
-                                    <span dir="ltr" className="inline-block font-bold">
-                                        {idx + 1} / 3
-                                    </span>
-                                )
-                            }
-                            elevated
-                            className="w-full max-w-full min-w-0 box-border"
-                        >
-                            <div className="space-y-4 pt-1 w-full min-w-0 box-border">
-                                {/* Focus Lens Suggestion (concise) */}
-                                {targetHint && lensHint && (
-                                    <div className="w-full min-w-0 box-border p-3 bg-white/80 rounded-xl border border-black/5 text-xs sm:text-sm text-neutral-700 space-y-0.5 break-words">
-                                        <div className="font-bold text-neutral-900">
-                                            💡 {isHebrew ? 'זווית מומלצת:' : 'Focus lens:'}{' '}
-                                            <span className="font-normal text-neutral-700">
-                                                {targetHint} | {lensHint}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Question 1: Direct Accessible <textarea> */}
-                                <div className="w-full min-w-0 box-border">
-                                    <label
-                                        htmlFor={`gratitude-q1-${idx}`}
-                                        className="block text-sm sm:text-base font-bold text-neutral-900 mb-1.5 text-start break-words"
-                                    >
-                                        {t.threeGoodThings.moment1Label}
-                                    </label>
-                                    <textarea
-                                        id={`gratitude-q1-${idx}`}
-                                        ref={(el) => {
-                                            textareaRefs.current[idx] = el;
-                                        }}
-                                        dir={isHebrew ? 'rtl' : 'ltr'}
-                                        value={item.act}
-                                        onChange={(e) => handleQuestion1Change(idx, e.target.value)}
-                                        onFocus={handleInputFocus}
-                                        placeholder={t.threeGoodThings.moment1Placeholder}
-                                        rows={2}
-                                        className="w-full min-w-0 box-border text-base sm:text-lg rounded-xl p-3 bg-white border border-black/15 focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-all text-neutral-900 placeholder:text-neutral-400 resize-y shadow-xs text-start leading-relaxed"
-                                    />
-                                </div>
-
-                                {/* Question 2: My Part (Humanized Agency + Quick Suggestion Chips) */}
-                                <div className="w-full min-w-0 box-border rounded-2xl p-3.5 bg-amber-50/95 border border-amber-200 space-y-2.5">
-                                    <div>
-                                        <label
-                                            htmlFor={`gratitude-q2-${idx}`}
-                                            className="block text-sm sm:text-base font-bold text-amber-950 mb-1 text-start break-words"
-                                        >
-                                            {t.threeGoodThings.moment2Label}
-                                        </label>
-                                        <p className="text-xs sm:text-sm text-amber-900/90 leading-relaxed text-start break-words">
-                                            {t.threeGoodThings.moment2Helper}
-                                        </p>
-                                    </div>
-
-                                    {/* 3 Quick-Tap Suggestion Chips */}
-                                    <div className="flex flex-wrap items-center gap-1.5 w-full">
-                                        {suggestionChips.map((chip, chipIdx) => (
-                                            <button
-                                                key={chipIdx}
-                                                type="button"
-                                                onClick={() => handleChipClick(idx, chip)}
-                                                className="text-xs px-2.5 py-1.5 bg-white hover:bg-amber-100 text-amber-950 rounded-lg border border-amber-300 font-medium transition-all shadow-2xs active:scale-95 text-start break-words"
-                                            >
-                                                + {chip}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <textarea
-                                        id={`gratitude-q2-${idx}`}
-                                        dir={isHebrew ? 'rtl' : 'ltr'}
-                                        value={item.causalReflection}
-                                        onChange={(e) => handleQuestion2Change(idx, e.target.value)}
-                                        onFocus={handleInputFocus}
-                                        placeholder={t.threeGoodThings.moment2Placeholder}
-                                        rows={2}
-                                        className="w-full min-w-0 box-border text-base sm:text-lg rounded-xl p-3 bg-white border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all text-neutral-900 placeholder:text-neutral-400 resize-y shadow-xs text-start leading-relaxed"
-                                    />
-                                </div>
-
-                                {/* Warm Encouraging AI Reflection (Zero Numeric Grades) */}
-                                {evaluation && (
-                                    <div className="w-full min-w-0 box-border rounded-2xl p-3.5 bg-emerald-50 border border-emerald-300 text-sm shadow-xs space-y-1 break-words animate-fadeIn">
-                                        <div className="flex items-center gap-2 font-bold text-emerald-950">
-                                            <IconSparkles className="w-4 h-4 text-emerald-700" />
-                                            <span>{t.threeGoodThings.encouragingInsight}</span>
-                                        </div>
-                                        <p className="text-emerald-900 leading-relaxed break-words font-medium">
-                                            {evaluation.feedback}
-                                        </p>
-                                        {evaluation.recommendedEnhancement && (
-                                            <p className="text-emerald-800 text-xs italic break-words mt-1">
-                                                💡 {evaluation.recommendedEnhancement}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Optional Encouraging AI Reflection Trigger */}
-                                {isItemFilled && (
-                                    <button
-                                        type="button"
-                                        onClick={() => void handleEvaluate(idx)}
-                                        disabled={isEvaluating}
-                                        className="w-full min-w-0 box-border py-2 px-3 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-black text-white shadow-xs disabled:opacity-60"
-                                    >
-                                        <IconSparkles className="w-3.5 h-3.5" />
-                                        <span>
-                                            {isEvaluating
-                                                ? t.common.checking
-                                                : evaluation
-                                                ? (isHebrew ? 'רענן תובנה מעודדת' : 'Refresh Reflection')
-                                                : (isHebrew ? 'קבל תובנה מעודדת ✨' : 'Get Encouraging Reflection ✨')}
-                                        </span>
-                                    </button>
-                                )}
-                            </div>
-                        </PastelCard>
-                    );
-                })}
-            </div>
-
-            {/* Clarified End-of-Practice 1-7 Feeling Scale */}
-            <div className="w-full min-w-0 box-border p-4 bg-white/95 rounded-2xl border border-black/10 shadow-sm space-y-3">
-                <div className="w-full min-w-0 text-start">
-                    <h4 className="text-sm sm:text-base font-bold text-neutral-900 break-words">
-                        {t.threeGoodThings.feelingTitle}
-                    </h4>
-                    <p className="text-xs text-neutral-600 mt-0.5">
-                        {isHebrew
-                            ? 'מדידת תחושת ההקלה והרוגע בסיום הכתיבה'
-                            : 'Tracking emotional relief and calm after writing'}
-                    </p>
-                </div>
-
-                {/* 1-7 Likert Buttons in explicit LTR container */}
-                <div dir="ltr" className="w-full flex items-center justify-between gap-1.5 py-1">
-                    {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-                        <button
-                            key={num}
-                            type="button"
-                            onClick={() => handleAffectChange(num)}
-                            className={`flex-1 min-w-[34px] max-w-[48px] h-11 rounded-xl text-sm font-bold transition-all flex items-center justify-center ${
-                                currentFeeling === num
-                                    ? 'bg-amber-600 text-white shadow-md scale-105'
-                                    : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800'
-                            }`}
-                        >
-                            {num}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-neutral-700 font-medium px-1">
+                {/* 3 Scale Anchor Labels with Dynamic Center Indicator */}
+                <div className="flex justify-between items-center text-[10px] sm:text-[11px] text-stone-500 mt-3 px-1 gap-2">
                     <span className="text-start">{t.threeGoodThings.feelingLow}</span>
+                    <span className="text-center font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                        {getFeelingDescription(currentFeeling, isHebrew)}
+                    </span>
                     <span className="text-end">{t.threeGoodThings.feelingHigh}</span>
                 </div>
-            </div>
+            </section>
         </div>
     );
 };

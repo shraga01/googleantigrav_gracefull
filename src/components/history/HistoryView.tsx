@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { StorageService } from '../../services/storage';
-// import { decryptEntry } from '../../services/encryption'; // logic moved to Modal
 import type { DailyEntry } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { ApiService } from '../../services/api';
@@ -8,7 +7,6 @@ import { DiaryCalendar } from './DiaryCalendar';
 import { EntryDetailModal } from './EntryDetailModal';
 
 export const HistoryView: React.FC = () => {
-    console.log('HistoryView Loaded: v-detail-modal-refactor');
     const { userProfile, googleId, isAuthenticated } = useApp();
     const [entries, setEntries] = useState<DailyEntry[]>([]);
     const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
@@ -17,19 +15,13 @@ export const HistoryView: React.FC = () => {
 
     useEffect(() => {
         const loadEntries = async () => {
-            // 1. Load from local storage first (instant)
             setEntries(StorageService.getEntries());
 
-            // 2. If authenticated, sync from server (background)
             if (isAuthenticated) {
                 try {
                     const serverEntries = await ApiService.getEntries();
                     if (serverEntries.length > 0) {
-                        console.log('🔄 Syncing entries from server:', serverEntries.length);
-                        // Save each entry to local storage (updates existing ones)
                         serverEntries.forEach((entry: DailyEntry) => StorageService.saveEntry(entry));
-
-                        // Reload from storage to update UI
                         setEntries(StorageService.getEntries());
                     }
                 } catch (error) {
@@ -38,22 +30,14 @@ export const HistoryView: React.FC = () => {
             }
         };
 
-        loadEntries();
+        void loadEntries();
     }, [isAuthenticated]);
 
     if (entries.length === 0) {
         return (
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '60vh',
-                textAlign: 'center',
-                padding: '24px'
-            }}>
-                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📖</div>
-                <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+                <div className="text-6xl mb-4">📖</div>
+                <p className="text-lg font-medium text-stone-600">
                     {isHebrew ? 'עדיין אין היסטוריה. התחל לתרגל!' : 'No history yet. Start practicing!'}
                 </p>
             </div>
@@ -62,8 +46,6 @@ export const HistoryView: React.FC = () => {
 
     return (
         <div className="animate-fadeIn max-w-2xl mx-auto pb-20">
-
-
             {/* Calendar Grid */}
             <DiaryCalendar
                 entries={entries}
@@ -71,7 +53,7 @@ export const HistoryView: React.FC = () => {
                 isHebrew={isHebrew}
             />
 
-            {/* Selected Entry Detail Modal / View - Compact Version */}
+            {/* Selected Entry Detail Modal */}
             {selectedEntry && (
                 <EntryDetailModal
                     entry={selectedEntry}
@@ -83,7 +65,7 @@ export const HistoryView: React.FC = () => {
 
             {/* Hint if nothing selected */}
             {!selectedEntry && (
-                <p className="text-center text-white/90 text-sm mt-4 font-medium animate-pulse">
+                <p className="text-center text-stone-600 text-sm mt-4 font-medium">
                     {isHebrew ? 'לחץ על יום כדי לצפות בזיכרון' : 'Tap a completed day to reflect'}
                 </p>
             )}
