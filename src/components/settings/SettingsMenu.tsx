@@ -105,7 +105,7 @@ export const SettingsMenu: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => setShowReminderModal(true)}
-                        className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2"
+                        className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2"
                     >
                         <span>🌙</span>
                         <span>
@@ -174,10 +174,10 @@ export const SettingsMenu: React.FC = () => {
                 </div>
             </PastelCard>
 
-            {/* About Section - High Contrast on Purple BG */}
-            <div className="text-center text-xs text-white/85 space-y-1 pt-2 pb-6">
-                <p className="font-semibold">Daily Appreciation Platform v1.2</p>
-                <p className="text-purple-100/80">Bilingual Gratitude & Well-Being</p>
+            {/* About Section - High Contrast on Warm Cream BG */}
+            <div className="text-center text-xs text-stone-600 space-y-1 pt-2 pb-6">
+                <p className="font-semibold">Daily Appreciation Platform v1.3</p>
+                <p className="text-amber-800/80">Bilingual Gratitude & Well-Being</p>
             </div>
 
             {/* Reminder Settings Modal */}
