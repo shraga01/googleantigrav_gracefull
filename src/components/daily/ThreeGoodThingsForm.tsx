@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import type { ThreeGoodThingsItem, UserProfile, Locale, EmpiricalHistoricalContext } from '../../types';
-import { AiService } from '../../services/aiService';
-import { FirestoreService } from '../../services/firestoreService';
+import { NeuralRubricEngine, type NeuralDimensionKey } from '../../services/neuralRubricEngine';
 import { PromptEngine, TARGET_DESCRIPTIONS, LENS_DESCRIPTIONS } from '../../services/promptEngine';
 import { getDictionary } from '../../locales';
 import { IconCheck } from '../common/SvgIcon';
@@ -9,6 +8,7 @@ import { IconCheck } from '../common/SvgIcon';
 interface ThreeGoodThingsFormProps {
     items: ThreeGoodThingsItem[];
     activeStep: 0 | 1 | 2;
+    showMoodScale: boolean;
     userProfile: UserProfile;
     empiricalContext?: EmpiricalHistoricalContext | null;
     lastSavedAt?: number | null;
@@ -25,10 +25,9 @@ interface StrengthChipDef {
     token: string;
 }
 
-interface AiAssistantState {
-    mode: 'feedback' | 'inspiration';
+interface InspirationPromptState {
     message: string;
-    starterPrompt?: string;
+    starterPrompt: string;
 }
 
 function parseCausalReflection(
@@ -113,6 +112,7 @@ function getFeelingDescription(score: number, isHebrew: boolean): string {
 export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
     items,
     activeStep,
+    showMoodScale,
     userProfile,
     empiricalContext,
     lastSavedAt,
@@ -124,8 +124,8 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
     // -------------------------------------------------------------------------
     // 1. All useState & useRef Declarations (Strictly physical top - TDZ Prevention)
     // -------------------------------------------------------------------------
-    const [aiLoading, setAiLoading] = useState<boolean>(false);
-    const [aiOutputs, setAiOutputs] = useState<Record<number, AiAssistantState | null>>({});
+    const [rubricOpenByStep, setRubricOpenByStep] = useState<Record<number, boolean>>({});
+    const [inspirationByStep, setInspirationByStep] = useState<Record<number, InspirationPromptState | null>>({});
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     const locale: Locale = userProfile.locale || (userProfile.language === 'hebrew' ? 'he' : 'en');
@@ -186,6 +186,17 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
         chipTokens
     );
 
+    // Deterministic offline 5-dimension Neural Depth Evaluation
+    const liveEvaluation = useMemo(
+        () =>
+            NeuralRubricEngine.evaluate(
+                currentItem.act,
+                currentItem.causalReflection,
+                locale
+            ),
+        [currentItem.act, currentItem.causalReflection, locale]
+    );
+
     // -------------------------------------------------------------------------
     // 2. All useCallback Declarations
     // -------------------------------------------------------------------------
@@ -196,7 +207,9 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                 act: val,
                 benefit: val,
             });
-            setAiOutputs((prev) => (prev[activeStep] ? { ...prev, [activeStep]: null } : prev));
+            if (val.trim().length >= 6) {
+                setInspirationByStep((prev) => (prev[activeStep] ? { ...prev, [activeStep]: null } : prev));
+            }
         },
         [activeStep, currentItem, onChange]
     );
@@ -249,103 +262,83 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
         }, 120);
     }, []);
 
-    const handleAiAssist = useCallback(async () => {
+    const handleAiAssist = useCallback(() => {
         const actText = currentItem.act.trim();
 
-        // Branch A: Question 1 is empty -> generate personalized inspiration prompt
-        if (actText.length < 3) {
+        // Branch A: Question 1 too short / empty -> show starter inspiration
+        if (actText.length < 6) {
             const cfg = PromptEngine.getDailyConfig(activeStep, userProfile, empiricalContext || undefined);
             const targetHint = TARGET_DESCRIPTIONS[cfg.target]?.[locale] || '';
             const lensHint = LENS_DESCRIPTIONS[cfg.lens]?.[locale] || '';
 
             const stepStartersHe = [
-                'שיחה קצרה או עזרה קטנה שקיבלתי היום, ואני מודה לעצמי שהייתי פתוח/ה להיעזר...',
-                'רגע קטן של שקט או נשימה באמצע היום שבחרתי לעצור ולהעריך...',
-                'משימה או פרט קטן שהצלחתי לקדם היום בזכות סבלנות והתמדה שלי...',
+                'היום בהפסקה שקטה בחוץ הרגשתי פתאום נשימה עמוקה ושקט נעים...',
+                'למרות שהיום היה עמוס בעבודה, בחרתי לעצור רגע והצלחתי לסיים משימה חשובה...',
+                'עמית בעבודה עזר לי היום במשהו קטן והרגשתי הקלה וחום אנושי בלב...',
             ];
             const stepStartersEn = [
-                'A small act of support I received today, and I appreciate being open to accepting help...',
-                'A quiet pause in the middle of my day that I intentionally slowed down to notice...',
-                'A small task or detail I moved forward today through patience and steady effort...',
+                'Today during a quiet break outside I felt a deep breath of calm and warmth...',
+                'Even though today was busy at work, I chose to pause and completed an important task...',
+                'A colleague helped me today with a small task and I felt relief and warmth...',
             ];
 
-            const starterPrompt = (isHebrew ? stepStartersHe : stepStartersEn)[activeStep];
-            const message = isHebrew
-                ? `רעיון להתבוננות (${targetHint} | ${lensHint}): נסה/י להיזכר ברגע ספציפי מהשעות האחרונות שבו חווית הקלה או חום אנושי.`
-                : `Reflection angle (${targetHint} | ${lensHint}): Recall one specific moment from the last few hours that brought ease or warmth.`;
-
-            setAiOutputs((prev) => ({
+            setInspirationByStep((prev) => ({
                 ...prev,
                 [activeStep]: {
-                    mode: 'inspiration',
-                    message,
-                    starterPrompt,
+                    message: isHebrew
+                        ? `זווית מוצעת (${targetHint} | ${lensHint}): הנה התחלה שתוכלו להתאים לחוויה שלכם מהיום:`
+                        : `Suggested angle (${targetHint} | ${lensHint}): Here is a quick starter you can adapt:`,
+                    starterPrompt: (isHebrew ? stepStartersHe : stepStartersEn)[activeStep],
                 },
             }));
+            setRubricOpenByStep((prev) => ({ ...prev, [activeStep]: false }));
             return;
         }
 
-        // Branch B: User already typed in Q1 -> request warm empowering AI reflection
-        setAiLoading(true);
-        try {
-            let context = empiricalContext;
-            if (!context && userProfile.userId) {
-                try {
-                    context = await FirestoreService.getEmpiricalHistoricalContext(userProfile.userId);
-                } catch (err) {
-                    console.warn('Could not fetch empirical context:', err);
-                }
-            }
-
-            const promptText = isHebrew
-                ? `המשתמש תיאר רגע של הכרת תודה: "${actText}". החוזקה שזוייגה: "${currentItem.causalReflection || 'טרם סומנה'}". כתוב משוב מעצים, חם וממוקד ב-2 משפטים המכיר בפרט הספציפי ובסוכנות האישית שלו.`
-                : `The user wrote this gratitude moment: "${actText}". Strength tagged: "${currentItem.causalReflection || 'none yet'}". Write a warm, encouraging 2-sentence reflection acknowledging their concrete detail and personal agency.`;
-
-            const aiResponse = await AiService.orchestrateGratitudeAi(
-                'evaluate_3gt',
-                promptText,
-                'medium',
-                context || undefined,
-                locale
-            );
-
-            let feedbackMessage = aiResponse;
-            if (aiResponse) {
-                try {
-                    const parsed = JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '').trim());
-                    if (parsed?.feedback) feedbackMessage = parsed.feedback;
-                } catch {
-                    // Use plain text response directly
-                }
-            }
-
-            if (!feedbackMessage) {
-                feedbackMessage = isHebrew
-                    ? 'בחירה מדויקת ומלאת נוכחות. העצירה לשים לב לרגע הזה ולחלק שלך בו מחזקת תחושת מסוגלות ורוגע לפני השינה.'
-                    : 'Thoughtful and specific reflection. Noticing this moment and your active role in it reinforces calm and personal agency.';
-            }
-
-            setAiOutputs((prev) => ({
-                ...prev,
-                [activeStep]: {
-                    mode: 'feedback',
-                    message: feedbackMessage,
-                },
-            }));
-        } catch (error) {
-            console.error('AI assistance failed:', error);
-        } finally {
-            setAiLoading(false);
-        }
-    }, [activeStep, currentItem, empiricalContext, isHebrew, locale, userProfile]);
+        // Branch B: Genuine entry -> immediately reveal live offline 5-dimension Neural Depth Rubric Card
+        setInspirationByStep((prev) => ({ ...prev, [activeStep]: null }));
+        setRubricOpenByStep((prev) => ({ ...prev, [activeStep]: true }));
+    }, [activeStep, currentItem.act, empiricalContext, isHebrew, locale, userProfile]);
 
     const handleUseStarter = useCallback(
         (starter: string) => {
-            handleQuestion1Change(starter);
-            setAiOutputs((prev) => ({ ...prev, [activeStep]: null }));
+            onChange(activeStep, {
+                ...currentItem,
+                act: starter,
+                benefit: starter,
+            });
+            setInspirationByStep((prev) => ({ ...prev, [activeStep]: null }));
+            setRubricOpenByStep((prev) => ({ ...prev, [activeStep]: true }));
             setTimeout(() => textareaRef.current?.focus(), 60);
         },
-        [activeStep, handleQuestion1Change]
+        [activeStep, currentItem, onChange]
+    );
+
+    const handleApplyUpgradeChip = useCallback(
+        (chipText: string, missingKey: NeuralDimensionKey | null) => {
+            if (missingKey === 'causalAgency') {
+                const parsed = parseCausalReflection(currentItem.causalReflection || '', chipTokens);
+                const mergedCustom = parsed.customText
+                    ? `${parsed.customText}, ${chipText}`
+                    : chipText;
+                const nextCausal = serializeCausalReflection(parsed.selectedTokens, mergedCustom);
+                onChange(activeStep, {
+                    ...currentItem,
+                    causalReflection: nextCausal,
+                });
+                return;
+            }
+
+            const existingAct = currentItem.act.trim();
+            const cleanedBase = existingAct.replace(/[.!\s]+$/u, '');
+            const nextAct = cleanedBase ? `${cleanedBase}. ${chipText}` : chipText;
+            onChange(activeStep, {
+                ...currentItem,
+                act: nextAct,
+                benefit: nextAct,
+            });
+        },
+        [activeStep, chipTokens, currentItem, onChange]
     );
 
     const stepTitles = [
@@ -359,7 +352,39 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
         t.threeGoodThings.callout3,
     ];
     const currentFeeling = currentItem.affectRating || 5;
-    const currentAiOutput = aiOutputs[activeStep];
+    const isRubricVisible = Boolean(rubricOpenByStep[activeStep] && currentItem.act.trim().length >= 6);
+    const currentInspiration = inspirationByStep[activeStep];
+
+    const pillarItems: Array<{ key: NeuralDimensionKey; label: string; active: boolean }> = [
+        {
+            key: 'specificity',
+            label: t.threeGoodThings.pillarSpecificity,
+            active: liveEvaluation.dimensions.specificity,
+        },
+        {
+            key: 'causalAgency',
+            label: t.threeGoodThings.pillarAgency,
+            active: liveEvaluation.dimensions.causalAgency,
+        },
+        {
+            key: 'interpersonalWarmth',
+            label: t.threeGoodThings.pillarWarmth,
+            active: liveEvaluation.dimensions.interpersonalWarmth,
+        },
+        {
+            key: 'sensoryEmotionalDetail',
+            label: t.threeGoodThings.pillarSensory,
+            active: liveEvaluation.dimensions.sensoryEmotionalDetail,
+        },
+        {
+            key: 'authenticity',
+            label: t.threeGoodThings.pillarAuthenticity,
+            active: liveEvaluation.dimensions.authenticity,
+        },
+    ];
+
+    const canSendWhatsapp =
+        liveEvaluation.dimensions.interpersonalWarmth || currentItem.act.trim().length >= 10;
 
     return (
         <div className="w-full max-w-full min-w-0 box-border space-y-4">
@@ -380,11 +405,9 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                         </h2>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-medium text-stone-600 bg-stone-100/90 px-2.5 py-1 rounded-full whitespace-nowrap">
-                            {t.threeGoodThings.stepBadge.replace('{step}', String(activeStep + 1))}
-                        </span>
-                    </div>
+                    <span className="text-xs font-medium text-stone-600 bg-stone-100/90 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
+                        {t.threeGoodThings.stepBadge.replace('{step}', String(activeStep + 1))}
+                    </span>
                 </div>
 
                 {/* Clickable Step Progress Dots (1 • 2 • 3) & Back Navigation */}
@@ -434,7 +457,7 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                     </div>
                 </div>
 
-                {/* Reflection Opportunity Callout Box */}
+                {/* Anti-Habituation Reflection Callout Box */}
                 <div className="mt-3.5 p-3 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-pink-50/60 border border-amber-100/80 flex items-start gap-2.5">
                     <span className="text-amber-500 text-base leading-tight mt-0.5 shrink-0">✨</span>
                     <p className="text-xs leading-relaxed text-stone-700 text-start">
@@ -524,96 +547,174 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                     />
                 </div>
 
-                {/* AI Inspiration & Empowering Feedback */}
+                {/* Offline Deterministic 5-Dimension Neural Depth Trigger & Panel */}
                 <div className="mt-4 pt-3 space-y-3">
                     <button
                         type="button"
-                        onClick={() => void handleAiAssist()}
-                        disabled={aiLoading}
-                        className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-violet-50 via-amber-50 to-rose-50 border border-amber-200/70 hover:border-amber-300 flex items-center justify-center gap-2 text-xs font-semibold text-stone-700 shadow-xs active:scale-[0.99] transition-all disabled:opacity-60"
+                        onClick={handleAiAssist}
+                        className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-violet-50 via-amber-50 to-rose-50 border border-amber-200/70 hover:border-amber-300 flex items-center justify-center gap-2 text-xs font-semibold text-stone-700 shadow-xs active:scale-[0.99] transition-all"
                     >
                         <span className="animate-gentle text-amber-500">✨</span>
-                        <span>
-                            {aiLoading ? t.common.checking : t.threeGoodThings.aiButton}
-                        </span>
+                        <span>{t.threeGoodThings.aiButton}</span>
                         <span className="text-[10px] bg-white px-2 py-0.5 rounded-full text-violet-700 font-bold shadow-2xs border border-violet-100">
                             {t.threeGoodThings.aiNewBadge}
                         </span>
                     </button>
 
-                    {currentAiOutput && (
-                        <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs sm:text-sm text-stone-800 space-y-2 animate-fadeIn text-start">
+                    {/* Branch A: Inspiration starter when Q1 is empty */}
+                    {currentInspiration && (
+                        <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-xs sm:text-sm text-stone-800 space-y-2 animate-fadeIn text-start">
                             <div className="font-bold text-amber-950">
-                                {currentAiOutput.mode === 'feedback'
-                                    ? `✨ ${t.threeGoodThings.encouragingInsight}`
-                                    : isHebrew
-                                    ? '✨ רעיון להשראה:'
-                                    : '✨ Inspiration Prompt:'}
+                                {isHebrew ? '✨ רעיון להשראה:' : '✨ Inspiration Prompt:'}
                             </div>
-                            <p className="leading-relaxed text-stone-700">{currentAiOutput.message}</p>
-                            {currentAiOutput.starterPrompt && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleUseStarter(currentAiOutput.starterPrompt!)}
-                                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs"
-                                >
-                                    {isHebrew ? 'השתמש כהתחלה ✓' : 'Use as starter ✓'}
-                                </button>
+                            <p className="leading-relaxed text-stone-700">{currentInspiration.message}</p>
+                            <button
+                                type="button"
+                                onClick={() => handleUseStarter(currentInspiration.starterPrompt)}
+                                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs"
+                            >
+                                {isHebrew ? 'השתמש כהתחלה ✓' : 'Use as starter ✓'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Branch B: Live 5-Dimension Neural Depth Card (1–5 ✨) + Upgrade Chips + WhatsApp Visit */}
+                    {isRubricVisible && (
+                        <div
+                            data-purpose="neural-depth-card"
+                            className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-emerald-50/60 border border-amber-200/90 shadow-xs space-y-3 animate-fadeIn text-start"
+                        >
+                            {/* Rubric Score Badge */}
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-extrabold">
+                                    <span>{t.threeGoodThings.rubricBadge}</span>
+                                    <span dir="ltr">{liveEvaluation.score}/5 ✨</span>
+                                </span>
+                                <span className="text-[11px] font-semibold text-stone-500">
+                                    {liveEvaluation.score === 5
+                                        ? (isHebrew ? 'עומק מרבי!' : 'Peak depth!')
+                                        : (isHebrew ? 'לחץ לשדרוג הרגע' : 'Tap chip to deepen')}
+                                </span>
+                            </div>
+
+                            {/* 5 Visual Neural Pillar Pills */}
+                            <div className="flex flex-wrap gap-1.5">
+                                {pillarItems.map((pillar) => (
+                                    <span
+                                        key={pillar.key}
+                                        className={`px-2.5 py-1 rounded-full text-[11px] border transition-colors ${
+                                            pillar.active
+                                                ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold'
+                                                : 'bg-stone-100/80 text-stone-500 border-stone-200 font-medium'
+                                        }`}
+                                    >
+                                        {pillar.label}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Empowering Reflection */}
+                            <p className="text-xs sm:text-sm text-stone-800 leading-relaxed font-medium">
+                                {liveEvaluation.empoweringFeedback}
+                            </p>
+
+                            {/* Gentle Upgrade Prompt + 3 Clickable Upgrade Chips */}
+                            {liveEvaluation.score < 5 && liveEvaluation.upgradeChips.length > 0 && (
+                                <div className="pt-2 border-t border-amber-200/60 space-y-2">
+                                    <p className="text-xs font-semibold text-amber-950">
+                                        {liveEvaluation.upgradePrompt}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {liveEvaluation.upgradeChips.map((chip, cIdx) => (
+                                            <button
+                                                key={cIdx}
+                                                type="button"
+                                                onClick={() =>
+                                                    handleApplyUpgradeChip(
+                                                        chip,
+                                                        liveEvaluation.missingDimensionKey
+                                                    )
+                                                }
+                                                className="text-xs px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 font-semibold transition-all shadow-2xs active:scale-95 text-start"
+                                            >
+                                                + {chip}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Phase 2: WhatsApp Micro-Gratitude Visit Button */}
+                            {canSendWhatsapp && (
+                                <div className="pt-2 border-t border-emerald-200/70">
+                                    <a
+                                        href={`https://wa.me/?text=${encodeURIComponent(
+                                            liveEvaluation.whatsappDraft
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] no-underline text-center"
+                                    >
+                                        <span>{t.threeGoodThings.whatsappBtn}</span>
+                                    </a>
+                                </div>
                             )}
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* Mood / Wellbeing Rating Card (1 to 7) */}
-            <section
-                data-purpose="mood-scale"
-                className="bg-white rounded-3xl p-4 shadow-soft-card border border-amber-100/80 w-full box-border"
-            >
-                <div className="text-center mb-3">
-                    <h3 className="text-sm font-bold text-stone-900">
-                        {t.threeGoodThings.feelingTitle}
-                    </h3>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
-                        {t.threeGoodThings.feelingSubtitle}
-                    </p>
-                </div>
-
-                {/* 1 to 7 Scale Selector (1 on Right in RTL, 7 on Left in RTL) */}
-                <div
-                    dir={isHebrew ? 'rtl' : 'ltr'}
-                    className="flex justify-between items-center px-1 max-w-sm mx-auto gap-1"
+            {/* Phase 3: Mood / Wellbeing Rating Card (Visible on Step 3 OR MVE Early-Finish) */}
+            {showMoodScale && (
+                <section
+                    data-purpose="mood-scale"
+                    className="bg-white rounded-3xl p-4 shadow-soft-card border border-amber-100/80 w-full box-border animate-fadeIn"
                 >
-                    {[1, 2, 3, 4, 5, 6, 7].map((num) => {
-                        const isSelected = currentFeeling === num;
-                        return (
-                            <button
-                                key={num}
-                                type="button"
-                                onClick={() => handleAffectChange(num)}
-                                aria-pressed={isSelected}
-                                aria-label={isHebrew ? `דרגה ${num}` : `Rating ${num}`}
-                                className={`rounded-full flex items-center justify-center transition-all ${
-                                    isSelected
-                                        ? 'w-10 h-10 text-sm font-bold text-white bg-amber-400 bg-gradient-to-tr from-amber-500 to-amber-400 shadow-md shadow-glow-amber scale-110 ring-4 ring-amber-100'
-                                        : 'w-9 h-9 text-xs font-medium text-stone-600 bg-stone-50 hover:bg-stone-100 border border-stone-200'
-                                }`}
-                            >
-                                {num}
-                            </button>
-                        );
-                    })}
-                </div>
+                    <div className="text-center mb-3">
+                        <h3 className="text-sm font-bold text-stone-900">
+                            {t.threeGoodThings.feelingTitle}
+                        </h3>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                            {t.threeGoodThings.feelingSubtitle}
+                        </p>
+                    </div>
 
-                {/* 3 Scale Anchor Labels with Dynamic Center Indicator */}
-                <div className="flex justify-between items-center text-[10px] sm:text-[11px] text-stone-500 mt-3 px-1 gap-2">
-                    <span className="text-start">{t.threeGoodThings.feelingLow}</span>
-                    <span className="text-center font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                        {getFeelingDescription(currentFeeling, isHebrew)}
-                    </span>
-                    <span className="text-end">{t.threeGoodThings.feelingHigh}</span>
-                </div>
-            </section>
+                    {/* 1 to 7 Scale Selector (1 on Right in RTL, 7 on Left in RTL) */}
+                    <div
+                        dir={isHebrew ? 'rtl' : 'ltr'}
+                        className="flex justify-between items-center px-1 max-w-sm mx-auto gap-1"
+                    >
+                        {[1, 2, 3, 4, 5, 6, 7].map((num) => {
+                            const isSelected = currentFeeling === num;
+                            return (
+                                <button
+                                    key={num}
+                                    type="button"
+                                    onClick={() => handleAffectChange(num)}
+                                    aria-pressed={isSelected}
+                                    aria-label={isHebrew ? `דרגה ${num}` : `Rating ${num}`}
+                                    className={`rounded-full flex items-center justify-center transition-all ${
+                                        isSelected
+                                            ? 'w-10 h-10 text-sm font-bold text-white bg-amber-400 bg-gradient-to-tr from-amber-500 to-amber-400 shadow-md shadow-glow-amber scale-110 ring-4 ring-amber-100'
+                                            : 'w-9 h-9 text-xs font-medium text-stone-600 bg-stone-50 hover:bg-stone-100 border border-stone-200'
+                                    }`}
+                                >
+                                    {num}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* 3 Scale Anchor Labels with Dynamic Center Indicator */}
+                    <div className="flex justify-between items-center text-[10px] sm:text-[11px] text-stone-500 mt-3 px-1 gap-2">
+                        <span className="text-start">{t.threeGoodThings.feelingLow}</span>
+                        <span className="text-center font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                            {getFeelingDescription(currentFeeling, isHebrew)}
+                        </span>
+                        <span className="text-end">{t.threeGoodThings.feelingHigh}</span>
+                    </div>
+                </section>
+            )}
         </div>
     );
 };
