@@ -1,7 +1,7 @@
 export const en = {
     common: {
         appName: 'Daily Appreciation',
-        tagline: 'Neuroscience-based gratitude for resilience and deep calm',
+        tagline: 'Quiet moments of gratitude for calm and resilience',
         save: 'Save',
         cancel: 'Cancel',
         next: 'Next →',
@@ -22,8 +22,8 @@ export const en = {
         settings: 'Settings',
     },
     dosing: {
-        onboardingTitle: 'Daily Habit: Day {day} of 21',
-        onboardingDesc: 'Building your evening gratitude routine and mental resilience',
+        onboardingTitle: 'Daily Habit for a Positive Routine',
+        onboardingDesc: 'A 3-minute evening pause cultivating calm and better sleep',
         maintenanceTitle: 'Phase 2: Tailored Routine (2-3x / week)',
         maintenanceDesc: 'Consistent practice to sustain positivity and emotional vitality',
         currentDay: 'Day {day} of 21',
@@ -36,6 +36,8 @@ export const en = {
         subtitle: 'A quiet evening pause to notice what went well today',
         stepBadge: 'Moment {step} of 3',
         overviewTitle: 'Your 3 moments today:',
+        overviewHelper: 'Write directly in any of the 3 boxes below',
+        draftSaved: 'Draft saved automatically ✓',
         moment1Label: '1. What went well today, and who was part of it?',
         moment1Placeholder: 'e.g. A colleague stayed late to help with the presentation and it really relieved my stress...',
         moment2Label: '2. What small part did I play in making this happen?',
@@ -109,13 +111,6 @@ export const en = {
         subtitle: 'Hedonic adaptation antidote: Contemplating life without an existing good reactivates neural appreciation pathways',
         blessingLabel: 'Choose a condition or blessing easily taken for granted:',
         reflectionLabel: 'Your Reflection: What would life look like without it, and how do you feel returning to reality?',
-    },
-    pwa: {
-        title: 'Install on Samsung Galaxy S26',
-        subtitle: 'Full AMOLED standalone display, instant offline access & reliable evening alarms',
-        installBtn: 'Install App ⚡',
-        installed: '✓ App installed successfully!',
-        tip: 'Add to home screen for native-grade performance',
     },
     reminders: {
         title: 'Evening Reminder & Sleep Ritual Settings',

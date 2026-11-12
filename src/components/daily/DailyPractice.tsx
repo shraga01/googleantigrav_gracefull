@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { StorageService } from '../../services/storage';
 import { FirestoreService } from '../../services/firestoreService';
@@ -38,25 +38,30 @@ const HubermanRecallModal = React.lazy(() =>
 
 export const DailyPractice: React.FC = () => {
     // -------------------------------------------------------------------------
-    // 1. All useState Declarations (Strictly physical top - TDZ Prevention)
+    // 1. All useState & useRef Declarations (Strictly physical top - TDZ Prevention)
     // -------------------------------------------------------------------------
     const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
     const [activeProtocol] = useState<GratitudeProtocolType>('three_good_things');
-    const [currentStep, setCurrentStep] = useState(0);
     const [showDeeperTools, setShowDeeperTools] = useState(false);
+    const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
     // Empirical historical context loaded directly from Firestore
     const [empiricalContext, setEmpiricalContext] = useState<EmpiricalHistoricalContext | null>(null);
 
-    // Three Good Things structured items (with mandatory causal/agency attribution & 1-7 affect rating)
-    const [items, setItems] = useState<ThreeGoodThingsItem[]>([
-        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
-        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
-        { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
-    ]);
+    // Three Good Things structured items (hydrated immediately from local draft if present)
+    const [items, setItems] = useState<ThreeGoodThingsItem[]>(() => {
+        const today = new Date().toLocaleDateString('en-CA');
+        const draft = StorageService.getDraft(today);
+        if (draft) return draft;
+        return [
+            { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+            { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+            { act: '', benefactor: '', benefit: '', causalReflection: '', affectRating: 5 },
+        ];
+    });
 
     // Modals
     const [showLetterModal, setShowLetterModal] = useState(false);
@@ -71,6 +76,9 @@ export const DailyPractice: React.FC = () => {
         return new URLSearchParams(window.location.search).get('mode') === 'evening_ritual';
     });
     const [scientificFact, setScientificFact] = useState<{ statement: string; citation: string } | null>(null);
+
+    // Guard to prevent background profile updates from unmounting active inputs / resetting IME focus
+    const loadedKeyRef = useRef<string | null>(null);
 
     const locale: Locale = userProfile?.locale || (userProfile?.language === 'hebrew' ? 'he' : 'en');
     const t = getDictionary(locale);
@@ -92,6 +100,15 @@ export const DailyPractice: React.FC = () => {
         if (!userProfile) return;
 
         const today = new Date().toLocaleDateString('en-CA');
+        const loadKey = `${userProfile.userId}_${today}_${googleId || 'anon'}`;
+
+        // Prevent re-loading & unmounting inputs on unrelated userProfile object reference updates
+        if (loadedKeyRef.current === loadKey) {
+            setIsLoading(false);
+            return;
+        }
+        loadedKeyRef.current = loadKey;
+
         setIsLoading(true);
 
         try {
@@ -113,12 +130,18 @@ export const DailyPractice: React.FC = () => {
                 }
             }
 
-            // Check local fallback
+            // Check local completed entry fallback
             const localEntry = StorageService.getEntryByDate(today);
             if (localEntry) {
                 setDailyStateFromEntry(localEntry);
                 setIsLoading(false);
                 return;
+            }
+
+            // Check draft fallback
+            const localDraft = StorageService.getDraft(today);
+            if (localDraft) {
+                setItems(localDraft);
             }
 
             // Load scientific fact
@@ -132,23 +155,20 @@ export const DailyPractice: React.FC = () => {
     }, [userProfile, isAuthenticated, googleId, locale, setDailyStateFromEntry]);
 
     const handleItemChange = useCallback((index: number, updatedItem: ThreeGoodThingsItem) => {
+        const today = new Date().toLocaleDateString('en-CA');
         setItems((prev) => {
             const next = [...prev];
             next[index] = updatedItem;
+            StorageService.saveDraft(today, next);
             return next;
         });
-    }, []);
-
-    const handleItemCompleted = useCallback((stepIndex: number) => {
-        if (stepIndex < 2) {
-            setCurrentStep((prev) => Math.min(prev + 1, 2));
-        }
+        setLastSavedAt(Date.now());
     }, []);
 
     const handleSaveEntry = useCallback(async () => {
         if (!userProfile) return;
 
-        // Verify all 3 items have act and agency attribution
+        // Verify all 3 items have concrete moment and agency attribution
         const isAllValid = items.every(
             (it) => it.act.trim().length >= 4 && it.causalReflection.trim().length >= 4
         );
@@ -229,6 +249,7 @@ export const DailyPractice: React.FC = () => {
         try {
             StorageService.updateStreak(updatedStreak);
             StorageService.saveEntry(newEntry);
+            StorageService.clearDraft(today);
 
             if (isAuthenticated && googleId) {
                 await FirestoreService.saveEntry(googleId, newEntry);
@@ -293,24 +314,23 @@ export const DailyPractice: React.FC = () => {
         (it) => it.act.trim().length >= 4 && it.causalReflection.trim().length >= 4
     );
 
+    const completedCount = items.filter(
+        (it) => it.act.trim().length >= 4 && it.causalReflection.trim().length >= 4
+    ).length;
+
     return (
         <div dir={locale === 'he' ? 'rtl' : 'ltr'} className="w-full max-w-full min-w-0 space-y-4 animate-fadeIn">
-            {/* Header & Neuroscience Dosing Badge */}
-            <div className="flex flex-col gap-3 w-full min-w-0 pb-3 border-b border-black/5">
-                <div className="w-full min-w-0 text-start">
-                    <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight break-words">
-                        {t.common.appName}
-                    </h1>
-                    <p className="text-sm text-neutral-600 font-medium mt-0.5 break-words">
-                        {t.common.tagline}
-                    </p>
-                </div>
+            {/* Clean High-Contrast Subtitle (No duplicate "יום הודיה" heading) & Habit Progress Card */}
+            <div className="flex flex-col gap-3 w-full min-w-0 pb-1">
+                <p className="text-sm sm:text-base text-white/95 font-medium text-start break-words px-1 drop-shadow-xs">
+                    {t.common.tagline}
+                </p>
                 <DosingScheduleBadge dosingSchedule={userProfile.dosingSchedule} locale={locale} />
             </div>
 
             {/* Evening Ritual Deep-Link Banner */}
             {isEveningRitual && (
-                <div className="p-3.5 bg-purple-950 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 animate-fadeIn w-full min-w-0 box-border">
+                <div className="p-3.5 bg-purple-950 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 animate-fadeIn w-full min-w-0 box-border border border-purple-400/20">
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <span className="text-2xl flex-shrink-0">🌙</span>
                         <div className="text-xs min-w-0 flex-1">
@@ -330,68 +350,57 @@ export const DailyPractice: React.FC = () => {
                 </div>
             )}
 
-            {/* Main Structured 3GT Form with Overview, 2 Questions, and 1-7 Feeling Scale */}
+            {/* Main Direct-Input 3GT Form (All 3 Textareas Accessible Directly) */}
             <ThreeGoodThingsForm
                 items={items}
-                activeStep={currentStep}
-                onSelectStep={setCurrentStep}
                 userProfile={userProfile}
                 empiricalContext={empiricalContext}
+                lastSavedAt={lastSavedAt}
                 onChange={handleItemChange}
-                onCompleted={() => handleItemCompleted(currentStep)}
             />
 
-            {/* Moment Step Controls & Completion Button */}
-            <div className="flex items-center justify-between gap-3 pt-2">
+            {/* Primary Daily Completion Button */}
+            <div className="pt-1 w-full">
                 <button
                     type="button"
-                    onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
-                    disabled={currentStep === 0}
-                    className="px-4 py-2.5 text-sm font-bold text-neutral-700 hover:text-neutral-900 disabled:opacity-30 rounded-xl bg-white/60 hover:bg-white border border-black/5"
+                    onClick={handleSaveEntry}
+                    disabled={isSaving || !allThreeFilled}
+                    className={`w-full py-3.5 px-6 text-base font-black rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
+                        allThreeFilled && !isSaving
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/30'
+                            : 'bg-white/25 text-white/75 border border-white/25 cursor-not-allowed'
+                    }`}
                 >
-                    {t.common.previous}
+                    {isSaving ? (
+                        <span>{t.common.loading}</span>
+                    ) : allThreeFilled ? (
+                        <span>{locale === 'he' ? '✓ שמור והשלם תרגול יומי' : '✓ Complete Daily Practice'}</span>
+                    ) : (
+                        <span>
+                            {locale === 'he'
+                                ? `השלם את 3 הרגעים לשמירה (${completedCount}/3)`
+                                : `Complete all 3 moments to save (${completedCount}/3)`}
+                        </span>
+                    )}
                 </button>
-
-                {currentStep < 2 ? (
-                    <button
-                        type="button"
-                        onClick={() => setCurrentStep((prev) => Math.min(prev + 1, 2))}
-                        className="px-6 py-2.5 text-sm font-bold bg-neutral-900 hover:bg-black text-white rounded-xl shadow-md transition-all active:scale-[0.98]"
-                    >
-                        {locale === 'he' ? 'לרגע הבא →' : 'Next Moment →'}
-                    </button>
-                ) : (
-                    <button
-                        type="button"
-                        onClick={handleSaveEntry}
-                        disabled={isSaving || !allThreeFilled}
-                        className={`px-7 py-3 text-sm sm:text-base font-black rounded-xl shadow-lg transition-all active:scale-[0.98] ${
-                            allThreeFilled && !isSaving
-                                ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20'
-                                : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
-                        }`}
-                    >
-                        {isSaving ? t.common.loading : (locale === 'he' ? '✓ שמור תרגול יומי' : '✓ Complete Practice')}
-                    </button>
-                )}
             </div>
 
             {/* Secondary Clinical Tools Section (Expandable 2-Column Grid) */}
-            <div className="pt-4 border-t border-black/10">
+            <div className="pt-3 border-t border-white/15">
                 <button
                     type="button"
                     onClick={() => setShowDeeperTools((prev) => !prev)}
-                    className="w-full p-3.5 bg-white/70 hover:bg-white rounded-2xl border border-black/10 flex items-center justify-between text-start transition-all"
+                    className="w-full p-3.5 bg-white/95 hover:bg-white rounded-2xl border border-black/10 flex items-center justify-between text-start transition-all shadow-sm"
                 >
                     <div className="min-w-0 flex-1">
                         <div className="font-bold text-sm text-neutral-900 truncate">
                             {t.threeGoodThings.deeperToolsTitle}
                         </div>
-                        <div className="text-xs text-neutral-500 truncate">
+                        <div className="text-xs text-neutral-600 truncate">
                             {t.threeGoodThings.deeperToolsSubtitle}
                         </div>
                     </div>
-                    <div className="ms-2 flex-shrink-0 text-neutral-600">
+                    <div className="ms-2 flex-shrink-0 text-neutral-700">
                         {showDeeperTools ? <IconChevronUp className="w-5 h-5" /> : <IconChevronDown className="w-5 h-5" />}
                     </div>
                 </button>
@@ -401,7 +410,7 @@ export const DailyPractice: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setShowLetterModal(true)}
-                            className="p-3 text-start bg-rose-50/90 hover:bg-rose-100/90 text-rose-950 rounded-xl border border-rose-200 transition-all shadow-xs"
+                            className="p-3 text-start bg-rose-50 hover:bg-rose-100 text-rose-950 rounded-xl border border-rose-200 transition-all shadow-xs"
                         >
                             <div className="text-lg mb-1">✉️</div>
                             <div className="font-bold text-xs">{t.letters.title}</div>
@@ -410,7 +419,7 @@ export const DailyPractice: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setShowGQ6Modal(true)}
-                            className="p-3 text-start bg-amber-50/90 hover:bg-amber-100/90 text-amber-950 rounded-xl border border-amber-200 transition-all shadow-xs"
+                            className="p-3 text-start bg-amber-50 hover:bg-amber-100 text-amber-950 rounded-xl border border-amber-200 transition-all shadow-xs"
                         >
                             <div className="text-lg mb-1">📊</div>
                             <div className="font-bold text-xs">{t.gq6.title}</div>
@@ -419,7 +428,7 @@ export const DailyPractice: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setShowVirtualVisitModal(true)}
-                            className="p-3 text-start bg-purple-50/90 hover:bg-purple-100/90 text-purple-950 rounded-xl border border-purple-200 transition-all shadow-xs"
+                            className="p-3 text-start bg-purple-50 hover:bg-purple-100 text-purple-950 rounded-xl border border-purple-200 transition-all shadow-xs"
                         >
                             <div className="text-lg mb-1">🪑</div>
                             <div className="font-bold text-xs">{t.emptyChair.title}</div>
@@ -428,7 +437,7 @@ export const DailyPractice: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setShowHubermanModal(true)}
-                            className="p-3 text-start bg-blue-50/90 hover:bg-blue-100/90 text-blue-950 rounded-xl border border-blue-200 transition-all shadow-xs"
+                            className="p-3 text-start bg-blue-50 hover:bg-blue-100 text-blue-950 rounded-xl border border-blue-200 transition-all shadow-xs"
                         >
                             <div className="text-lg mb-1">🧠</div>
                             <div className="font-bold text-xs">{t.huberman.title}</div>
@@ -437,7 +446,7 @@ export const DailyPractice: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setShowSubtractionModal(true)}
-                            className="p-3 text-start bg-emerald-50/90 hover:bg-emerald-100/90 text-emerald-950 rounded-xl border border-emerald-200 transition-all shadow-xs col-span-2"
+                            className="p-3 text-start bg-emerald-50 hover:bg-emerald-100 text-emerald-950 rounded-xl border border-emerald-200 transition-all shadow-xs col-span-2"
                         >
                             <div className="text-lg mb-1">⏳</div>
                             <div className="font-bold text-xs">{t.mentalSubtraction.title}</div>

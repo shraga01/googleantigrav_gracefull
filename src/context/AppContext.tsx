@@ -4,6 +4,7 @@ import React, {
     useState,
     useEffect,
     useCallback,
+    useRef,
     type ReactNode,
 } from 'react';
 import type { UserProfile, Language, StreakData } from '../types';
@@ -33,7 +34,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // -------------------------------------------------------------------------
-    // 1. All useState Declarations (Strictly at the physical top)
+    // 1. All useState & useRef Declarations (Strictly at the physical top)
     // -------------------------------------------------------------------------
     const [userProfile, setUserProfile] = useState<UserProfile | null>(() => StorageService.getUserProfile());
     const [language, setLanguageState] = useState<Language>(() => {
@@ -43,8 +44,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [googleId, setGoogleIdState] = useState<string | null>(null);
-    const [streak, setStreak] = useState<StreakData>(StorageService.getStreak());
+    const [streak, setStreak] = useState<StreakData>(() => StorageService.getStreak());
     const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<string[]>([]);
+
+    const googleIdRef = useRef<string | null>(null);
 
     // -------------------------------------------------------------------------
     // 2. All useCallback and Pure Utility Functions (Physically above useEffect)
@@ -55,7 +58,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, []);
 
     const fetchStreakFromServer = useCallback(async (currentUserId?: string) => {
-        const uid = currentUserId || googleId;
+        const uid = currentUserId || googleIdRef.current;
         if (!uid) return;
 
         try {
@@ -67,10 +70,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } catch (error) {
             console.error('Failed to fetch streak from Firestore:', error);
         }
-    }, [googleId]);
+    }, []);
 
     const fetchProfileFromServer = useCallback(async (currentUserId?: string): Promise<UserProfile | null> => {
-        const uid = currentUserId || googleId;
+        const uid = currentUserId || googleIdRef.current;
         if (!uid) return null;
 
         try {
@@ -86,7 +89,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             console.error('Failed to fetch profile from Firestore:', error);
             return null;
         }
-    }, [googleId, updateDocumentDirection]);
+    }, [updateDocumentDirection]);
 
     const updateProfile = useCallback(async (profile: UserProfile, syncToServer = true) => {
         setUserProfile(profile);
@@ -123,12 +126,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [updateDocumentDirection]);
 
     const setGoogleId = useCallback((id: string | null) => {
+        googleIdRef.current = id;
         setGoogleIdState(id);
     }, []);
 
     const logout = useCallback(async () => {
         console.log('Logging out cleanly...');
         StorageService.clearUserProfile();
+        googleIdRef.current = null;
         setUserProfile(null);
         setIsAuthenticated(false);
         setGoogleIdState(null);
@@ -150,22 +155,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const unsubscribe = onAuthChange(async (firebaseUser) => {
             if (firebaseUser) {
                 setIsAuthenticated(true);
+                googleIdRef.current = firebaseUser.uid;
                 setGoogleIdState(firebaseUser.uid);
 
-                // Fetch empirical Firestore data
+                // Fetch empirical Firestore data without tearing down auth listener
                 await fetchStreakFromServer(firebaseUser.uid);
                 await fetchProfileFromServer(firebaseUser.uid);
                 setIsLoading(false);
             } else {
                 setIsAuthenticated(false);
+                googleIdRef.current = null;
                 setGoogleIdState(null);
-                setUserProfile(null);
+                setUserProfile(StorageService.getUserProfile());
                 setIsLoading(false);
             }
         });
 
         return () => unsubscribe();
-    }, [updateDocumentDirection, fetchStreakFromServer, fetchProfileFromServer]);
+    }, [fetchStreakFromServer, fetchProfileFromServer]);
 
     return (
         <AppContext.Provider

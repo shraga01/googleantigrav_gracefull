@@ -4,7 +4,6 @@ import { StorageService } from '../../services/storage';
 import { Button } from '../common/Button';
 import { PastelCard } from '../common/PastelCard';
 import { ReminderSettingsModal } from './ReminderSettingsModal';
-import { InstallAppBanner } from '../pwa/InstallAppBanner';
 import { getDictionary } from '../../locales';
 import type { Locale } from '../../types';
 
@@ -66,21 +65,17 @@ export const SettingsMenu: React.FC = () => {
     }, [refreshProfile]);
 
     return (
-        <div className="p-4 sm:p-6 max-w-xl mx-auto space-y-6">
-            {/* PWA Installation for Samsung Galaxy S26 */}
-            <InstallAppBanner locale={locale} />
-
-            {/* Pre-Sleep Evening Reminder & S26 Calendar Sync Section */}
+        <div className="p-2 sm:p-4 max-w-xl mx-auto space-y-5 w-full min-w-0 box-border">
+            {/* Pre-Sleep Evening Reminder & Calendar Sync Section */}
             <PastelCard
                 variant="lavender"
                 title={t.reminders?.title || (isHebrew ? 'תזכורות ערב וטקס שינה' : 'Evening Reminders')}
                 subtitle={
                     t.reminders?.subtitle ||
                     (isHebrew
-                        ? 'תזכורות מותאמות-דוקטרינה וסנכרון חומרתי לשעון/יומן Samsung S26'
-                        : 'Doctrine-aware alerts & hardware sync to Samsung S26 calendar/alarm')
+                        ? 'תזכורות ערב מותאמות לשגרה וסנכרון ליומן במכשיר'
+                        : 'Evening alerts & calendar sync')
                 }
-                badge="Samsung S26"
             >
                 <div className="pt-2 space-y-3">
                     <div className="flex items-center justify-between text-xs text-neutral-700 bg-white/70 p-3 rounded-xl border border-black/5">
@@ -88,7 +83,7 @@ export const SettingsMenu: React.FC = () => {
                             <span className="font-bold block">
                                 {isHebrew ? 'סטטוס תזכורת:' : 'Reminder Status:'}
                             </span>
-                            <span className="text-neutral-500">
+                            <span className="text-neutral-600">
                                 {userProfile?.reminderSettings?.enabled ?? true
                                     ? (isHebrew
                                         ? `פעיל בשעה ${userProfile?.reminderSettings?.eveningTime || '21:30'}`
@@ -115,8 +110,8 @@ export const SettingsMenu: React.FC = () => {
                         <span>🌙</span>
                         <span>
                             {isHebrew
-                                ? 'הגדר שעת ערב וסנכרון לשעון S26'
-                                : 'Configure Evening Time & S26 Sync'}
+                                ? 'הגדר שעת ערב וסנכרון ליומן'
+                                : 'Configure Evening Time & Calendar Sync'}
                         </span>
                     </button>
                 </div>
@@ -126,7 +121,7 @@ export const SettingsMenu: React.FC = () => {
             <PastelCard
                 variant="peach"
                 title={isHebrew ? 'פרופיל אישי' : 'Personal Profile'}
-                subtitle={isHebrew ? 'פרטי המשתמש והדוקטרינה הקלינית' : 'User details and clinical dosing'}
+                subtitle={isHebrew ? 'פרטי המשתמש ושלב התרגול' : 'User details and current habit stage'}
             >
                 <div className="pt-2 text-xs space-y-2 text-neutral-800">
                     <div className="flex justify-between py-1 border-b border-black/5">
@@ -137,8 +132,10 @@ export const SettingsMenu: React.FC = () => {
                         <span className="font-bold">{isHebrew ? 'שלב תרגול:' : 'Practice Phase:'}</span>
                         <span className="font-semibold text-amber-900">
                             {userProfile?.dosingSchedule?.phase === 'maintenance_variety'
-                                ? (isHebrew ? 'שלב 2: גיוון ותחזוקה (3 בשבוע)' : 'Phase 2: Variety & Maintenance (3x/wk)')
-                                : (isHebrew ? `שלב 1: בנייה נוירופלסטית (יום ${userProfile?.dosingSchedule?.currentDay || 1}/21)` : `Phase 1: Neuroplastic Onboarding (Day ${userProfile?.dosingSchedule?.currentDay || 1}/21)`)}
+                                ? (isHebrew ? 'שלב 2: שגרה מותאמת (3 בשבוע)' : 'Phase 2: Tailored Routine (3x/wk)')
+                                : (isHebrew
+                                    ? <>שלב 1: הרגל יומי (יום <span dir="ltr">{userProfile?.dosingSchedule?.currentDay || 1}/21</span>)</>
+                                    : <>Phase 1: Daily Habit (Day {userProfile?.dosingSchedule?.currentDay || 1}/21)</>)}
                         </span>
                     </div>
                 </div>
@@ -177,10 +174,10 @@ export const SettingsMenu: React.FC = () => {
                 </div>
             </PastelCard>
 
-            {/* About Section */}
-            <div className="text-center text-xs text-neutral-500 space-y-1 pt-2 pb-6">
-                <p className="font-semibold">Daily Appreciation Platform v1.1</p>
-                <p>Optimized for Samsung Galaxy S26 & AMOLED Standalone Display</p>
+            {/* About Section - High Contrast on Purple BG */}
+            <div className="text-center text-xs text-white/85 space-y-1 pt-2 pb-6">
+                <p className="font-semibold">Daily Appreciation Platform v1.2</p>
+                <p className="text-purple-100/80">Bilingual Gratitude & Well-Being</p>
             </div>
 
             {/* Reminder Settings Modal */}
