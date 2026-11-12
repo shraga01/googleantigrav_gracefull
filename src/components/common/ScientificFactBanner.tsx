@@ -21,13 +21,14 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
             className="scientific-fact-banner"
             dir={isHebrew ? 'rtl' : 'ltr'}
             style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'black',
+                background: 'linear-gradient(135deg, #5b4bb7 0%, #6d3b96 100%)',
+                color: '#FFFFFF',
                 padding: '16px 20px',
-                borderRadius: '12px',
+                borderRadius: '16px',
                 marginBottom: '20px',
                 position: 'relative',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
                 transition: 'all 0.3s ease'
             }}
         >
@@ -41,11 +42,10 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
                     cursor: 'pointer'
                 }}
             >
-                {/* Science Orb - 3D CSS Badge Style */}
+                {/* Science Orb */}
                 <div style={{
                     animation: 'floatIcon 3s ease-in-out infinite',
-                    marginRight: isHebrew ? '0' : '8px',
-                    marginLeft: isHebrew ? '8px' : '0',
+                    marginInlineEnd: '8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -56,14 +56,13 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
                 </div>
 
                 <div style={{ flex: 1 }}>
-                    {/* Label */}
                     <div
                         style={{
-                            fontSize: '12px',
-                            fontWeight: 600,
+                            fontSize: '13px',
+                            fontWeight: 700,
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px',
-                            opacity: 0.9,
+                            color: '#F3E8FF',
                         }}
                     >
                         {isHebrew ? 'עובדה מדעית' : 'Scientific Fact'}
@@ -72,6 +71,8 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
 
                 {/* Collapse/Expand Button */}
                 <button
+                    type="button"
+                    aria-label={isExpanded ? 'Collapse fact' : 'Expand fact'}
                     style={{
                         background: 'rgba(255, 255, 255, 0.2)',
                         border: 'none',
@@ -82,8 +83,8 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: 'black',
-                        fontSize: '14px',
+                        color: '#FFFFFF',
+                        fontSize: '12px',
                         flexShrink: 0,
                         transition: 'background 0.2s',
                         transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
@@ -98,10 +99,9 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
                 <div style={{
                     marginTop: '12px',
                     paddingTop: '12px',
-                    borderTop: '1px solid rgba(0,0,0,0.1)',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.2)',
                     animation: 'fadeIn 0.3s ease-in-out'
                 }}>
-                    {/* Statement */}
                     <p
                         className="scientific-fact-content"
                         style={{
@@ -109,16 +109,16 @@ export const ScientificFactBanner: React.FC<ScientificFactBannerProps> = ({
                             lineHeight: '1.6',
                             marginBottom: '8px',
                             fontWeight: 400,
+                            color: '#FFFFFF',
                         }}
                     >
                         {statement}
                     </p>
 
-                    {/* Citation */}
                     <div
                         style={{
                             fontSize: '12px',
-                            opacity: 0.85,
+                            color: '#E9D5FF',
                             fontStyle: 'italic',
                         }}
                     >

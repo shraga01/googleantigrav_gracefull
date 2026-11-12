@@ -23,28 +23,32 @@ export const DosingScheduleBadge: React.FC<DosingScheduleBadgeProps> = ({
 
     const titleText = isMaintenance
         ? t.dosing.maintenanceTitle
-        : t.dosing.onboardingTitle.replace('{day}', String(currentDay));
+        : t.dosing.onboardingTitle;
 
     const subtitleText = isMaintenance
         ? t.dosing.maintenanceDesc
         : t.dosing.onboardingDesc;
+
+    const progressPercent = Math.min(
+        100,
+        Math.round(
+            isMaintenance
+                ? (weeklyCount / targetCount) * 100
+                : (currentDay / 21) * 100
+        )
+    );
 
     return (
         <PastelCard
             variant="sage"
             title={titleText}
             subtitle={subtitleText}
-            badge={
-                <span dir="ltr" className="inline-block font-bold">
-                    {isMaintenance ? 'Maintenance' : `${currentDay}/21`}
-                </span>
-            }
             action={
                 <button
                     type="button"
                     aria-label={t.dosing.scienceToggle}
                     onClick={() => setIsScienceExpanded((prev) => !prev)}
-                    className="p-1 rounded-full text-emerald-800 hover:bg-emerald-200/50 transition-colors flex items-center gap-1 text-xs font-semibold"
+                    className="p-1.5 rounded-full text-emerald-800 hover:bg-emerald-200/50 transition-colors flex items-center gap-1 text-xs font-semibold"
                 >
                     <IconInfo className="w-4 h-4 text-emerald-800" />
                     {isScienceExpanded ? (
@@ -57,6 +61,7 @@ export const DosingScheduleBadge: React.FC<DosingScheduleBadgeProps> = ({
             className="w-full max-w-full box-border"
         >
             <div className="pt-2 w-full min-w-0 box-border">
+                {/* Single clean progress status row (no duplicate day strings) */}
                 <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-emerald-950 mb-1.5 gap-2 w-full min-w-0">
                     <span className="truncate flex-1 min-w-0">
                         {isMaintenance
@@ -64,9 +69,7 @@ export const DosingScheduleBadge: React.FC<DosingScheduleBadgeProps> = ({
                             : t.dosing.currentDay.replace('{day}', String(currentDay))}
                     </span>
                     <span dir="ltr" className="flex-shrink-0 ms-2 whitespace-nowrap font-bold">
-                        {isMaintenance
-                            ? `${weeklyCount} / ${targetCount}`
-                            : `${Math.round((currentDay / 21) * 100)}%`}
+                        {isMaintenance ? `${weeklyCount} / ${targetCount}` : `${progressPercent}%`}
                     </span>
                 </div>
 
@@ -75,12 +78,7 @@ export const DosingScheduleBadge: React.FC<DosingScheduleBadgeProps> = ({
                     <div
                         className="h-full bg-emerald-600 rounded-full transition-all duration-500"
                         style={{
-                            width: `${Math.min(
-                                100,
-                                isMaintenance
-                                    ? (weeklyCount / targetCount) * 100
-                                    : (currentDay / 21) * 100
-                            )}%`,
+                            width: `${progressPercent}%`,
                         }}
                     />
                 </div>

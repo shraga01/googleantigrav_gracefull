@@ -83,7 +83,7 @@ export const HistoryView: React.FC = () => {
 
             {/* Hint if nothing selected */}
             {!selectedEntry && (
-                <p className="text-center text-gray-400 text-sm mt-4 animate-pulse">
+                <p className="text-center text-white/90 text-sm mt-4 font-medium animate-pulse">
                     {isHebrew ? 'לחץ על יום כדי לצפות בזיכרון' : 'Tap a completed day to reflect'}
                 </p>
             )}
