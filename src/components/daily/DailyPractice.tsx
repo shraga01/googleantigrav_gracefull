@@ -45,6 +45,7 @@ export const DailyPractice: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const [activeProtocol] = useState<GratitudeProtocolType>('three_good_things');
     const [activeStep, setActiveStep] = useState<0 | 1 | 2>(0);
+    const [earlyFinishOpen, setEarlyFinishOpen] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [showDeeperTools, setShowDeeperTools] = useState(false);
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
@@ -174,6 +175,7 @@ export const DailyPractice: React.FC = () => {
 
     const handleStepChange = useCallback((nextStep: 0 | 1 | 2) => {
         setValidationError(null);
+        setEarlyFinishOpen(false);
         setActiveStep(nextStep);
     }, []);
 
@@ -289,6 +291,7 @@ export const DailyPractice: React.FC = () => {
 
         if (activeStep < 2) {
             const nextStep = (activeStep + 1) as 1 | 2;
+            setEarlyFinishOpen(false);
             setActiveStep(nextStep);
             setTimeout(() => {
                 stepCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -311,7 +314,7 @@ export const DailyPractice: React.FC = () => {
         await persistEntry(items);
     }, [activeStep, items, isHebrew, persistEntry]);
 
-    const handleFinishEarlyClick = useCallback(async () => {
+    const handleEarlyFinishToggleOrSubmit = useCallback(async () => {
         const hasAtLeastOne = items.some((it) => it.act.trim().length >= 3);
         if (!hasAtLeastOne) {
             setValidationError(
@@ -321,8 +324,14 @@ export const DailyPractice: React.FC = () => {
             );
             return;
         }
+
+        if (!earlyFinishOpen) {
+            setEarlyFinishOpen(true);
+            return;
+        }
+
         await persistEntry(items);
-    }, [items, isHebrew, persistEntry]);
+    }, [earlyFinishOpen, items, isHebrew, persistEntry]);
 
     // -------------------------------------------------------------------------
     // 3. All useEffect Declarations (Strictly physical bottom)
@@ -371,6 +380,7 @@ export const DailyPractice: React.FC = () => {
     }
 
     const hasAtLeastOneMoment = items.some((it) => it.act.trim().length >= 3);
+    const showMoodScale = activeStep === 2 || earlyFinishOpen;
 
     return (
         <div dir={isHebrew ? 'rtl' : 'ltr'} className="w-full max-w-full min-w-0 space-y-4 animate-fadeIn">
@@ -403,10 +413,11 @@ export const DailyPractice: React.FC = () => {
                 </div>
             )}
 
-            {/* Phase 2 & 3.1: Interactive 3-Step Wizard Form + Mood Scale */}
+            {/* Phase 1, 2 & 3: Interactive 3-Step Wizard Form + Gated Mood Scale */}
             <ThreeGoodThingsForm
                 items={items}
                 activeStep={activeStep}
+                showMoodScale={showMoodScale}
                 userProfile={userProfile}
                 empiricalContext={empiricalContext}
                 lastSavedAt={lastSavedAt}
@@ -416,33 +427,40 @@ export const DailyPractice: React.FC = () => {
                 onChange={handleItemChange}
             />
 
-            {/* Phase 3.2: Primary Gradient CTA Button */}
+            {/* Primary Gradient CTA Button */}
             <div className="pt-1 space-y-2 w-full">
-                <button
-                    type="button"
-                    onClick={() => void handlePrimaryCtaClick()}
-                    disabled={isSaving}
-                    className="w-full py-4 px-6 rounded-2xl bg-gradient-to-l from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-lg shadow-amber-500/25 active:scale-[0.98] hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                    <span>
-                        {isSaving
-                            ? t.common.loading
-                            : activeStep < 2
-                            ? t.threeGoodThings.nextMomentBtn
-                            : t.threeGoodThings.completePracticeBtn}
-                    </span>
-                    {activeStep < 2 && !isSaving && (
-                        <svg className="w-5 h-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                        </svg>
-                    )}
-                </button>
-
-                {/* Minimum Viable Effort secondary finish on steps 0-1 */}
-                {activeStep < 2 && hasAtLeastOneMoment && !isSaving && (
+                {activeStep === 2 || earlyFinishOpen ? (
                     <button
                         type="button"
-                        onClick={() => void handleFinishEarlyClick()}
+                        onClick={() =>
+                            void (earlyFinishOpen ? handleEarlyFinishToggleOrSubmit() : handlePrimaryCtaClick())
+                        }
+                        disabled={isSaving}
+                        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-l from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-lg shadow-amber-500/25 active:scale-[0.98] hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                        <span>{isSaving ? t.common.loading : t.threeGoodThings.completePracticeBtn}</span>
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => void handlePrimaryCtaClick()}
+                        disabled={isSaving}
+                        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-l from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-lg shadow-amber-500/25 active:scale-[0.98] hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                        <span>{isSaving ? t.common.loading : t.threeGoodThings.nextMomentBtn}</span>
+                        {!isSaving && (
+                            <svg className="w-5 h-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                            </svg>
+                        )}
+                    </button>
+                )}
+
+                {/* Minimum Viable Effort early-finish toggle on steps 0–1 */}
+                {activeStep < 2 && hasAtLeastOneMoment && !earlyFinishOpen && !isSaving && (
+                    <button
+                        type="button"
+                        onClick={() => void handleEarlyFinishToggleOrSubmit()}
                         className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-stone-600 hover:text-stone-900 hover:bg-white/70 transition-colors"
                     >
                         {t.threeGoodThings.finishEarlyBtn}
@@ -450,7 +468,7 @@ export const DailyPractice: React.FC = () => {
                 )}
             </div>
 
-            {/* Phase 3.3: Research Wisdom Card (Prof. Martin Seligman) */}
+            {/* Research Wisdom Card (Prof. Martin Seligman) */}
             <section
                 data-purpose="scientific-insight"
                 className="bg-gradient-to-br from-indigo-50/80 via-purple-50/45 to-amber-50/60 rounded-2xl p-4 border border-indigo-100/80 text-stone-700 w-full box-border text-start"
