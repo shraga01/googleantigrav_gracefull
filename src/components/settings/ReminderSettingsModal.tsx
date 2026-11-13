@@ -21,6 +21,8 @@ interface ReminderSettingsModalProps {
     onSaveSuccess?: (updated: ReminderSettings) => void;
 }
 
+const PRESET_TIMES = ['20:30', '21:00', '21:30', '22:00', '22:30'];
+
 const WEEKDAYS = [
     { day: 0, he: 'ראשון', en: 'Sun' },
     { day: 1, he: 'שני', en: 'Mon' },
@@ -83,8 +85,18 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                 fcmToken: initialSettings.fcmToken,
             };
 
+            const updatedProfile: UserProfile = {
+                ...userProfile,
+                reminderSettings: updated,
+            };
+
             if (userProfile.userId) {
                 await FirestoreService.updateReminderSettings(userProfile.userId, updated);
+            }
+
+            // Schedule native Android notification if running inside APK
+            if (ReminderEngine.isNativePlatform()) {
+                await ReminderEngine.scheduleNativeNotification(updatedProfile, locale);
             }
 
             if (onSaveSuccess) {
@@ -103,7 +115,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         preferredDays,
         digitalSunsetMode,
         initialSettings,
-        userProfile.userId,
+        userProfile,
         onSaveSuccess,
         onClose,
         locale,
@@ -115,8 +127,8 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         if (perm === 'granted') {
             alert(
                 locale === 'he'
-                    ? '✓ התראות דפדפן הופעלו בהצלחה!'
-                    : '✓ Browser notifications enabled successfully!'
+                    ? '✓ הרשאת התראות הופעלה בהצלחה!'
+                    : '✓ Notifications enabled successfully!'
             );
         }
     }, [locale]);
@@ -145,23 +157,25 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         setIsTesting(true);
         setTestResult(null);
         try {
-            const res = await ReminderEngine.triggerCloudTest();
+            const res = await ReminderEngine.triggerTestNotification(locale);
             setTestResult(res.message);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Test failed';
-            setTestResult(`Cloud Test: ${msg}`);
+            setTestResult(`Test: ${msg}`);
         } finally {
             setIsTesting(false);
         }
-    }, []);
+    }, [locale]);
 
     // -------------------------------------------------------------------------
     // 3. All useEffect Declarations (Strictly physical bottom)
     // -------------------------------------------------------------------------
     useEffect(() => {
-        if (typeof window !== 'undefined' && 'Notification' in window) {
-            setNotificationPermission(Notification.permission);
-        }
+        const checkPerm = async () => {
+            const status = await ReminderEngine.checkNotificationPermission();
+            setNotificationPermission(status === 'granted' ? 'granted' : 'denied');
+        };
+        void checkPerm();
 
         const evaluate = async () => {
             try {
@@ -244,7 +258,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                             />
                         </div>
 
-                        {/* Evening Time Selector */}
+                        {/* Evening Time Selector with Quick Presets */}
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
                                 {locale === 'he' ? 'שעת התזכורת (מומלץ 15-30 דקות לפני השינה):' : 'Evening Reminder Time (15-30m before bed):'}
@@ -253,8 +267,24 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                                 type="time"
                                 value={eveningTime}
                                 onChange={(e) => setEveningTime(e.target.value)}
-                                className="w-full text-base font-semibold rounded-xl p-3 bg-white border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-neutral-800 shadow-xs"
+                                className="w-full text-base font-semibold rounded-xl p-3 bg-white border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-neutral-800 shadow-xs mb-2"
                             />
+                            <div className="flex flex-wrap gap-1.5">
+                                {PRESET_TIMES.map((time) => (
+                                    <button
+                                        key={time}
+                                        type="button"
+                                        onClick={() => setEveningTime(time)}
+                                        className={`py-1 px-2.5 rounded-lg text-xs font-semibold transition-all ${
+                                            eveningTime === time
+                                                ? 'bg-purple-600 text-white shadow-xs'
+                                                : 'bg-white/80 text-neutral-700 hover:bg-white border border-black/5'
+                                        }`}
+                                    >
+                                        {time}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Preferred Days for Phase 2 Maintenance */}
@@ -306,18 +336,25 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                             />
                         </div>
 
-                        {/* Layer 1: Browser Web Push Notifications */}
+                        {/* Layer 1: Native Android Local Notifications or Browser Web Push */}
                         <div className="p-3 bg-white/80 rounded-xl border border-black/5 space-y-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-neutral-800">
-                                    🔔 {locale === 'he' ? 'התראות דפדפן (Web Push):' : 'Browser Push Notifications:'}
+                                <span className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                                    <span>{ReminderEngine.isNativePlatform() ? '📱' : '🔔'}</span>
+                                    <span>
+                                        {ReminderEngine.isNativePlatform()
+                                            ? (locale === 'he' ? 'התראות מערכת Android (Local):' : 'Native Android Notifications:')
+                                            : (locale === 'he' ? 'התראות דפדפן (Web Push):' : 'Browser Push Notifications:')}
+                                    </span>
                                 </span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
                                     notificationPermission === 'granted'
                                         ? 'bg-emerald-100 text-emerald-800'
                                         : 'bg-neutral-100 text-neutral-600'
                                 }`}>
-                                    {notificationPermission}
+                                    {notificationPermission === 'granted'
+                                        ? (locale === 'he' ? 'מופעל' : 'Granted')
+                                        : (locale === 'he' ? 'דורש אישור' : 'Permission needed')}
                                 </span>
                             </div>
                             {notificationPermission !== 'granted' ? (
@@ -326,7 +363,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                                     onClick={handleRequestPush}
                                     className="w-full py-2 px-3 bg-purple-100 hover:bg-purple-200 text-purple-900 rounded-xl text-xs font-bold transition-colors"
                                 >
-                                    {locale === 'he' ? 'בקש הרשאת התראות' : 'Request Push Permission'}
+                                    {locale === 'he' ? 'אפשר התראות במכשיר' : 'Allow Device Notifications'}
                                 </button>
                             ) : (
                                 <div className="flex items-center gap-2">
@@ -338,7 +375,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                                     >
                                         {isTesting
                                             ? (locale === 'he' ? 'בודק...' : 'Testing...')
-                                            : (locale === 'he' ? 'בדיקת התראת ענן' : 'Test Cloud Reminder')}
+                                            : (locale === 'he' ? 'בדיקת התראה מיידית (2 שניות)' : 'Test Immediate Alert (2s)')}
                                     </button>
                                 </div>
                             )}

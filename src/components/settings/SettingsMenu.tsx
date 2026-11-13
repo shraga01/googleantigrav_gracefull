@@ -176,7 +176,7 @@ export const SettingsMenu: React.FC = () => {
 
             {/* About Section - High Contrast on Warm Cream BG */}
             <div className="text-center text-xs text-stone-600 space-y-1 pt-2 pb-6">
-                <p className="font-semibold">Daily Appreciation Platform v1.5</p>
+                <p className="font-semibold">Daily Appreciation Platform v1.6</p>
                 <p className="text-amber-800/80">Bilingual Gratitude & Well-Being</p>
             </div>
 
