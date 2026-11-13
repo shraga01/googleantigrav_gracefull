@@ -162,7 +162,7 @@ export const SettingsMenu: React.FC = () => {
             >
                 <div className="pt-2 flex flex-col gap-2.5">
                     <Button variant="secondary" onClick={handleExport} fullWidth>
-                        {isHebrew ? 'ייצא נתונים (Backup JSON)' : 'Export Data (Backup JSON)'}
+                        {isHebrew ? 'ייצוא וגיבוי הנתונים שלי' : 'Export Personal Data Backup'}
                     </Button>
                     <button
                         type="button"
@@ -176,7 +176,7 @@ export const SettingsMenu: React.FC = () => {
 
             {/* About Section - High Contrast on Warm Cream BG */}
             <div className="text-center text-xs text-stone-600 space-y-1 pt-2 pb-6">
-                <p className="font-semibold">Daily Appreciation Platform v1.3</p>
+                <p className="font-semibold">Daily Appreciation Platform v1.5</p>
                 <p className="text-amber-800/80">Bilingual Gratitude & Well-Being</p>
             </div>
 
