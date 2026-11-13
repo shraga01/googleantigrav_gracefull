@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { DailyEntry, Locale } from '../../types';
 import { decryptEntry } from '../../services/encryption';
 import { NeuralRubricEngine } from '../../services/neuralRubricEngine';
+import { StorageService } from '../../services/storage';
 import { useApp } from '../../context/AppContext';
 
 const looksEncrypted = (content: string): boolean => {
@@ -163,6 +164,9 @@ export const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                                                 )}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
+                                                onClick={() => {
+                                                    StorageService.markGratitudeShared();
+                                                }}
                                                 className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 transition-colors"
                                             >
                                                 <span>💌</span>
