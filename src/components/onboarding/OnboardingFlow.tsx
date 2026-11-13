@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { WelcomeScreen } from './WelcomeScreen';
+import { AccountChoiceStep } from './AccountChoiceStep';
 import { ProfileSetup } from './ProfileSetup';
 
 interface OnboardingFlowProps {
@@ -12,7 +13,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
   // 1. All useState Hooks (Strictly physical top - React 19 TDZ Prevention)
   // -------------------------------------------------------------------------
   const { language, setLanguage } = useApp();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const isHebrew = language === 'hebrew';
 
@@ -32,11 +33,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
   );
 
   const handleStepNext = useCallback(() => {
-    setStep(2);
+    setStep((prev) => (prev < 3 ? ((prev + 1) as 2 | 3) : 3));
   }, []);
 
   const handleStepBack = useCallback(() => {
-    setStep(1);
+    setStep((prev) => (prev > 1 ? ((prev - 1) as 1 | 2) : 1));
   }, []);
 
   const handleFlowComplete = useCallback(() => {
@@ -55,9 +56,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
         if (language !== savedLang) {
           setLanguage(savedLang);
         }
-      } else if (language !== 'hebrew') {
-        // Default to Hebrew as primary application locale
-        setLanguage('hebrew');
+      } else {
+        const navLang = typeof navigator !== 'undefined' ? (navigator.language || '') : '';
+        const detected: 'english' | 'hebrew' = navLang.toLowerCase().startsWith('en') ? 'english' : 'hebrew';
+        if (language !== detected) {
+          setLanguage(detected);
+        }
       }
     } catch {
       // ignore
@@ -67,11 +71,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
   return (
     <div
       dir={isHebrew ? 'rtl' : 'ltr'}
-      className="min-h-[100dvh] w-full max-w-md mx-auto bg-gradient-to-b from-[#FFFDF9] via-[#FAF5EE] to-[#F5EFFE] antialiased text-stone-900 transition-colors duration-500 overflow-x-hidden pt-12 pb-10 px-5 flex flex-col justify-between overflow-y-auto"
+      className="min-h-[100dvh] w-full max-w-md mx-auto bg-gradient-to-b from-[#FFFDF9] via-[#FAF5EE] to-[#F5EFFE] antialiased text-stone-900 transition-colors duration-500 overflow-x-hidden pt-8 pb-8 px-5 flex flex-col justify-between overflow-y-auto"
     >
-      {/* Top Header: Navigation & Clean Language Toggle Pill */}
+      {/* Top Header: Navigation, Step Progress, & Language Toggle Pill */}
       <div className="flex items-center justify-between w-full mb-3 shrink-0">
-        {step === 2 ? (
+        {step > 1 ? (
           <button
             type="button"
             onClick={handleStepBack}
@@ -81,15 +85,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
             <span>{isHebrew ? 'חזרה' : 'Back'}</span>
           </button>
         ) : (
-          <div />
+          <div className="w-16" />
         )}
 
-        {/* Clean Language Toggle Pill: English 🇬🇧 / עברית 🇮🇱 */}
-        <div className="inline-flex items-center rounded-full bg-white/90 p-1 border border-amber-200/80 shadow-xs backdrop-blur-sm">
+        {/* Step Counter Pill */}
+        <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/80 border border-amber-200/70 text-xs font-semibold text-stone-600 shadow-xs">
+          <span>{isHebrew ? `שלב ${step} מתוך 3` : `Step ${step} of 3`}</span>
+        </div>
+
+        {/* Header Language Toggle Pill */}
+        <div className="inline-flex items-center rounded-full bg-white/90 p-1 border border-amber-200/80 shadow-xs backdrop-blur-xs">
           <button
             type="button"
             onClick={() => handleLanguageChange('hebrew')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
               isHebrew
                 ? 'bg-amber-500 text-white shadow-xs'
                 : 'text-stone-600 hover:text-stone-900'
@@ -100,7 +109,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
           <button
             type="button"
             onClick={() => handleLanguageChange('english')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
               !isHebrew
                 ? 'bg-amber-500 text-white shadow-xs'
                 : 'text-stone-600 hover:text-stone-900'
@@ -111,10 +120,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
         </div>
       </div>
 
-      {/* 2-Step Flow Content */}
-      {step === 1 ? (
-        <WelcomeScreen onNext={handleStepNext} />
-      ) : (
+      {/* 3-Step Flow Content */}
+      {step === 1 && (
+        <WelcomeScreen onNext={handleStepNext} onLanguageChange={handleLanguageChange} />
+      )}
+      {step === 2 && (
+        <AccountChoiceStep onNext={handleStepNext} />
+      )}
+      {step === 3 && (
         <ProfileSetup onComplete={handleFlowComplete} onBack={handleStepBack} />
       )}
     </div>

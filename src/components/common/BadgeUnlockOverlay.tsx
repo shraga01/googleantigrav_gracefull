@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
     ALL_BADGES,
@@ -10,84 +10,70 @@ import { FluentIcon } from './FluentIcon';
 import '../../styles/badges.css';
 
 export const BadgeUnlockOverlay: React.FC = () => {
-    const { newlyUnlockedBadges, setNewlyUnlockedBadges, userProfile } = useApp();
-    const [currentBadgeCode, setCurrentBadgeCode] = useState<string | null>(null);
+    const { newlyUnlockedBadges, setNewlyUnlockedBadges, userProfile, language } = useApp();
     const [animatingOut, setAnimatingOut] = useState(false);
 
+    const activeBadgeCode = newlyUnlockedBadges[0] ?? null;
+
+    const handleDismiss = useCallback(() => {
+        setNewlyUnlockedBadges(newlyUnlockedBadges.slice(1));
+        setAnimatingOut(false);
+    }, [newlyUnlockedBadges, setNewlyUnlockedBadges]);
+
     useEffect(() => {
-        if (newlyUnlockedBadges.length > 0 && !currentBadgeCode) {
-            const nextCode = newlyUnlockedBadges[0];
-            // Schedule the transition asynchronously to prevent cascading synchronous renders
-            const startTimer = setTimeout(() => {
-                setCurrentBadgeCode(nextCode);
-                setAnimatingOut(false);
-            }, 50);
+        if (!activeBadgeCode) return;
+        const timer1 = setTimeout(() => setAnimatingOut(true), 2800);
+        const timer2 = setTimeout(() => handleDismiss(), 3500);
+        return () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+        };
+    }, [activeBadgeCode, handleDismiss]);
 
-            // Wait 2.2 seconds, then start exit animation to bottom nav
-            const timer1 = setTimeout(() => {
-                setAnimatingOut(true);
-            }, 2200);
+    if (!activeBadgeCode) return null;
 
-            // Wait another 0.8s for animation to finish, then advance queue
-            const timer2 = setTimeout(() => {
-                setCurrentBadgeCode(null);
-                setAnimatingOut(false);
-                setNewlyUnlockedBadges(newlyUnlockedBadges.slice(1));
-            }, 3000);
-
-            return () => {
-                clearTimeout(startTimer);
-                clearTimeout(timer1);
-                clearTimeout(timer2);
-            };
-        }
-    }, [newlyUnlockedBadges, currentBadgeCode, setNewlyUnlockedBadges]);
-
-    if (!currentBadgeCode) return null;
-
-    const badgeDef = ALL_BADGES.find((b) => b.code === currentBadgeCode);
+    const badgeDef = ALL_BADGES.find((b) => b.code === activeBadgeCode);
     if (!badgeDef) return null;
 
-    const iconClass = getBadgeIconClass(currentBadgeCode);
-    const number = getBadgeNumber(currentBadgeCode);
-    const fluentIconName = getBadgeFluentIcon(currentBadgeCode);
-    const isHebrew = userProfile?.language === 'hebrew';
+    const iconClass = getBadgeIconClass(activeBadgeCode);
+    const number = getBadgeNumber(activeBadgeCode);
+    const fluentIconName = getBadgeFluentIcon(activeBadgeCode);
+    const isHebrew = language === 'hebrew' || userProfile?.language === 'hebrew';
 
     return (
-        <div className={`badge-overlay-backdrop ${animatingOut ? 'fading-out' : ''}`}>
-            <div className="badge-overlay-particles"></div>
+        <div
+            className={`badge-overlay-backdrop ${animatingOut ? 'fading-out' : ''}`}
+            style={{ pointerEvents: 'auto' }}
+            onClick={handleDismiss}
+        >
+            <div className="badge-overlay-particles" />
 
             <div
-                className={`badge-overlay-content ${animatingOut ? 'badge-overlay-animating-out' : ''}`}
+                className={`badge-overlay-content bg-white rounded-3xl p-6 max-w-xs w-full mx-4 text-center shadow-2xl border-2 border-amber-300 relative ${
+                    animatingOut ? 'badge-overlay-animating-out' : ''
+                }`}
+                onClick={(e) => e.stopPropagation()}
                 dir={isHebrew ? 'rtl' : 'ltr'}
             >
-                <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-                    <h2
-                        style={{
-                            fontSize: '2.5rem',
-                            fontWeight: 'bold',
-                            color: 'white',
-                            textShadow: '0 4px 15px rgba(0,0,0,0.5)',
-                            marginBottom: '0.5rem',
-                        }}
-                    >
-                        {isHebrew ? 'הישג חדש!' : 'New Badge!'}
-                    </h2>
-                    <p
-                        style={{
-                            fontSize: '1.5rem',
-                            color: '#ffeb3b',
-                            fontWeight: 'bold',
-                            textShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                        }}
-                    >
-                        {isHebrew ? badgeDef.name : badgeDef.nameEn || badgeDef.name}
-                    </p>
+                {/* Top-corner close button (✕) */}
+                <button
+                    type="button"
+                    onClick={handleDismiss}
+                    className="absolute top-4 end-4 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                    aria-label={isHebrew ? 'סגור' : 'Close'}
+                >
+                    <span className="text-xl font-bold leading-none">✕</span>
+                </button>
+
+                {/* Header badge */}
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold tracking-wide mb-1">
+                    {isHebrew ? '🎉 הישג חדש נפתח!' : '🎉 New Achievement Unlocked!'}
                 </div>
 
+                {/* Badge icon */}
                 <div
-                    className={`badge-icon ${iconClass} badge-unlocked badge-overlay-glow`}
-                    style={{ width: '8rem', height: '8rem', margin: '2rem' }}
+                    className={`badge-icon ${iconClass} badge-unlocked badge-overlay-glow w-20 h-20 aspect-square rounded-2xl mx-auto my-4`}
+                    style={{ width: '5rem', height: '5rem' }}
                 >
                     {fluentIconName ? (
                         <div
@@ -100,14 +86,31 @@ export const BadgeUnlockOverlay: React.FC = () => {
                                 height: '100%',
                             }}
                         >
-                            <FluentIcon name={fluentIconName} size={84} />
+                            <FluentIcon name={fluentIconName} size={48} />
                         </div>
                     ) : number ? (
-                        <span className="badge-number" style={{ fontSize: '3rem' }}>
+                        <span className="badge-number" style={{ fontSize: '2rem' }}>
                             {number}
                         </span>
                     ) : null}
                 </div>
+
+                {/* Badge Name & Description */}
+                <h2 className="text-2xl font-extrabold text-stone-900 mb-1">
+                    {isHebrew ? badgeDef.name : (badgeDef.nameEn || badgeDef.name)}
+                </h2>
+                <p className="text-sm text-stone-600 mb-5">
+                    {isHebrew ? badgeDef.description : (badgeDef.descriptionEn || badgeDef.description)}
+                </p>
+
+                {/* Primary CTA button */}
+                <button
+                    type="button"
+                    onClick={handleDismiss}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-l from-amber-500 to-orange-500 text-white font-bold shadow-md hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all cursor-pointer"
+                >
+                    {isHebrew ? 'איזה כיף! המשך ✓' : 'Awesome! Continue ✓'}
+                </button>
             </div>
         </div>
     );

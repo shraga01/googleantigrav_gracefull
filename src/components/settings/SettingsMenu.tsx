@@ -223,7 +223,7 @@ export const SettingsMenu: React.FC = () => {
 
             {/* About Section - High Contrast on Warm Cream BG */}
             <div className="text-center text-xs text-stone-600 space-y-1 pt-2 pb-6">
-                <p className="font-semibold">{t.settings?.version || 'Daily Appreciation Platform v1.7'}</p>
+                <p className="font-semibold">{t.settings?.version || 'Daily Appreciation Platform v1.8'}</p>
                 <p className="text-amber-800/80">{t.settings?.subversion || 'Bilingual Gratitude & Well-Being'}</p>
             </div>
 

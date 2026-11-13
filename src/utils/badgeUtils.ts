@@ -79,7 +79,6 @@ export function evaluateBadges(
     const progressMap: Record<string, { current: number; target: number }> = {};
 
     // 1. Compute empirical metrics from entries and streak
-    const totalDays = Math.max(streak.totalDaysPracticed || 0, entries.length);
     const totalEntries = entries.length;
     const longestStreak = Math.max(streak.longestStreak || 0, streak.currentStreak || 0);
 
@@ -96,11 +95,23 @@ export function evaluateBadges(
     const hasShared = StorageService.hasSharedGratitude();
     const hasInvited = StorageService.hasInvitedFriend();
 
+    // Check if at least 1 completed entry exists where all 3 moments have >= 3 chars
+    const hasCompleted3MomentsEntry = entries.some((entry) => {
+        if (!entry.items || !Array.isArray(entry.items) || entry.items.length < 3) {
+            return false;
+        }
+        return (
+            (entry.items[0]?.act || '').trim().length >= 3 &&
+            (entry.items[1]?.act || '').trim().length >= 3 &&
+            (entry.items[2]?.act || '').trim().length >= 3
+        );
+    });
+
     // 2. Define criteria and progress for each of the 12 badges
     const badgeEvaluators: Record<string, { condition: boolean; current: number; target: number }> = {
         first_step: {
-            condition: totalDays >= 1,
-            current: Math.min(totalDays, 1),
+            condition: hasCompleted3MomentsEntry,
+            current: hasCompleted3MomentsEntry ? 1 : 0,
             target: 1,
         },
         perfect_day: {
