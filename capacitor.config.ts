@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Daily Appreciation',
   webDir: 'dist',
   android: {
-    backgroundColor: '#4a148c',
+    backgroundColor: '#FAF7F2',
     allowMixedContent: true
   },
   plugins: {

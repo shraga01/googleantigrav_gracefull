@@ -64,15 +64,7 @@ html {
 /* ==================== */
 
 body {
-  background-color: #4a148c;
-  background-image:
-    radial-gradient(at 0% 0%, #c2185b 0px, transparent 50%),
-    radial-gradient(at 100% 0%, #512da8 0px, transparent 50%),
-    radial-gradient(at 100% 100%, #006064 0px, transparent 50%),
-    radial-gradient(at 0% 100%, #f57f17 0px, transparent 50%),
-    radial-gradient(at 50% 50%, #d81b60 0px, transparent 50%);
-  background-size: 100% 100%;
-  background-attachment: fixed;
+  background-color: #FAF7F2;
   font-family: 'Plus Jakarta Sans', 'Rubik', sans-serif;
   width: 100%;
   max-width: 100vw;
@@ -81,7 +73,7 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  color: white;
+  color: var(--color-text-primary);
   text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -766,15 +758,7 @@ body {
 /* ==================== */
 
 .mesh-gradient {
-  background-color: #4a148c;
-  /* Deep purple base */
-  background-image:
-    radial-gradient(at 0% 0%, #c2185b 0px, transparent 50%),
-    radial-gradient(at 100% 0%, #512da8 0px, transparent 50%),
-    radial-gradient(at 100% 100%, #006064 0px, transparent 50%),
-    radial-gradient(at 0% 100%, #f57f17 0px, transparent 50%),
-    radial-gradient(at 50% 50%, #d81b60 0px, transparent 50%);
-  background-size: 100% 100%;
+  background-color: #FAF7F2;
 }
 
 .glass-card {

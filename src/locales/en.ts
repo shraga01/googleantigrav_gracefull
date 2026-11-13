@@ -69,6 +69,8 @@ export const en = {
         feelingMid: '5: Pleasant & appreciative ☀️',
         feelingHigh: '7: Uplifted & joyful',
         nextMomentBtn: 'Save & Continue to Next Moment',
+        nextMomentBtnStep1: 'Save & Continue to Second Moment ›',
+        nextMomentBtnStep2: 'Save & Continue to Third Moment ›',
         completePracticeBtn: 'Save & Complete Daily Practice ✓',
         finishEarlyBtn: 'Save & Finish for Today',
         seligmanTitle: 'Research Wisdom (Prof. Martin Seligman)',

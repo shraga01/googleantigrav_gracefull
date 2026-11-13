@@ -69,6 +69,8 @@ export const he = {
         feelingMid: '5: נעים ומלא הערכה ☀️',
         feelingHigh: '7: מרומם ומלא שמחה',
         nextMomentBtn: 'שמור והמשך לרגע הבא',
+        nextMomentBtnStep1: 'שמור והמשך לרגע השני ‹',
+        nextMomentBtnStep2: 'שמור והמשך לרגע השלישי ‹',
         completePracticeBtn: 'שמור והשלם תרגול יומי ✓',
         finishEarlyBtn: 'שמור וסיים להיום',
         seligmanTitle: "חוכמת המחקר (פרופ' מרטין זליגמן)",

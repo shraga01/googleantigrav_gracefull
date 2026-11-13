@@ -45,9 +45,6 @@ export async function signInWithGoogle(): Promise<UserCredential> {
                 ? 'האפליקציה פועלת במצב מקומי ומאובטח במכשירך. כל הנתונים נשמרים בטלפון וניתנים לגיבוי ושחזור מקובץ בתפריט ההגדרות.'
                 : 'The app is running in secure local mode on your device. Your data is stored on this phone and can be backed up and restored via Settings.';
 
-            if (typeof alert !== 'undefined') {
-                alert(nativeNotice);
-            }
             throw new Error(nativeNotice);
         }
 
