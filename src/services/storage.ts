@@ -269,5 +269,49 @@ export const StorageService = {
         const entries = StorageService.getEntries();
         const streak = StorageService.getStreak();
         return JSON.stringify({ profile, entries, streak }, null, 2);
+    },
+
+    importData: (jsonString: string): { success: boolean; error?: string } => {
+        try {
+            if (!jsonString || typeof jsonString !== 'string' || !jsonString.trim()) {
+                return { success: false, error: 'Empty backup data' };
+            }
+
+            const data = JSON.parse(jsonString);
+            if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                return { success: false, error: 'Invalid backup file structure' };
+            }
+
+            const hasProfile = data.profile && typeof data.profile === 'object' && !Array.isArray(data.profile);
+            const hasEntries = Array.isArray(data.entries);
+            const hasStreak = data.streak && typeof data.streak === 'object' && !Array.isArray(data.streak);
+
+            if (!hasProfile && !hasEntries && !hasStreak) {
+                return { success: false, error: 'Backup does not contain valid platform data (profile, entries, or streak)' };
+            }
+
+            if (hasProfile) {
+                localStorage.setItem(KEYS.PROFILE, JSON.stringify(data.profile));
+            }
+
+            if (hasEntries) {
+                localStorage.setItem(KEYS.ENTRIES, JSON.stringify(data.entries));
+            }
+
+            if (hasStreak) {
+                localStorage.setItem(KEYS.STREAK, JSON.stringify(data.streak));
+            }
+
+            // Reconcile streak from entries to guarantee empirical integrity
+            StorageService.reconcileStreakFromEntries();
+
+            return { success: true };
+        } catch (err) {
+            console.error('Failed to import backup data:', err);
+            return {
+                success: false,
+                error: err instanceof Error ? err.message : 'Failed to parse backup JSON',
+            };
+        }
     }
 };
