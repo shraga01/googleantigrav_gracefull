@@ -3,7 +3,8 @@
 **Platform:** Daily Appreciation App (`daily-appreciation-app`)  
 **Source Repository:** `shraga01/googleantigrav_gracefull`  
 **Firebase Project:** `daily-appreciation-app-275bf` (`daily-appreciation-app`)  
-**Lead Engine:** Gemini 4 Argon / Gemini 3.8 Flash
+**Lead Engine:** Gemini 4 Argon / Gemini 3.8 Flash  
+**Protocol Version:** v1.4.0
 
 ---
 
@@ -12,15 +13,15 @@
 ### 1.1 The 3-Branch Git Hierarchy
 * `main`: Production environment (Strictly Read-Only. Direct commits are forbidden).
 * `dev`: Integration / Staging (Branch off only from here).
-* `feat/`, `fix/`, `chore/`: Isolated execution sandboxes (e.g., `feat/bilingual-rebuild`). All work must happen here.
+* `feat/`, `fix/`, `chore/`: Isolated execution sandboxes (e.g., `feat/bilingual-rebuild`, `chore/update-agents-md-v140`). All work must happen here.
 
 ### 1.2 Zero-Trust & Server-Side Authority
-* Client bundles must never contain generative API keys or database admin keys.
+* Client bundles must never contain generative API keys (`AIzaSy`) or database admin keys.
 * All live data must reside in Firebase Firestore with user-level security rules (`/users/{userId}/**`).
 * Mock data or theoretical assumptions are forbidden in live user flows. If it does not exist in Firestore, it does not exist in the platform.
 
 ### 1.3 React Execution Order (Temporal Dead Zone Prevention)
-* Every `useState` declaration and `useCallback` hook must appear physically ABOVE any `useEffect` hook that references it.
+* Every `useState`, `useRef`, and `useCallback` hook must appear physically ABOVE any `useEffect` hook that references it.
 * Lazy state initialization (`useState(() => initialValue)`) must be used for cached stores to prevent cascading synchronous render warnings.
 
 ### 1.4 Vertex AI & Genkit Payload Cleanliness
@@ -28,30 +29,46 @@
 * **Reasoning Control:** Use `thinking_level: 'medium'` (standard interactive coding/validation) or `'high'` (clinical narrative synthesis).
 * **Payload Cleanliness:** NEVER include `thinking_budget` or custom sampling parameters (`temperature`, `top_p`, `top_k`).
 
+### 1.5 Samsung Android APK & WebView IME Resilience
+* `android/app/src/main/AndroidManifest.xml` MUST always retain `android:windowSoftInputMode="adjustResize"` on `.MainActivity`.
+* Never mount/unmount form inputs when `userProfile` reference updates in `AppContext.tsx`; guard initial daily practice loading with `loadedKeyRef` and stabilize auth listeners with `googleIdRef`.
+* `BottomNav.tsx` must auto-hide when viewport height drops below `480px` (virtual keyboard open).
+* Never render PWA `beforeinstallprompt` banners inside the app.
+* Because `capacitor.config.ts` bundles static `dist/` assets (`webDir: 'dist'`), every release intended for Android APK users requires `npm run build && npx cap sync android && cd android && .\gradlew.bat assembleDebug`.
+
 ---
 
-## 2. Clinical Neuroscience Protocols
+## 2. Clinical Neuroscience Protocols & Empirical Data Integrity
 
-1. **Seligman Three Good Things (3GT) with Mandatory Causal Reflection:**
-   - Active ingredient: `causalReflection` (Agency Attribution). The user must answer: *"Why did this happen? What was my personal role, choice, or condition?"*
-   - Includes 1-7 Likert rating for emotional relief and elevation (`affectRating`).
-2. **Dosing Schedule & Hedonic Adaptation Buffer:**
-   - Phase 1 (`onboarding_daily_21`): 21 consecutive days of daily practice for medial prefrontal cortex (mPFC) neuroplasticity.
-   - Phase 2 (`maintenance_variety`): 2-3 times per week with rotating lenses and angles to prevent hedonic adaptation and emotional fatigue.
-3. **Longitudinal GQ-6 Assessment (McCullough et al.):**
-   - 6-item validated questionnaire rated 1-7, tracking baseline (T1), midpoint (T2), and maintenance (T3). Items 3 and 6 are reverse-scored (`8 - score`).
-4. **Empty Chair 3-Position Virtual Gratitude Visit:**
-   - Position 1: Self Expressing (reading letter to visualized person).
-   - Position 2: Other Responding (embodying recipient in empty chair, vocalizing response).
-   - Position 3: Self Integration (returning to self, anchoring somatic relief and vagal regulation).
-5. **Huberman Narrative Recall:**
-   - Recalling a specific memory of receiving genuine gratitude to activate mPFC and autonomic parasympathetic pathways.
+### 2.1 Seligman Three Good Things (3GT) with Mandatory Causal Reflection
+* Active ingredient: `causalReflection` (Agency Attribution). The user must answer: *"Why did this happen? What was my personal role, choice, or condition?"*
+* Includes 1-7 Likert rating for emotional relief and elevation (`affectRating`).
+
+### 2.2 Clinical & Empirical Data Integrity (Guardrail #4)
+* **Never inject synthetic fallback text into `causalReflection` (`q2`).** If the user leaves Question 2 blank, persist `""` strictly.
+* **Offline Deterministic 5-Dimension Rubric:** Maintain the 5-dimension deterministic rubric (`neuralRubricEngine.ts`) evaluating Specificity, Causal Agency, Interpersonal Warmth, Sensory/Emotional Detail, and Authenticity offline with zero client-side `AIzaSy` keys.
+* **Interactive Scoring & Interpersonal Warmth:** 1-tap upgrade chips dynamically enrich reflections; interpersonal warmth triggers 1-tap WhatsApp micro-gratitude visits (`💌 שלח/י מילה טובה ב-WhatsApp`).
+* **Progressive Cognitive Load:** Step-3 mood gating keeps mood assessment focused at the end of practice or on intentional early finish.
+
+### 2.3 Longitudinal GQ-6, Virtual Visit & Dosing Protocols
+* **Dosing Schedule & Hedonic Adaptation Buffer:**
+  - Phase 1 (`onboarding_daily_21`): 21 consecutive days of daily practice for medial prefrontal cortex (mPFC) neuroplasticity.
+  - Phase 2 (`maintenance_variety`): 2-3 times per week with rotating lenses and angles to prevent hedonic adaptation and emotional fatigue.
+* **Longitudinal GQ-6 Assessment (McCullough et al.):**
+  - 6-item validated questionnaire rated 1-7, tracking baseline (T1), midpoint (T2), and maintenance (T3). Items 3 and 6 are reverse-scored (`8 - score`).
+* **Empty Chair 3-Position Virtual Gratitude Visit:**
+  - Position 1: Self Expressing (reading letter to visualized person).
+  - Position 2: Other Responding (embodying recipient in empty chair, vocalizing response).
+  - Position 3: Self Integration (returning to self, anchoring somatic relief and vagal regulation).
+* **Huberman Narrative Recall:**
+  - Recalling a specific memory of receiving genuine gratitude to activate mPFC and autonomic parasympathetic pathways.
 
 ---
 
 ## 3. Bilingual & Logical CSS Engineering
 
 * **Strict Bilingual Support:** Seamless bilingual support for Hebrew (`he`, RTL) and English (`en`, LTR).
+* **100% Locale Parity:** Maintain 100% key parity between `src/locales/he.ts` and `src/locales/en.ts` (`scripts/verify-locales.js`).
 * **Logical Properties Only:** In Tailwind CSS, only logical CSS properties are permitted:
   - `ms-*`, `me-*`, `ps-*`, `pe-*`, `text-start`, `text-end`, `border-s`, `border-e`, `start-*`, `end-*`.
   - Physical directional classes (`ml-*`, `mr-*`, `pl-*`, `pr-*`, `text-left`, `text-right`) are blocked by `scripts/verify-logical-css.js`.
@@ -60,10 +77,18 @@
 
 ## 4. Verification Harness Commands
 
-Run before any PR or merge:
+Run before any PR, merge, or release:
 ```bash
-npm run lint          # ESLint 9 & React 19 rules (0 errors, 0 warnings)
-npx tsc -b            # TypeScript strict compilation (0 errors)
-npm run verify:css    # Logical CSS verifier (0 physical directionals)
-npm run build         # Full production build (Vite / Next.js)
+npm run lint                  # ESLint 9 & React 19 rules (0 errors, 0 warnings)
+npx tsc -b                    # TypeScript strict compilation (0 errors)
+npm run verify:css            # Logical CSS verifier (0 physical directionals)
+node scripts/verify-locales.js # 100% bilingual locale key parity
+npm run build                 # Full production build (Vite / Next.js)
+```
+
+For Android APK builds:
+```bash
+npx cap sync android
+cd android
+.\gradlew.bat assembleDebug
 ```
