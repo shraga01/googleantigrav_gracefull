@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { LanguageSelection } from './components/onboarding/LanguageSelection';
-import { AuthChoice } from './components/onboarding/AuthChoice';
-import { WelcomeScreen } from './components/onboarding/WelcomeScreen';
-import { ProfileSetup } from './components/onboarding/ProfileSetup';
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { DailyPractice } from './components/daily/DailyPractice';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { AppHeader } from './components/layout/AppHeader';
@@ -30,7 +27,6 @@ const AppContent: React.FC = () => {
   // 1. All useState Declarations (Strictly physical top - TDZ Prevention)
   // -------------------------------------------------------------------------
   const { userProfile, isLoading, isAuthenticated, logout, refreshProfile, fetchProfileFromServer } = useApp();
-  const [onboardingStep, setOnboardingStep] = useState<'language' | 'auth' | 'welcome' | 'profile'>('language');
   const [currentTab, setCurrentTab] = useState<'daily' | 'history' | 'stats' | 'settings'>('daily');
   const [hasCheckedServerProfile, setHasCheckedServerProfile] = useState(false);
   const [isEveningRitualMode] = useState<boolean>(() => {
@@ -44,7 +40,6 @@ const AppContent: React.FC = () => {
   const handleLogout = useCallback(async () => {
     try {
       await logout();
-      setOnboardingStep('language');
       setHasCheckedServerProfile(false);
     } catch (error) {
       console.error('Logout failed:', error);
@@ -59,25 +54,9 @@ const AppContent: React.FC = () => {
     }
   }, [currentTab]);
 
-  const handleLanguageSelected = useCallback(() => setOnboardingStep('auth'), []);
-  const handleAuthCompleted = useCallback(() => setOnboardingStep('welcome'), []);
-  const handleWelcomeCompleted = useCallback(() => setOnboardingStep('profile'), []);
-  const handleProfileCompleted = useCallback(() => {
+  const handleOnboardingComplete = useCallback(() => {
     refreshProfile();
   }, [refreshProfile]);
-
-  const handleGoogleSignIn = useCallback(async () => {
-    handleAuthCompleted();
-  }, [handleAuthCompleted]);
-
-  const handleContinueAnonymously = useCallback(() => {
-    handleAuthCompleted();
-  }, [handleAuthCompleted]);
-
-  const handleAuthError = useCallback((error: Error) => {
-    console.error('Auth error:', error);
-    alert(error.message);
-  }, []);
 
   // -------------------------------------------------------------------------
   // 3. All useEffect Declarations (Strictly physical bottom)
@@ -92,7 +71,6 @@ const AppContent: React.FC = () => {
           console.log('Found profile on server, skipping onboarding');
         } else {
           console.log('No profile on server, user needs to complete profile setup');
-          setOnboardingStep('profile');
         }
       }
     };
@@ -191,20 +169,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  return (
-    <div className="min-h-[100dvh] overflow-x-hidden animate-fadeIn">
-      {onboardingStep === 'language' && <LanguageSelection onNext={handleLanguageSelected} />}
-      {onboardingStep === 'auth' && (
-        <AuthChoice
-          onGoogleSignIn={handleGoogleSignIn}
-          onContinueAnonymously={handleContinueAnonymously}
-          onError={handleAuthError}
-        />
-      )}
-      {onboardingStep === 'welcome' && <WelcomeScreen onNext={handleWelcomeCompleted} />}
-      {onboardingStep === 'profile' && <ProfileSetup onComplete={handleProfileCompleted} />}
-    </div>
-  );
+  return <OnboardingFlow onComplete={handleOnboardingComplete} />;
 };
 
 const App: React.FC = () => {

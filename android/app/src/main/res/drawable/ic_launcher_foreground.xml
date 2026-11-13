@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Sun Rays (Warm Gold #FDE68A) -->
+    <path
+        android:pathData="M54,26 L54,21 M61.5,29.5 L64.5,26.5 M64,36 L69,36 M44,36 L39,36 M46.5,29.5 L43.5,26.5"
+        android:strokeColor="#FDE68A"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round" />
+
+    <!-- Sun Disc (Warm Gold #FDE68A) -->
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M54,29 A7,7 0 1,1 53.99,29 Z" />
+
+    <!-- Sun Inner Core (Cream-White #FFFDF9) -->
+    <path
+        android:fillColor="#FFFDF9"
+        android:pathData="M54,33 A3,3 0 1,1 53.99,33 Z" />
+
+    <!-- Left Sprout Leaf (Warm Gold #FDE68A) -->
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M54,54 C47,50 39,44 41,36 C47,39 51,46 54,54 Z" />
+
+    <!-- Right Sprout Leaf (Warm Gold #FDE68A) -->
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M54,54 C61,50 69,44 67,36 C61,39 57,46 54,54 Z" />
+
+    <!-- Sprout Stem (Warm Gold #FDE68A) -->
+    <path
+        android:pathData="M54,54 L54,43"
+        android:strokeColor="#FDE68A"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+
+    <!-- Foundation Heart (Cream-White #FFFDF9) -->
+    <path
+        android:fillColor="#FFFDF9"
+        android:pathData="M54,53 C49,46 39,46 36,54 C33,63 42,71 54,78 C66,71 75,63 72,54 C69,46 59,46 54,53 Z" />
+
+    <!-- Heart Inner Warmth Accent (Gold #FDE68A with alpha) -->
+    <path
+        android:fillColor="#40FDE68A"
+        android:pathData="M54,58 C51,53 44,53 42,58 C40,64 47,68 54,73 C61,68 68,64 66,58 C64,53 57,53 54,58 Z" />
+</vector>

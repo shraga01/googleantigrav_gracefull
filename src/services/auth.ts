@@ -13,6 +13,7 @@ import {
     type User,
     type UserCredential,
 } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
 import { auth } from './firebase';
 
 // Configure Google provider with minimal scopes
@@ -26,7 +27,8 @@ googleProvider.addScope('email');
 
 /**
  * Sign in with Google using popup
- * Returns user credential with minimal data
+ * Returns user credential with minimal data.
+ * NOTE: signInWithRedirect and getRedirectResult are strictly banned across the codebase.
  */
 export async function signInWithGoogle(): Promise<UserCredential> {
     try {
@@ -36,7 +38,20 @@ export async function signInWithGoogle(): Promise<UserCredential> {
     } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
         console.error('❌ Google sign-in failed:', error);
 
-        // Handle specific error cases
+        // On native Android APK (Capacitor), catch popup errors gracefully without redirecting to firebaseapp.com
+        if (Capacitor.isNativePlatform()) {
+            const isHebrew = typeof document !== 'undefined' && document.documentElement.lang === 'he';
+            const nativeNotice = isHebrew
+                ? 'האפליקציה פועלת במצב מקומי ומאובטח במכשירך. כל הנתונים נשמרים בטלפון וניתנים לגיבוי ושחזור מקובץ בתפריט ההגדרות.'
+                : 'The app is running in secure local mode on your device. Your data is stored on this phone and can be backed up and restored via Settings.';
+
+            if (typeof alert !== 'undefined') {
+                alert(nativeNotice);
+            }
+            throw new Error(nativeNotice);
+        }
+
+        // Handle specific error cases for web
         if (error.code === 'auth/popup-closed-by-user') {
             throw new Error('Sign-in cancelled');
         } else if (error.code === 'auth/popup-blocked') {
