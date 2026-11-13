@@ -8,6 +8,7 @@ import type {
     GratitudeProtocolType,
     Locale,
     EmpiricalHistoricalContext,
+    UserProfile,
 } from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { getRandomScientificFact } from '../../services/scientificFacts';
@@ -15,6 +16,7 @@ import { ThreeGoodThingsForm } from './ThreeGoodThingsForm';
 import { DosingScheduleBadge } from '../clinical/DosingScheduleBadge';
 import { PastelCard } from '../common/PastelCard';
 import { getDictionary } from '../../locales';
+import { evaluateBadges } from '../../utils/badgeUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { IconChevronDown, IconChevronUp } from '../common/SvgIcon';
 
@@ -39,7 +41,14 @@ export const DailyPractice: React.FC = () => {
     // -------------------------------------------------------------------------
     // 1. All useState & useRef Declarations (Strictly physical top - TDZ Prevention)
     // -------------------------------------------------------------------------
-    const { userProfile, googleId, isAuthenticated, refreshStreak } = useApp();
+    const {
+        userProfile,
+        googleId,
+        isAuthenticated,
+        refreshStreak,
+        updateProfile,
+        setNewlyUnlockedBadges,
+    } = useApp();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -49,7 +58,9 @@ export const DailyPractice: React.FC = () => {
     const [validationError, setValidationError] = useState<string | null>(null);
     const [showDeeperTools, setShowDeeperTools] = useState(false);
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-    const [streakCount, setStreakCount] = useState<number>(() => StorageService.getStreak().currentStreak || 1);
+    const [streakCount, setStreakCount] = useState<number>(
+        () => StorageService.reconcileStreakFromEntries().currentStreak || 1
+    );
 
     // Empirical historical context loaded directly from Firestore
     const [empiricalContext, setEmpiricalContext] = useState<EmpiricalHistoricalContext | null>(null);
@@ -117,7 +128,7 @@ export const DailyPractice: React.FC = () => {
         setIsLoading(true);
 
         try {
-            setStreakCount(StorageService.getStreak().currentStreak || 1);
+            setStreakCount(StorageService.reconcileStreakFromEntries().currentStreak || 1);
 
             // Load empirical Firestore historical context
             if (isAuthenticated && googleId) {
@@ -185,34 +196,6 @@ export const DailyPractice: React.FC = () => {
 
             setIsSaving(true);
             const today = new Date().toLocaleDateString('en-CA');
-            const currentStreakData = StorageService.getStreak();
-
-            let newCurrentStreak = 1;
-            const lastPracticeDate = currentStreakData.lastPracticeDate;
-
-            if (lastPracticeDate) {
-                const todayDate = new Date(today);
-                const lastDate = new Date(lastPracticeDate);
-                const daysDiff = Math.floor(
-                    (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-                );
-
-                if (daysDiff === 1) {
-                    newCurrentStreak = currentStreakData.currentStreak + 1;
-                } else if (daysDiff === 0) {
-                    newCurrentStreak = currentStreakData.currentStreak;
-                } else {
-                    newCurrentStreak = 1;
-                }
-            }
-
-            const updatedStreak = {
-                ...currentStreakData,
-                currentStreak: newCurrentStreak,
-                longestStreak: Math.max(currentStreakData.longestStreak || 0, newCurrentStreak),
-                totalDaysPracticed: currentStreakData.totalDaysPracticed + 1,
-                lastPracticeDate: today,
-            };
 
             // Guardrail #4: Never inject fabricated strings into Firestore
             const normalizedItems: ThreeGoodThingsItem[] = itemsToSave.map((it) => ({
@@ -232,8 +215,11 @@ export const DailyPractice: React.FC = () => {
                 )
                 .join('\n');
 
+            const existingEntry = StorageService.getEntryByDate(today);
+            const entryId = existingEntry?.entryId || uuidv4();
+
             const newEntry: DailyEntry = {
-                entryId: uuidv4(),
+                entryId,
                 userId: userProfile.userId,
                 date: today,
                 protocol: activeProtocol,
@@ -246,31 +232,74 @@ export const DailyPractice: React.FC = () => {
                     content: compiledContent,
                 },
                 completedAt: Date.now(),
-                streakDay: newCurrentStreak,
+                streakDay: 1,
                 qualityScore: normalizedItems.every((it) => it.act.length >= 3) ? 95 : 80,
             };
 
             try {
-                StorageService.updateStreak(updatedStreak);
+                // Save entry to localStorage first so reconcileStreakFromEntries inspects the saved entry
                 StorageService.saveEntry(newEntry);
+
+                // Reconcile streak empirically from entries (prevents double-incrementing totalDaysPracticed on same-day edits)
+                const reconciledStreak = StorageService.reconcileStreakFromEntries();
+                newEntry.streakDay = reconciledStreak.currentStreak;
+                StorageService.saveEntry(newEntry);
+
                 StorageService.clearDraft(today);
-                setStreakCount(newCurrentStreak);
+                setStreakCount(reconciledStreak.currentStreak);
+
+                // Evaluate badges empirically across entries and reconciled streak
+                const allEntries = StorageService.getEntries();
+                const existingBadgeCodes = userProfile.unlockedBadges?.map((b) => b.code) || [];
+                const { newlyUnlockedCodes } = evaluateBadges(
+                    allEntries,
+                    reconciledStreak,
+                    existingBadgeCodes
+                );
+
+                if (newlyUnlockedCodes.length > 0) {
+                    const now = Date.now();
+                    const newBadgeEntries = newlyUnlockedCodes.map((code) => ({
+                        code,
+                        awardedAt: now,
+                    }));
+                    const updatedBadges = [...(userProfile.unlockedBadges || []), ...newBadgeEntries];
+                    const updatedProfile: UserProfile = {
+                        ...userProfile,
+                        unlockedBadges: updatedBadges,
+                    };
+                    StorageService.saveUserProfile(updatedProfile);
+                    void updateProfile(updatedProfile);
+                    setNewlyUnlockedBadges(newlyUnlockedCodes);
+                }
 
                 if (isAuthenticated && googleId) {
                     await FirestoreService.saveEntry(googleId, newEntry);
-                    await FirestoreService.updateStreak(googleId, updatedStreak);
+                    await FirestoreService.updateStreak(googleId, reconciledStreak);
                     await refreshStreak();
                 }
 
                 setIsCompleted(true);
             } catch (error) {
                 console.error('Failed to save daily entry:', error);
-                setValidationError(isHebrew ? 'שגיאה בשמירת התרגול, נסה שוב.' : 'Error saving practice, please try again.');
+                setValidationError(
+                    isHebrew ? 'שגיאה בשמירת התרגול, נסה שוב.' : 'Error saving practice, please try again.'
+                );
             } finally {
                 setIsSaving(false);
             }
         },
-        [userProfile, activeProtocol, isHebrew, subtractionReflection, isAuthenticated, googleId, refreshStreak]
+        [
+            userProfile,
+            activeProtocol,
+            isHebrew,
+            subtractionReflection,
+            isAuthenticated,
+            googleId,
+            refreshStreak,
+            updateProfile,
+            setNewlyUnlockedBadges,
+        ]
     );
 
     const handlePrimaryCtaClick = useCallback(async () => {

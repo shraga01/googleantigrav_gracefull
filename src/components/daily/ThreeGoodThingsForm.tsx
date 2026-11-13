@@ -3,6 +3,7 @@ import type { ThreeGoodThingsItem, UserProfile, Locale, EmpiricalHistoricalConte
 import { NeuralRubricEngine, type NeuralDimensionKey } from '../../services/neuralRubricEngine';
 import { PromptEngine, TARGET_DESCRIPTIONS, LENS_DESCRIPTIONS } from '../../services/promptEngine';
 import { getDictionary } from '../../locales';
+import { StorageService } from '../../services/storage';
 import { IconCheck } from '../common/SvgIcon';
 
 interface ThreeGoodThingsFormProps {
@@ -653,6 +654,9 @@ export const ThreeGoodThingsForm: React.FC<ThreeGoodThingsFormProps> = ({
                                         )}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        onClick={() => {
+                                            StorageService.markGratitudeShared();
+                                        }}
                                         className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] no-underline text-center"
                                     >
                                         <span>{t.threeGoodThings.whatsappBtn}</span>

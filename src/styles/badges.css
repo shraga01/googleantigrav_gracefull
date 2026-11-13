@@ -19,7 +19,7 @@
 }
 
 .badge-glass-card.locked {
-    opacity: 0.5;
+    opacity: 1;
 }
 
 /* ==================== */
@@ -28,17 +28,21 @@
 
 /* Base badge icon container */
 .badge-icon {
-    width: 4.5rem;
-    height: 4.5rem;
-    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    aspect-ratio: 1 / 1;
+    border-radius: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
+    flex-shrink: 0;
+    margin-inline: auto;
+    margin-bottom: 0.5rem;
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.2),
-        inset 0 -8px 16px rgba(0, 0, 0, 0.15),
-        inset 0 8px 16px rgba(255, 255, 255, 0.2);
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        inset 0 -4px 8px rgba(0, 0, 0, 0.08),
+        inset 0 4px 8px rgba(255, 255, 255, 0.25);
 }
 
 /* Glossy overlay effect */
@@ -134,9 +138,7 @@
 .badge-icon-milestone-100 {
     background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);
     border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 0.75rem;
-    width: 3.5rem;
-    height: 4.5rem;
+    border-radius: 1rem;
 }
 
 .badge-icon-milestone-10 .badge-number,
@@ -223,7 +225,8 @@
 
 /* Locked badge overlay */
 .badge-locked {
-    filter: grayscale(1) brightness(0.5);
+    filter: none;
+    opacity: 0.9;
 }
 
 .badge-unlocked {
@@ -268,8 +271,8 @@
 /* Adjust icon sizes for smaller screens */
 @media (max-width: 400px) {
     .badge-icon {
-        width: 3.5rem;
-        height: 3.5rem;
+        width: 56px;
+        height: 56px;
     }
 
     .badge-icon::after {
