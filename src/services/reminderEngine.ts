@@ -17,6 +17,8 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 import type { UserProfile, ReminderSettings } from '../types';
 import { FirestoreService } from './firestoreService';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 
 const DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
@@ -169,13 +171,188 @@ export const ReminderEngine = {
     },
 
     /**
-     * Request browser notification permission (FCM / Web Push).
+     * Platform detection helper.
+     */
+    isNativePlatform: (): boolean => {
+        return Capacitor.isNativePlatform();
+    },
+
+    /**
+     * Sets up high-priority notification channel for Android 8.0+.
+     */
+    setupNotificationChannel: async (): Promise<void> => {
+        if (!Capacitor.isNativePlatform()) return;
+        try {
+            await LocalNotifications.createChannel({
+                id: 'evening_gratitude_channel',
+                name: 'Evening Gratitude Reminders',
+                description: 'Pre-sleep evening gratitude practice alerts',
+                importance: 5,
+                visibility: 1,
+                sound: 'default',
+                vibration: true,
+                lights: true,
+                lightColor: '#D4A373',
+            });
+        } catch (err) {
+            console.warn('Could not create native notification channel:', err);
+        }
+    },
+
+    /**
+     * Request notification permission across native Android or Web Push.
      */
     requestNotificationPermission: async (): Promise<NotificationPermission> => {
-        if (typeof window === 'undefined' || !('Notification' in window)) {
-            return 'denied';
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const res = await LocalNotifications.requestPermissions();
+                return res.display === 'granted' ? 'granted' : 'denied';
+            } catch (err) {
+                console.warn('Native requestPermissions failed:', err);
+                return 'denied';
+            }
         }
-        return await Notification.requestPermission();
+
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            return await Notification.requestPermission();
+        }
+        return 'denied';
+    },
+
+    /**
+     * Check current notification permission status.
+     */
+    checkNotificationPermission: async (): Promise<string> => {
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const res = await LocalNotifications.checkPermissions();
+                return res.display;
+            } catch {
+                return 'prompt';
+            }
+        }
+
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            return Notification.permission;
+        }
+        return 'default';
+    },
+
+    /**
+     * Schedules native Android local notification for recurring evening practice.
+     */
+    scheduleNativeNotification: async (
+        profile: UserProfile,
+        locale: 'he' | 'en' = 'he'
+    ): Promise<{ success: boolean; message: string }> => {
+        if (!Capacitor.isNativePlatform()) {
+            return { success: false, message: 'Web environment: using web push / calendar sync' };
+        }
+
+        try {
+            await ReminderEngine.setupNotificationChannel();
+            const reminderId = 101;
+
+            // Cancel any previously scheduled evening reminder
+            await LocalNotifications.cancel({ notifications: [{ id: reminderId }] });
+
+            const settings = profile.reminderSettings || ReminderEngine.getDefaultSettings();
+            if (!settings.enabled) {
+                return { success: true, message: 'Reminders disabled; canceled existing notification' };
+            }
+
+            const [hoursStr, minutesStr] = (settings.eveningTime || '21:30').split(':');
+            const targetHour = parseInt(hoursStr || '21', 10);
+            const targetMinute = parseInt(minutesStr || '30', 10);
+
+            const title = locale === 'he' ? '🌙 זמן להכרת תודה יומית' : '🌙 Evening Gratitude Ritual';
+            const body = locale === 'he'
+                ? 'עוצרים, נושמים ומקדישים כמה דקות ל-3 דברים טובים לפני השינה ✨'
+                : 'Pause, breathe and take a few minutes for Three Good Things before bed ✨';
+
+            await LocalNotifications.schedule({
+                notifications: [
+                    {
+                        id: reminderId,
+                        title,
+                        body,
+                        channelId: 'evening_gratitude_channel',
+                        schedule: {
+                            on: {
+                                hour: targetHour,
+                                minute: targetMinute,
+                            },
+                            repeats: true,
+                            allowWhileIdle: true,
+                        },
+                        extra: {
+                            mode: 'evening_ritual',
+                            source: 'local_notification',
+                        },
+                    },
+                ],
+            });
+
+            return {
+                success: true,
+                message: locale === 'he'
+                    ? `✓ תזכורת הוגדרה מדי ערב בשעה ${settings.eveningTime}`
+                    : `✓ Native reminder scheduled daily at ${settings.eveningTime}`,
+            };
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.error('Failed to schedule native notification:', err);
+            return { success: false, message: errorMsg };
+        }
+    },
+
+    /**
+     * Triggers an immediate test notification (2s future) on native Android or via Cloud Function on Web.
+     */
+    triggerTestNotification: async (
+        locale: 'he' | 'en' = 'he'
+    ): Promise<{ success: boolean; message: string }> => {
+        if (Capacitor.isNativePlatform()) {
+            try {
+                await ReminderEngine.setupNotificationChannel();
+                const testId = 999;
+                await LocalNotifications.cancel({ notifications: [{ id: testId }] });
+
+                const title = locale === 'he' ? '🌙 בדיקת תזכורת ערב מוצלחת!' : '🌙 Evening Reminder Test Successful!';
+                const body = locale === 'he'
+                    ? 'התראת ערב פועלת כראוי במכשירך. שלב תרגול 3 דברים טובים לפני השינה ✨'
+                    : 'Evening notification is fully working on your device. Take a moment for Three Good Things ✨';
+
+                const triggerTime = new Date(Date.now() + 2000);
+                await LocalNotifications.schedule({
+                    notifications: [
+                        {
+                            id: testId,
+                            title,
+                            body,
+                            channelId: 'evening_gratitude_channel',
+                            schedule: {
+                                at: triggerTime,
+                                allowWhileIdle: true,
+                            },
+                        },
+                    ],
+                });
+
+                return {
+                    success: true,
+                    message: locale === 'he'
+                        ? 'התראת בדיקה תישלח בעוד 2 שניות 📱'
+                        : 'Test notification will appear in 2 seconds 📱',
+                };
+            } catch (err: unknown) {
+                const errorMsg = err instanceof Error ? err.message : String(err);
+                return { success: false, message: `Native error: ${errorMsg}` };
+            }
+        }
+
+        const cloudRes = await ReminderEngine.triggerCloudTest();
+        return { success: cloudRes.success, message: cloudRes.message };
     },
 
     /**
