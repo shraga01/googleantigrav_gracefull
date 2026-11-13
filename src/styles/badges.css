@@ -323,8 +323,7 @@
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    pointer-events: none;
-    /* Let any clicks go through if user taps screen */
+    pointer-events: auto !important;
     transition: opacity 0.5s ease;
 }
 

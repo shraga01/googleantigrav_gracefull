@@ -54,7 +54,6 @@ export const DailyPractice: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const [activeProtocol] = useState<GratitudeProtocolType>('three_good_things');
     const [activeStep, setActiveStep] = useState<0 | 1 | 2>(0);
-    const [earlyFinishOpen, setEarlyFinishOpen] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [showDeeperTools, setShowDeeperTools] = useState(false);
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
@@ -186,7 +185,6 @@ export const DailyPractice: React.FC = () => {
 
     const handleStepChange = useCallback((nextStep: 0 | 1 | 2) => {
         setValidationError(null);
-        setEarlyFinishOpen(false);
         setActiveStep(nextStep);
     }, []);
 
@@ -303,14 +301,31 @@ export const DailyPractice: React.FC = () => {
     );
 
     const handlePrimaryCtaClick = useCallback(async () => {
-        const currentAct = (items[activeStep]?.act || '').trim();
-        if (currentAct.length < 3) {
-            setValidationError(
-                isHebrew
-                    ? 'אנא כתוב כמה מילים על הרגע הטוב לפני שממשיכים ✨'
-                    : 'Please write a few words about this good moment before continuing ✨'
-            );
-            return;
+        if (activeStep === 2) {
+            // Step 2 -> verify all 3 moments have at least 3 chars (or jump to first empty one)
+            const firstEmptyIndex = items.findIndex((it) => (it?.act || '').trim().length < 3);
+            if (firstEmptyIndex !== -1) {
+                setActiveStep(firstEmptyIndex as 0 | 1 | 2);
+                setValidationError(
+                    isHebrew
+                        ? `אנא השלם גם את רגע ${firstEmptyIndex + 1} לפני השלמת התרגול`
+                        : `Please also complete Moment ${firstEmptyIndex + 1} before finishing`
+                );
+                setTimeout(() => {
+                    stepCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 60);
+                return;
+            }
+        } else {
+            const currentAct = (items[activeStep]?.act || '').trim();
+            if (currentAct.length < 3) {
+                setValidationError(
+                    isHebrew
+                        ? 'אנא כתוב כמה מילים על הרגע הטוב לפני שממשיכים ✨'
+                        : 'Please write a few words about this good moment before continuing ✨'
+                );
+                return;
+            }
         }
 
         const today = new Date().toLocaleDateString('en-CA');
@@ -320,7 +335,6 @@ export const DailyPractice: React.FC = () => {
 
         if (activeStep < 2) {
             const nextStep = (activeStep + 1) as 1 | 2;
-            setEarlyFinishOpen(false);
             setActiveStep(nextStep);
             setTimeout(() => {
                 stepCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -328,39 +342,8 @@ export const DailyPractice: React.FC = () => {
             return;
         }
 
-        // Step 2 -> verify all 3 moments have at least 3 chars (or jump to first empty one)
-        const firstEmptyIndex = items.findIndex((it) => it.act.trim().length < 3);
-        if (firstEmptyIndex !== -1) {
-            setActiveStep(firstEmptyIndex as 0 | 1 | 2);
-            setValidationError(
-                isHebrew
-                    ? `אנא השלם גם את רגע ${firstEmptyIndex + 1} לפני השלמת התרגול`
-                    : `Please also complete Moment ${firstEmptyIndex + 1} before finishing`
-            );
-            return;
-        }
-
         await persistEntry(items);
     }, [activeStep, items, isHebrew, persistEntry]);
-
-    const handleEarlyFinishToggleOrSubmit = useCallback(async () => {
-        const hasAtLeastOne = items.some((it) => it.act.trim().length >= 3);
-        if (!hasAtLeastOne) {
-            setValidationError(
-                isHebrew
-                    ? 'אנא מלא רגע טוב אחד לפחות לפני השמירה.'
-                    : 'Please enter at least one gratitude moment before saving.'
-            );
-            return;
-        }
-
-        if (!earlyFinishOpen) {
-            setEarlyFinishOpen(true);
-            return;
-        }
-
-        await persistEntry(items);
-    }, [earlyFinishOpen, items, isHebrew, persistEntry]);
 
     // -------------------------------------------------------------------------
     // 3. All useEffect Declarations (Strictly physical bottom)
@@ -408,8 +391,7 @@ export const DailyPractice: React.FC = () => {
         );
     }
 
-    const hasAtLeastOneMoment = items.some((it) => it.act.trim().length >= 3);
-    const showMoodScale = activeStep === 2 || earlyFinishOpen;
+    const showMoodScale = activeStep === 2;
 
     return (
         <div dir={isHebrew ? 'rtl' : 'ltr'} className="w-full max-w-full min-w-0 space-y-4 animate-fadeIn">
@@ -458,14 +440,12 @@ export const DailyPractice: React.FC = () => {
 
             {/* Primary Gradient CTA Button */}
             <div className="pt-1 space-y-2 w-full">
-                {activeStep === 2 || earlyFinishOpen ? (
+                {activeStep === 2 ? (
                     <button
                         type="button"
-                        onClick={() =>
-                            void (earlyFinishOpen ? handleEarlyFinishToggleOrSubmit() : handlePrimaryCtaClick())
-                        }
+                        onClick={() => void handlePrimaryCtaClick()}
                         disabled={isSaving}
-                        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-l from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-lg shadow-amber-500/25 active:scale-[0.98] hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-l from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-lg shadow-amber-500/25 active:scale-[0.98] hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
                     >
                         <span>{isSaving ? t.common.loading : t.threeGoodThings.completePracticeBtn}</span>
                     </button>
@@ -474,25 +454,15 @@ export const DailyPractice: React.FC = () => {
                         type="button"
                         onClick={() => void handlePrimaryCtaClick()}
                         disabled={isSaving}
-                        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-l from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-lg shadow-amber-500/25 active:scale-[0.98] hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-l from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-lg shadow-amber-500/25 active:scale-[0.98] hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
                     >
-                        <span>{isSaving ? t.common.loading : t.threeGoodThings.nextMomentBtn}</span>
-                        {!isSaving && (
-                            <svg className="w-5 h-5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                            </svg>
-                        )}
-                    </button>
-                )}
-
-                {/* Minimum Viable Effort early-finish toggle on steps 0–1 */}
-                {activeStep < 2 && hasAtLeastOneMoment && !earlyFinishOpen && !isSaving && (
-                    <button
-                        type="button"
-                        onClick={() => void handleEarlyFinishToggleOrSubmit()}
-                        className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-stone-600 hover:text-stone-900 hover:bg-white/70 transition-colors"
-                    >
-                        {t.threeGoodThings.finishEarlyBtn}
+                        <span>
+                            {isSaving
+                                ? t.common.loading
+                                : activeStep === 0
+                                ? t.threeGoodThings.nextMomentBtnStep1
+                                : t.threeGoodThings.nextMomentBtnStep2}
+                        </span>
                     </button>
                 )}
             </div>

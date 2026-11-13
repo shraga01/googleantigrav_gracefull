@@ -1,18 +1,41 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 
 interface WelcomeScreenProps {
   onNext: () => void;
+  onLanguageChange?: (lang: 'hebrew' | 'english') => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
-  const { language } = useApp();
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext, onLanguageChange }) => {
+  // -------------------------------------------------------------------------
+  // 1. App Context & State
+  // -------------------------------------------------------------------------
+  const { language, setLanguage } = useApp();
   const isHebrew = language === 'hebrew';
+
+  // -------------------------------------------------------------------------
+  // 2. All useCallback Hooks (React 19 TDZ Prevention)
+  // -------------------------------------------------------------------------
+  const handleLanguageSelect = useCallback(
+    (lang: 'hebrew' | 'english') => {
+      try {
+        localStorage.setItem('daily_app_lang_pref', lang);
+      } catch {
+        // ignore localStorage errors
+      }
+      if (onLanguageChange) {
+        onLanguageChange(lang);
+      } else {
+        setLanguage(lang);
+      }
+    },
+    [onLanguageChange, setLanguage]
+  );
 
   return (
     <div className="flex flex-col flex-1 justify-between w-full">
       <div className="flex flex-col items-center w-full">
-        {/* Hero Emblem: w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-glow-amber flex items-center justify-center mx-auto mb-5 with Sun & Heart-Sprout SVG */}
+        {/* Hero Emblem: Sun & Heart-Sprout SVG */}
         <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-glow-amber flex items-center justify-center mx-auto mb-5 transition-transform hover:scale-105 duration-300">
           <svg
             className="w-11 h-11 text-white drop-shadow-sm"
@@ -78,8 +101,48 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             : 'Pause, breathe and appreciate — 3 minutes in the evening for proven mental resilience'}
         </p>
 
-        {/* Scientific Card: bg-white rounded-3xl p-5 shadow-soft-card border border-amber-100/90 my-4 */}
-        <div className="bg-white rounded-3xl p-5 shadow-soft-card border border-amber-100/90 my-4 w-full">
+        {/* Prominent Language Choice Card */}
+        <div className="bg-white rounded-3xl p-4 shadow-soft-card border border-amber-100/90 my-3.5 w-full">
+          <div className="flex items-center justify-between mb-2.5 px-1">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+              {isHebrew ? 'שפת הממשק' : 'Language'}
+            </span>
+            <span className="text-xs text-amber-700 font-semibold">
+              {isHebrew ? '🇮🇱 עברית נבחרה' : '🇬🇧 English Selected'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 w-full">
+            <button
+              type="button"
+              onClick={() => handleLanguageSelect('hebrew')}
+              className={`py-3 px-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                isHebrew
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md ring-2 ring-amber-300'
+                  : 'bg-[#FBF9F5] hover:bg-amber-50 text-stone-700 border border-amber-200/70'
+              }`}
+            >
+              <span className="text-base">🇮🇱</span>
+              <span>עברית</span>
+              {isHebrew && <span className="text-xs font-black">✓</span>}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLanguageSelect('english')}
+              className={`py-3 px-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                !isHebrew
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md ring-2 ring-amber-300'
+                  : 'bg-[#FBF9F5] hover:bg-amber-50 text-stone-700 border border-amber-200/70'
+              }`}
+            >
+              <span className="text-base">🇬🇧</span>
+              <span>English</span>
+              {!isHebrew && <span className="text-xs font-black">✓</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Scientific Card: bg-white rounded-3xl p-5 shadow-soft-card border border-amber-100/90 mb-3 w-full */}
+        <div className="bg-white rounded-3xl p-5 shadow-soft-card border border-amber-100/90 mb-3 w-full">
           <div className="flex items-center gap-2 mb-2 text-amber-700 text-xs font-bold">
             <svg
               className="w-4 h-4 text-amber-500 shrink-0"
